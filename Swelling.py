@@ -22,14 +22,15 @@ class InitialConditions(UserExpression):
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
     # Bilinear and linear forms are used to compute the residual and Jacobian
-    def __init__(self, a, L):
+    def __init__(self, a, L, bcs):
         NonlinearProblem.__init__(self)
         self.L = L              # Linear form
         self.a = a              # Bilinear form
+        self.bcs = bcs          # Boundary conditions
     def F(self, b, x):          # Computes the residual vector "b"
-        assemble(self.L, tensor=b)
+        assemble(self.L, tensor=b, bcs=self.bcs)
     def J(self, A, x):          # Computes the Jacobian matrix "A"
-        assemble(self.a, tensor=A)
+        assemble(self.a, tensor=A, bcs=self.bcs)
 
 # Model parameters
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
@@ -130,11 +131,11 @@ F0 = inner(P(u), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
 F1 = dot(1-J, v_mu)*dx - inner(C0, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx
 WF = F0 + F1
 
-# Compute directional derivative about x in the direction of du (Jacobian)
+# Compute directional derivative about w in the direction of du (Jacobian)
 J = derivative(WF, w, du)
 
 # Create nonlinear problem and Newton solver
-problem = Equation(J, WF)
+problem = Equation(J, WF, bc)
 solver = NewtonSolver()
 solver.parameters["linear_solver"] = "lu"
 solver.parameters["convergence_criterion"] = "incremental"
