@@ -7,6 +7,23 @@ import matplotlib.pyplot as plt     # For visualization
 import numpy as np
 import os
 
+# Solver parameters
+snes_solver_parameters = {"nonlinear_solver": "snes",
+                          "symmetric": True,
+                          "snes_solver": {"maximum_iterations": 200,
+                                          "report": True,
+                                          "line_search": "bt",
+                                          "linear_solver": "mumps",
+                                          "method":"newtonls",
+                                          "absolute_tolerance": 1e-9,
+                                          "relative_tolerance": 1e-9,
+                                          "error_on_nonconvergence": False}}
+
+# Form compiler options
+parameters["form_compiler"]["optimize"] = True
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["quadrature_degree"]=4
+
 # Class representing the intial conditions for displacement and chemical potential
 class InitialConditions(UserExpression):
     def eval(self, values, x):
@@ -28,28 +45,30 @@ class Equation(NonlinearProblem):
         self.a = a              # Bilinear form
         self.bcs = bcs          # Boundary conditions
     def F(self, b, x):          # Computes the residual vector "b"
-        assemble(self.L, tensor=b, bcs=self.bcs)
+        assemble(self.L, tensor=b)
+        for bc in self.bcs:
+            bc.apply(b)
     def J(self, A, x):          # Computes the Jacobian matrix "A"
-        assemble(self.a, tensor=A, bcs=self.bcs)
+        assemble(self.a, tensor=A)
+        for bc in self.bcs:
+            bc.apply(A)
 
 # Model parameters
+#------------------------------------------------------------------
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
-chi = 0.4                       # Flory Parameter
+chi = 0.5                       # Flory Parameter
 l0 = 1.1                       # Initial Stretch (lambda_o)
 # Normalization Parameters
-bulkMod = 10^3                 # Bulk Modulus (K/N k_B T)
-n = 10^(-3)                     # Normalization (N Omega)
+bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
+n = 10**(-3)                     # Normalization (N Omega)
 # Time Parameters
 t = 0.0
-num_steps = 5
+num_steps = 3
 dt = 10e-5                      # time step
 
-# Form compiler options
-parameters["form_compiler"]["optimize"] = True
-parameters["form_compiler"]["cpp_optimize"] = True
-
 # Define mesh and mixed function space
+#------------------------------------------------------------------
 mesh = UnitCubeMesh(2, 2, 2)                        # Unit Cube
 # Define Taylor-Hood Elements
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
@@ -71,18 +90,19 @@ back =  CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 
 # Bottom of the cube is attached to substrate and has fixed displacement
-u_bot = Expression(("(scale-1)*x[0]", "(scale-1)*x[1]", "0.0"), scale=l0, degree=1)
+u_bot = Expression(("(1-scale)*x[0]", "0.0*x[1]", "(1-scale)*x[2]"), scale=l0, degree=1)
 # No flux on the bottom surface and four sides
-chem_pot = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
+chem_pot = (1.0/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
 # The Dirichlet BCs are specified in a subspace
 bc_u = DirichletBC(V.sub(0), u_bot, bottom)    # Set displacement on bottom surface
 
 # Set chemical potential boundary conditions to be equivalent to mu0
+bc_t = DirichletBC(V.sub(1), chem_pot, top)
 bc_l = DirichletBC(V.sub(1), chem_pot, left)
 bc_r = DirichletBC(V.sub(1), chem_pot, right)
 bc_b = DirichletBC(V.sub(1), chem_pot, back)
 bc_f = DirichletBC(V.sub(1), chem_pot, front)
-bc = [bc_u, bc_l, bc_r, bc_b, bc_f]
+bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]
 
 # Define trial and test functions of space V
 #------------------------------------------------------------------
@@ -134,12 +154,9 @@ WF = F0 + F1
 # Compute directional derivative about w in the direction of du (Jacobian)
 J = derivative(WF, w, du)
 
-# Create nonlinear problem and Newton solver
-problem = Equation(J, WF, bc)
-solver = NewtonSolver()
-solver.parameters["linear_solver"] = "lu"
-solver.parameters["convergence_criterion"] = "incremental"
-solver.parameters["relative_tolerance"] = 1e-6
+problem = NonlinearVariationalProblem(WF, w, bc, J=J)
+solver_problem = NonlinearVariationalSolver(problem)
+solver_problem.parameters.update(snes_solver_parameters)
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile("results.xdmf")
@@ -150,12 +167,13 @@ while (t < T):
 
     # Update time
     t += dt
+
     # Update fields containing u and mu
     w0.vector()[:] = w.vector()
 
     # Solve
-    solver.solve(problem, w.vector())
-    #solve(WF == 0, w, bc, J=J)
+    #solver.solve(problem, w.vector())
+    solver_problem.solve()
 
     # Note that this is now a deep copy not a shallow copy like split(w)
     (u, mu) = w.split()               # Split the test functions
