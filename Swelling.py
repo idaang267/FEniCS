@@ -1,20 +1,19 @@
 # Swelling of Unit Cube
-# Adapted from Hyperelasticity Demo:
+#------------------------------------------------------------------------------
+# Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
+# coupled solvent diffusion and large deformation of hydrogels"
 
-# Import modules
+# Import dolfin module
 from dolfin import *
-import matplotlib.pyplot as plt     # For visualization
-import numpy as np
-import os
 
-# Solver parameters
+# Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
                           "symmetric": True,
                           "snes_solver": {"maximum_iterations": 200,
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
-                                          "method":"newtonls",
+                                          "method": "newtonls",
                                           "absolute_tolerance": 1e-9,
                                           "relative_tolerance": 1e-9,
                                           "error_on_nonconvergence": False}}
@@ -22,16 +21,16 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
 # Form compiler options
 parameters["form_compiler"]["optimize"] = True
 parameters["form_compiler"]["cpp_optimize"] = True
-parameters["form_compiler"]["quadrature_degree"]=4
+parameters["form_compiler"]["quadrature_degree"] = 4
 
-# Class representing the intial conditions for displacement and chemical potential
+# Initial condition (IC) class for displacement and chemical potential
 class InitialConditions(UserExpression):
     def eval(self, values, x):
         # Displacement u0 = (values[0], values[1], values[2])
         values[0] = (l0-1)*x[0]
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
-        # Chemical potential mu0
+        # Initial Chemical potential: mu0
         values[3] = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
     def value_shape(self):
          return (4,)
@@ -54,21 +53,22 @@ class Equation(NonlinearProblem):
             bc.apply(A)
 
 # Model parameters
-#------------------------------------------------------------------
+#------------------------------------------------------------------------------
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
-chi = 0.5                       # Flory Parameter
-l0 = 1.1                       # Initial Stretch (lambda_o)
+chi = 0.4                       # Flory Parameter
+l0 = 1.1                        # Initial Stretch (lambda_o)
 # Normalization Parameters
 bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
-n = 10**(-3)                     # Normalization (N Omega)
+n = 10**(-3)                    # Normalization (N Omega)
 # Time Parameters
-t = 0.0
-num_steps = 3
-dt = 10e-5                      # time step
+t = 0.0                         # Initial time, will be updated within loop
+num_steps = 3                   # Number of time steps
+dt = 10e-5                      # Change in time between time steps
+Time = num_steps*dt             # Comparison to control amount of steps
 
 # Define mesh and mixed function space
-#------------------------------------------------------------------
+#------------------------------------------------------------------------------
 mesh = UnitCubeMesh(2, 2, 2)                        # Unit Cube
 # Define Taylor-Hood Elements
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
@@ -78,92 +78,112 @@ P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
 TH = MixedElement([P2,P1])
 V  = FunctionSpace(mesh, TH)
 
-# Boundary Conditions
-#------------------------------------------------------------------
+# Boundary Conditions (BC)
+#------------------------------------------------------------------------------
 # Mark Boundary Subdomains for each surface of the cube
+# Note: these subdomains are set according to ParaView default view where
+# x is right, y is up, and z-direction is out-of-plane
 bottom = CompiledSubDomain("near(x[1], side) && on_boundary", side = 0.0)
 top = CompiledSubDomain("near(x[1], side) && on_boundary", side = 1.0)
-# Sides of cube
 left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
 right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 back =  CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 
-# Bottom of the cube is attached to substrate and has fixed displacement
+# Bottom of the cube is attached to substrate and has fixed displacement from
+# the reference relative to the current configuration
 u_bot = Expression(("(1-scale)*x[0]", "0.0*x[1]", "(1-scale)*x[2]"), scale=l0, degree=1)
-# No flux on the bottom surface and four sides
-chem_pot = (1.0/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
-# The Dirichlet BCs are specified in a subspace
-bc_u = DirichletBC(V.sub(0), u_bot, bottom)    # Set displacement on bottom surface
+    # Account for initial configuration: displacement in x & z direction not y
+# Chemical potential BC equivalent to mu0 in the IC class
+chem_pot = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
 
-# Set chemical potential boundary conditions to be equivalent to mu0
+# The Dirichlet BCs are specified in respective subspaces
+# Displacement in first subspace V.sub(0)
+bc_u = DirichletBC(V.sub(0), u_bot, bottom)
+# Chemical potential in second subspace V.sub(1)
 bc_t = DirichletBC(V.sub(1), chem_pot, top)
 bc_l = DirichletBC(V.sub(1), chem_pot, left)
 bc_r = DirichletBC(V.sub(1), chem_pot, right)
 bc_b = DirichletBC(V.sub(1), chem_pot, back)
 bc_f = DirichletBC(V.sub(1), chem_pot, front)
-bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]
+bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]  # All boundary conditions
 
-# Define trial and test functions of space V
-#------------------------------------------------------------------
-du = TrialFunction(V)           # Incremental trial function
-v = TestFunction(V)             # Test Function
-w = Function(V)                 # Current solution
-w0 = Function(V)                # Previous solution
-# Split (produces a shallow copy not a deep copy)
+# Define functions in mixed function space V
+#------------------------------------------------------------------------------
+du = TrialFunction(V)                       # Incremental trial function
+v = TestFunction(V)                         # Test Function
+w = Function(V)                             # Current solution for u and mu
+w0 = Function(V)                            # Previous solution for u0 and mu0
+# Split test functions and unknowns (produces a shallow copy not a deep copy)
 (v_u, v_mu) = split(v)
-(u, mu) = split(w)              #w.split(deepcopy=True)
-(u0, mu0) = split(w)            #w0.split(deepcopy=True)
+(u, mu) = split(w)
+(u0, mu0) = split(w)
+    # Deep copy syntax: w.split(deepcopy=True)
 
-# Initial Conditions
-#--------------------------------------------------------------------
-# Initial conditions are created by using the classes defined and then
-# interpolating the initial conditions into a finite element space:
-C_0 = Constant(1 - l0**3)
-C0 = interpolate(C_0, V.sub(1).collapse())
-
-# Create intial conditions and interpolate
-init = InitialConditions(degree=1)
-w0.interpolate(init)
-w.interpolate(init)
+# Initial Conditions (IC)
+#------------------------------------------------------------------------------
+# Initial conditions are created by using the class defined and then
+# interpolating into a finite element space:
+init = InitialConditions(degree=1)          # Expression requires degree def.
+w.interpolate(init)                         # Interpolate current solution
+w0.interpolate(init)                        # Interpolate previous solution
 
 # Kinematics
+#------------------------------------------------------------------------------
 d = len(u)                      # Spatial dimension
 I = Identity(d)                 # Identity tensor
-F = I + grad(u)                 # Deformation gradient
+F = I + grad(u)                 # Deformation gradient from current time step
+F_prev = I + grad(u0)           # Deformation gradient from previous time step
 CG = F.T*F                      # Right Cauchy-Green (CG) tensor
 
 # Invariants of deformation tensors
 Ic = tr(CG)
-J  = det(F)
+J = det(F)                      # Current time step
+J_prev = det(F_prev)            # Previous time step
 
 # Definition for normalized nominal stress tensor: P = dU/dF
-def P(u):
-    return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/J**2 - mu))*J*inv(F)
+def P(u, mu):
+    return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/(J**2) - mu))*J*inv(F.T)
+
+# Definition of concentration where C = - dU/dmu = (J-1)
+def C_prev(u0):
+    return J_prev-1
+def C(u):
+    return J-1
 
 # Definition for normalized flux (Don't use J)
 def Flux(u, mu):
     p1 = dot(inv(F), grad(mu))
-    return -(1-J)*dot(inv(F),p1) # where C = - dU/dmu = 1 - J
+    return -C(u)*dot(inv(F),p1)
 
 # Variational problem where we have two equations for the weak form
-F0 = inner(P(u), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = dot(1-J, v_mu)*dx - inner(C0, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx
+F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
+F1 = (1/n)*(inner(C(u), v_mu)*dx - inner(C_prev(u0), v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
 J = derivative(WF, w, du)
 
+# Create nonlinear problem and Newton solver
+problem = Equation(J, WF, bc)
+solver = NewtonSolver()
+solver.parameters["linear_solver"] = "lu"
+solver.parameters["convergence_criterion"] = "incremental"
+solver.parameters["relative_tolerance"] = 1e-6
+
+# Use if trying SNES
+"""
+# Setup Non-linear variational problem
 problem = NonlinearVariationalProblem(WF, w, bc, J=J)
 solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
+"""
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile("results.xdmf")
 
 # Solve for each value using the previous solution as a starting point
-T = num_steps*dt
-while (t < T):
+while (t < Time):
 
     # Update time
     t += dt
@@ -172,8 +192,8 @@ while (t < T):
     w0.vector()[:] = w.vector()
 
     # Solve
-    #solver.solve(problem, w.vector())
-    solver_problem.solve()
+    #solver_problem.solve()
+    solver.solve(problem, w.vector())
 
     # Note that this is now a deep copy not a shallow copy like split(w)
     (u, mu) = w.split()               # Split the test functions
