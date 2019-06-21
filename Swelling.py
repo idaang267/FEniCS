@@ -3,8 +3,7 @@
 # Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
 # coupled solvent diffusion and large deformation of hydrogels"
 
-# Import dolfin module
-from dolfin import *
+from dolfin import *                # Dolfin module
 import matplotlib.pyplot as plt     # Module matplotlib
 
 # Solver parameters: Using PETSc SNES solver
@@ -36,12 +35,6 @@ class InitialConditions(UserExpression):
     def value_shape(self):
          return (4,)
 
-class StepConc(UserExpression):
-    def eval(self, values, x):
-        values[0] = J - 1
-    def value_shape(self):
-        return (1,)
-
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
     # Bilinear and linear forms are used to compute the residual and Jacobian
@@ -71,7 +64,7 @@ n = 10**(-3)                    # Normalization (N Omega)
 # Time Parameters
 t = 0.0                         # Initial time, will be updated within loop
 num_steps = 3                   # Number of time steps
-dt = 10e-5                      # Change in time between time steps
+dt = 10e-1                      # Change in time between time steps
 Time = num_steps*dt             # Comparison to control amount of steps
 
 # Define mesh and mixed function space
@@ -82,7 +75,7 @@ P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
     # Second order quadratic interpolation for displacement
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
     # First order linear interpolation for chemical potential
-TH = MixedElement([P2,P1])
+TH = MixedElement([P2, P1])
 V  = FunctionSpace(mesh, TH)
 
 # Boundary Conditions (BC)
@@ -102,7 +95,7 @@ front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, degree=1)
     # Account for initial configuration: displacement in x & z direction not y
 # Chemical potential BC equivalent to mu0 in the IC class
-chem_pot =0#(1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
+chem_pot = 0#(1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
 
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
@@ -120,11 +113,12 @@ bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]  # All boundary conditions
 du = TrialFunction(V)                       # Incremental trial function
 v = TestFunction(V)                         # Test Function
 w = Function(V)                             # Current solution for u and mu
-w0 = Function(V)                            # Previous solution for u0 and mu0
+w0 = Function(V)                            # Previous solution for u and mu
+
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
 (v_u, v_mu) = split(v)
-(u, mu) = split(w)
-(u0, mu0) = split(w0)
+(u, mu) = split(w)                          # Split current
+(u0, mu0) = split(w0)                       # Split previous
     # Deep copy syntax: w.split(deepcopy=True)
 
 # Initial Conditions (IC)
@@ -140,13 +134,13 @@ w0.interpolate(init)                        # Interpolate previous solution
 d = len(u)                      # Spatial dimension
 I = Identity(d)                 # Identity tensor
 F = I + grad(u)                 # Deformation gradient from current time step
-F_prev = I + grad(u0)           # Deformation gradient from previous time step
+F0 = I + grad(u0)               # Deformation gradient from previous time step
 CG = F.T*F                      # Right Cauchy-Green (CG) tensor
 
 # Invariants of deformation tensors
 Ic = tr(CG)
 J = det(F)                      # Current time step
-J_prev = det(F_prev)            # Previous time step
+J0 = det(F0)
 
 # Definitions
 #------------------------------------------------------------------------------
@@ -154,67 +148,43 @@ J_prev = det(F_prev)            # Previous time step
 def P(u, mu):
     return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/(J**2) - mu))*J*inv(F.T)
 
-# Definition of concentration where C = - dU/dmu = (J-1)
-C_prev = J_prev-1
-C = J-1
-
 # Definition for normalized flux (Don't use J)
 def Flux(u, mu):
     p1 = dot(inv(F), grad(mu))
-    return -C*dot(inv(F),p1)
+    return -(J-1)*dot(inv(F), p1)
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = (1/n)*(inner(C, v_mu)*dx - inner(C_prev, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx)
+F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
-J = derivative(WF, w, du)
+Jacobian = derivative(WF, w, du)
 
-'''
-# Create nonlinear problem and Newton solver
-problem = Equation(J, WF, bc)
-solver = NewtonSolver()
-solver.parameters["linear_solver"] = "lu"
-solver.parameters["convergence_criterion"] = "incremental"
-solver.parameters["relative_tolerance"] = 1e-6
-'''
-
-# Use for SNES solver
-# Setup Non-linear variational problem
-problem = NonlinearVariationalProblem(WF, w, bc, J=J)
+# SNES solver > Setup Non-linear variational problem
+problem = NonlinearVariationalProblem(WF, w, bc, J=Jacobian)
 solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile("results.xdmf")
 
-# Define concentrations as functions in order to update
-C_prev = Function(V)
-C = Function(V)
 # Solve for each value using the previous solution as a starting point
 while (t < Time):
 
-    # Update time
-    t += dt
-
-    # Update fields containing u and mu
-    w0.vector()[:] = w.vector()
+    t += dt                        # Update time
+    w0.vector()[:] = w.vector()    # Update fields containing u and mu
 
     # Solve
     solver_problem.solve()
-    #solver.solve(problem, w.vector())
 
     # Note that this is now a deep copy not a shallow copy like split(w)
-    (u, mu) = w.split()               # Split the test functions
-
-    # Update previous solution for Concentration
-    C_prev.assign(C)
-        # Assign computed C to C_prev (previous)
+    (u, mu) = w.split()
 
     # Write results to file_results defined
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential","mu")
+
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
