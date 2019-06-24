@@ -31,28 +31,25 @@ class InitialConditions(UserExpression):
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
-        values[3] = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
+        values[3] = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + \
+                    ln((l0**3-1)/l0**3) + chi/l0**6
     def value_shape(self):
          return (4,)
 
-class Constraint(SubDomain):
+# Constraint on top surface
+class TopConstraint(SubDomain):
     # Top boundary is "target domain" G without one point at [0, 1, 0]
     def inside(self, x, on_boundary):
-        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) and \
+        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) or \
                     (x[1] > 1.0 - DOLFIN_EPS and x[2] > 0.5 - DOLFIN_EPS) and \
                     on_boundary)
-        #return bool([0.5,1,0] and [1,1,0] and [1,1,0.5] and [0.5,1,0.5] and \
-        #            [0,1,0.5] and [0,1,1] and [0.5,1,1] and [1,1,1])
     # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
     def map(self, x, y):
-        y[0] = x[0]         # x
-        y[1] = x[1] - 1.0   # y - 1
+        y[0] = x[0]
+        y[1] = x[1]
+        y[2] = x[2]
 
-        #if near(x[0], 1):
-        #    y[0] = x[0] - 1.
-        #    y[1] = x[1] - 1.
-
-tb = Constraint()
+tb = TopConstraint()
 
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
@@ -76,12 +73,13 @@ class Equation(NonlinearProblem):
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
-l0 = 1.55                       # Initial Stretch (lambda_o)
+l0 = 1.45                       # Initial Stretch (lambda_o)
 # Normalization Parameters
 bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
 n = 10**(-3)                    # Normalization (N Omega)
 # Time Parameters
 t = 0.0                         # Initial time, will be updated within loop
+chem_steps = 0                  # Update for chemical potential
 num_steps = 3                   # Number of time steps
 dt = 10e-1                      # Change in time between time steps
 Time = num_steps*dt             # Comparison to control amount of steps
@@ -95,11 +93,7 @@ P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
     # First order linear interpolation for chemical potential
 TH = MixedElement([P2, P1])
-V  = FunctionSpace(mesh, TH, constrained_domain=tb)
-
-# Just a check
-#coordinates = mesh.coordinates()[6]
-#print(coordinates)
+V  = FunctionSpace(mesh, TH)#, constrained_domain=tb)
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -108,6 +102,10 @@ V  = FunctionSpace(mesh, TH, constrained_domain=tb)
 # x is right, y is up, and z-direction is out-of-plane
 bottom = CompiledSubDomain("near(x[1], side) && on_boundary", side = 0.0)
 top = CompiledSubDomain("near(x[1], side) && on_boundary", side = 1.0)
+def top_constraint(x):
+    return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) or \
+                (x[1] > 1.0 - DOLFIN_EPS and x[2] > 0.5 - DOLFIN_EPS))
+
 left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
 right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 back =  CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
@@ -117,20 +115,31 @@ front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 # the reference relative to the current configuration
 u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, degree=1)
     # Account for initial configuration: displacement in x & z direction not y
-# Chemical potential BC equivalent to mu0 in the IC class
-chem_pot = 0#(1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
-
+# Roller boundary conditions on
+u_lr  = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
+u_bf  = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
+#u_bf  = Expression(("(scale-1)*x[0]", "(scale-1)*x[1]", "0.0*x[2]"), scale=l0, degree=1)
+# Chemical potential BC ramped from 0 to mu0 in the IC class
+chem_max = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
+#chem_p = Expression(("(chem_max*chem_steps)/num_steps"), chem_max=chem_max, chem_steps=chem_steps, num_steps=num_steps,degree=1)
+chem_p = 0.0
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
 bc_u = DirichletBC(V.sub(0), u_bot, bottom)
-# Chemical potential in second subspace V.sub(1)
-bc_t = DirichletBC(V.sub(1), chem_pot, top)
-bc_l = DirichletBC(V.sub(1), chem_pot, left)
-bc_r = DirichletBC(V.sub(1), chem_pot, right)
-bc_b = DirichletBC(V.sub(1), chem_pot, back)
-bc_f = DirichletBC(V.sub(1), chem_pot, front)
-bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]  # All boundary conditions
+bc_c_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
+bc_c_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
+bc_c_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
+bc_c_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
+# Chemical potential in second subspace V.sub(1)
+bc_t = DirichletBC(V.sub(1), chem_p, top)
+bc_l = DirichletBC(V.sub(1), chem_p, left)
+bc_r = DirichletBC(V.sub(1), chem_p, right)
+bc_b = DirichletBC(V.sub(1), chem_p, back)
+bc_f = DirichletBC(V.sub(1), chem_p, front)
+
+# All boundary conditions
+bc = [bc_u, bc_c_l, bc_c_r, bc_c_b, bc_c_f,  bc_t]
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
@@ -191,10 +200,12 @@ solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
-file_results = XDMFFile("results.xdmf")
+file_results = XDMFFile("results_wo_ramp.xdmf")
 
 # Solve for each value using the previous solution as a starting point
 while (t < Time):
+    #chem_steps += 1                # Update steps for ramping of chemical potential
+    #chem_p.chem_steps = chem_steps # Update steps in expression class
 
     t += dt                        # Update time
     w0.vector()[:] = w.vector()    # Update fields containing u and mu
