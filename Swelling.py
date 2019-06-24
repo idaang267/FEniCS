@@ -35,6 +35,25 @@ class InitialConditions(UserExpression):
     def value_shape(self):
          return (4,)
 
+class Constraint(SubDomain):
+    # Top boundary is "target domain" G without one point at [0, 1, 0]
+    def inside(self, x, on_boundary):
+        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) and \
+                    (x[1] > 1.0 - DOLFIN_EPS and x[2] > 0.5 - DOLFIN_EPS) and \
+                    on_boundary)
+        #return bool([0.5,1,0] and [1,1,0] and [1,1,0.5] and [0.5,1,0.5] and \
+        #            [0,1,0.5] and [0,1,1] and [0.5,1,1] and [1,1,1])
+    # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
+    def map(self, x, y):
+        y[0] = x[0]         # x
+        y[1] = x[1] - 1.0   # y - 1
+
+        #if near(x[0], 1):
+        #    y[0] = x[0] - 1.
+        #    y[1] = x[1] - 1.
+
+tb = Constraint()
+
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
     # Bilinear and linear forms are used to compute the residual and Jacobian
@@ -76,7 +95,11 @@ P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
     # First order linear interpolation for chemical potential
 TH = MixedElement([P2, P1])
-V  = FunctionSpace(mesh, TH)
+V  = FunctionSpace(mesh, TH, constrained_domain=tb)
+
+# Just a check
+#coordinates = mesh.coordinates()[6]
+#print(coordinates)
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -107,6 +130,7 @@ bc_r = DirichletBC(V.sub(1), chem_pot, right)
 bc_b = DirichletBC(V.sub(1), chem_pot, back)
 bc_f = DirichletBC(V.sub(1), chem_pot, front)
 bc = [bc_u, bc_t, bc_l, bc_r, bc_b, bc_f]  # All boundary conditions
+
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
