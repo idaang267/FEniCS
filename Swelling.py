@@ -5,6 +5,8 @@
 
 from dolfin import *                # Dolfin module
 import matplotlib.pyplot as plt     # Module matplotlib
+import numpy as np
+from scipy.optimize import curve_fit
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -31,23 +33,23 @@ class InitialConditions(UserExpression):
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
-        values[3] = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + \
-                    ln((l0**3-1)/l0**3) + chi/l0**6
+        values[3] = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
     def value_shape(self):
          return (4,)
 
 # Constraint on top surface
 class TopConstraint(SubDomain):
-    # Top boundary is "target domain" G without one point at [0, 1, 0]
+    # Top boundary is "target domain" G without one point at [1, 1, 1]
     def inside(self, x, on_boundary):
-        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) or \
-                    (x[1] > 1.0 - DOLFIN_EPS and x[2] > 0.5 - DOLFIN_EPS) and \
+        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] < 0.5 - DOLFIN_EPS) or \
+                    (x[1] > 1.0 - DOLFIN_EPS and x[2] < 0.5 - DOLFIN_EPS) and \
                     on_boundary)
     # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
     def map(self, x, y):
-        y[0] = x[0]
-        y[1] = x[1]
-        y[2] = x[2]
+        y[0] = x[0] - 1
+        y[1] = x[1] - 1
+        y[2] = x[2] - 1
+        # The intersection of these three planes is point [1, 1, 1]
 
 tb = TopConstraint()
 
@@ -70,19 +72,44 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
+name = "results.xdmf"    # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
-l0 = 1.45                       # Initial Stretch (lambda_o)
+l0 = 1.55                       # Initial Stretch (lambda_o)
 # Normalization Parameters
 bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
 n = 10**(-3)                    # Normalization (N Omega)
-# Time Parameters
-t = 0.0                         # Initial time, will be updated within loop
-chem_steps = 0                  # Update for chemical potential
-num_steps = 3                   # Number of time steps
-dt = 10e-1                      # Change in time between time steps
-Time = num_steps*dt             # Comparison to control amount of steps
+# Time and Stepping Parameters
+#------------------------------------------------------------------------------
+t = 0.0                         # Initial time (updated within loop)
+steps = 0                       # Chemical potential steps (updated within loop)
+num_steps = 5                   # Number of time steps
+dt_first = 10^(-2);
+dt_last = 10^(-1);
+x = np.linspace(0, num_steps, num_steps)
+y = np.zeros(num_steps)
+y[0] = dt_first
+y[num_steps-1] = dt_last
+
+def fit_exp(x, a, b):
+    return a * np.exp(b * x)
+
+# Use starting value
+popt, pcov = curve_fit(fit_exp, x, y, bounds=(0.5, 2.5))
+#print(popt[0], popt[1])
+a = popt[0]                     # Fitting parameter 1
+b = popt[1]                     # Fitting parameter 2
+dt = a*np.exp(b*x)              # Change in time between time steps
+print(dt)
+
+'''
+plt.plot(x, dt, 'g--', label='fit: a=%5.3f, b=%5.3f' % tuple(popt))
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.show()
+'''
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
@@ -93,45 +120,46 @@ P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
     # First order linear interpolation for chemical potential
 TH = MixedElement([P2, P1])
-V  = FunctionSpace(mesh, TH)#, constrained_domain=tb)
+V  = FunctionSpace(mesh, TH, constrained_domain=tb)
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
 # Mark Boundary Subdomains for each surface of the cube
 # Note: these subdomains are set according to ParaView default view where
 # x is right, y is up, and z-direction is out-of-plane
-bottom = CompiledSubDomain("near(x[1], side) && on_boundary", side = 0.0)
+bot = CompiledSubDomain("near(x[1], side) && on_boundary", side = 0.0)
 top = CompiledSubDomain("near(x[1], side) && on_boundary", side = 1.0)
-def top_constraint(x):
-    return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] > 0.5 - DOLFIN_EPS) or \
-                (x[1] > 1.0 - DOLFIN_EPS and x[2] > 0.5 - DOLFIN_EPS))
-
-left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
+# Lateral surfaces
+left  = CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
 right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
-back =  CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
+back  = CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
 u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, degree=1)
     # Account for initial configuration: displacement in x & z direction not y
-# Roller boundary conditions on
+
+# Roller boundary conditions on lateral surfaces
+# Define the normal direction to the lateral surface
 u_lr  = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf  = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
-#u_bf  = Expression(("(scale-1)*x[0]", "(scale-1)*x[1]", "0.0*x[2]"), scale=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
-chem_max = (1/l0**3)*(l0/bulkMod-1/bulkMod+1) + ln((l0**3-1)/l0**3) + chi/l0**6
-#chem_p = Expression(("(chem_max*chem_steps)/num_steps"), chem_max=chem_max, chem_steps=chem_steps, num_steps=num_steps,degree=1)
-chem_p = 0.0
+chem_max = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
+chem_p = Expression(("chem_max - (chem_max*steps)/num_steps"), \
+                    chem_max=chem_max, steps=steps, num_steps=num_steps, degree=1)
+
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
-bc_u = DirichletBC(V.sub(0), u_bot, bottom)
-bc_c_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
-bc_c_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
-bc_c_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
-bc_c_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
+bc_u = DirichletBC(V.sub(0), u_bot, bot)
+# Roller displacement BCs on lateral faces
+# Access normal degree of freedom (Ex. V.sub(0).sub(0) gives x direction )
+bc_r_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
+bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
+bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
+bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Chemical potential in second subspace V.sub(1)
+# Chemical potential in second subspace V.sub(1) on exposed surfaces
 bc_t = DirichletBC(V.sub(1), chem_p, top)
 bc_l = DirichletBC(V.sub(1), chem_p, left)
 bc_r = DirichletBC(V.sub(1), chem_p, right)
@@ -139,7 +167,7 @@ bc_b = DirichletBC(V.sub(1), chem_p, back)
 bc_f = DirichletBC(V.sub(1), chem_p, front)
 
 # All boundary conditions
-bc = [bc_u, bc_c_l, bc_c_r, bc_c_b, bc_c_f,  bc_t]
+bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, bc_t]
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
@@ -171,9 +199,9 @@ F0 = I + grad(u0)               # Deformation gradient from previous time step
 CG = F.T*F                      # Right Cauchy-Green (CG) tensor
 
 # Invariants of deformation tensors
-Ic = tr(CG)
-J = det(F)                      # Current time step
-J0 = det(F0)
+Ic = tr(CG)                     # First invariant
+J = det(F)                      # Current time step for third invariant
+J0 = det(F0)                    # Previous time step for third invariant
 
 # Definitions
 #------------------------------------------------------------------------------
@@ -188,7 +216,7 @@ def Flux(u, mu):
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*dt*dx)
+F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*(dt[steps])*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -200,30 +228,28 @@ solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
-file_results = XDMFFile("results_wo_ramp.xdmf")
+file_results = XDMFFile(name)
 
 # Solve for each value using the previous solution as a starting point
-while (t < Time):
-    #chem_steps += 1                # Update steps for ramping of chemical potential
-    #chem_p.chem_steps = chem_steps # Update steps in expression class
-
-    t += dt                        # Update time
+while (t < dt[num_steps-1]):
+    # Update steps for ramping of chemical potential
+    steps += 1
+    chem_p.steps = steps # Update steps in expression class
     w0.vector()[:] = w.vector()    # Update fields containing u and mu
+    t += dt[steps]            # Update time
 
-    # Solve
-    solver_problem.solve()
+    solver_problem.solve()         # Solve using the parameters setup
 
     # Note that this is now a deep copy not a shallow copy like split(w)
+    # allowing us to write the results to file
     (u, mu) = w.split()
 
-    # Write results to file_results defined
+    # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential","mu")
-
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
-
     # Write to .xdmf results file
     file_results.write(u,t)
     file_results.write(mu,t)
