@@ -41,15 +41,15 @@ class InitialConditions(UserExpression):
 class TopConstraint(SubDomain):
     # Top boundary is "target domain" G without one point at [1, 1, 1]
     def inside(self, x, on_boundary):
-        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] < 0.5 - DOLFIN_EPS) or \
-                    (x[1] > 1.0 - DOLFIN_EPS and x[2] < 0.5 - DOLFIN_EPS) and \
+        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] < 1.0 - DOLFIN_EPS) or \
+                    (x[1] > 1.0 - DOLFIN_EPS and x[2] < 1.0 - DOLFIN_EPS) and
                     on_boundary)
     # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
     def map(self, x, y):
-        y[0] = x[0] - 1
-        y[1] = x[1] - 1
-        y[2] = x[2] - 1
-        # The intersection of these three planes is point [1, 1, 1]
+        y[1] = x[1] - 1.0   # Gives upper surface by y - 1
+        # Leave x and z coordinates
+        y[0] = x[0]
+        y[2] = x[2]
 
 tb = TopConstraint()
 
@@ -72,39 +72,42 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "results.xdmf"    # Name of file
+name = "results_chi0.5_l01.4.xdmf"    # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
-chi = 0.6                       # Flory Parameter
-l0 = 1.55                       # Initial Stretch (lambda_o)
+chi = 0.5                       # Flory Parameter
+l0 = 1.4                        # Initial Stretch (lambda_o)
 # Normalization Parameters
 bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
 n = 10**(-3)                    # Normalization (N Omega)
 # Time and Stepping Parameters
 #------------------------------------------------------------------------------
 t = 0.0                         # Initial time (updated within loop)
-steps = 0                       # Chemical potential steps (updated within loop)
-num_steps = 5                   # Number of time steps
-dt_first = 10^(-2);
-dt_last = 10^(-1);
-x = np.linspace(0, num_steps, num_steps)
-y = np.zeros(num_steps)
-y[0] = dt_first
-y[num_steps-1] = dt_last
+steps = 0                       # Steps (updated within loop)
+c_steps = 0                     # Chemical step counter (updated within loop)
+t_c_steps = 6                   # Total chemical steps
+tot_steps = 8                   # Total number of time steps
+# Set up starting and ending time step for exponential fit
+dt_first = 10**(-6)             # Beginning point
+dt_last = 10**(-1)              # End point
 
-def fit_exp(x, a, b):
-    return a * np.exp(b * x)
+test_x = [0, tot_steps]
+test_y = [dt_first, dt_last]
 
-# Use starting value
-popt, pcov = curve_fit(fit_exp, x, y, bounds=(0.5, 2.5))
-#print(popt[0], popt[1])
+def fit(x, a, b):
+    return a*x + b
+
+popt, pcov = curve_fit(fit, test_x, test_y)
 a = popt[0]                     # Fitting parameter 1
 b = popt[1]                     # Fitting parameter 2
-dt = a*np.exp(b*x)              # Change in time between time steps
+x = np.linspace(0, tot_steps, tot_steps)
+dt = a*x + b                    # Change in time between time steps
+Total_Time = np.sum(dt)
 print(dt)
 
 '''
-plt.plot(x, dt, 'g--', label='fit: a=%5.3f, b=%5.3f' % tuple(popt))
+plt.plot(test_x, test_y, 'b--')
+plt.plot(x, dt, 'g--', label='fit: a=%5.3f b=%5.3f' % tuple(popt))
 plt.xlabel('x')
 plt.ylabel('y')
 plt.legend()
@@ -113,7 +116,7 @@ plt.show()
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(2, 2, 2)                        # Unit Cube
+mesh = UnitCubeMesh(5, 5, 5)                        # Unit Cube
 # Define Taylor-Hood Elements
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
     # Second order quadratic interpolation for displacement
@@ -142,12 +145,15 @@ u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, d
 
 # Roller boundary conditions on lateral surfaces
 # Define the normal direction to the lateral surface
-u_lr  = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
-u_bf  = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
+u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
+u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
 chem_max = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
-chem_p = Expression(("chem_max - (chem_max*steps)/num_steps"), \
-                    chem_max=chem_max, steps=steps, num_steps=num_steps, degree=1)
+chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
+                    chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
+
+u_test = Expression(("(l0-1)*x[1]"), l0=l0, degree=1)
+pc = DirichletBC(V.sub(0).sub(1), u_test, tb)
 
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
@@ -216,7 +222,8 @@ def Flux(u, mu):
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - inner(Flux(u, mu), grad(v_mu))*(dt[steps])*dx)
+F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx \
+     - inner(Flux(u, mu), grad(v_mu))*(dt[steps])*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -231,14 +238,17 @@ solver_problem.parameters.update(snes_solver_parameters)
 file_results = XDMFFile(name)
 
 # Solve for each value using the previous solution as a starting point
-while (t < dt[num_steps-1]):
-    # Update steps for ramping of chemical potential
+while (t < Total_Time):
+    # Update total steps
     steps += 1
-    chem_p.steps = steps # Update steps in expression class
-    w0.vector()[:] = w.vector()    # Update fields containing u and mu
-    t += dt[steps]            # Update time
-
-    solver_problem.solve()         # Solve using the parameters setup
+    # Update the chemical steps for ramping of chemical potential
+    if c_steps < t_c_steps:
+        c_steps += 1
+    c_steps += 0
+    chem_p.c_steps = c_steps        # Update steps in expression class
+    w0.vector()[:] = w.vector()     # Update fields containing u and mu
+    t += dt[c_steps-1]              # Update time
+    solver_problem.solve()          # Solve using the parameters setup
 
     # Note that this is now a deep copy not a shallow copy like split(w)
     # allowing us to write the results to file
