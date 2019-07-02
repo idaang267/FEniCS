@@ -3,10 +3,10 @@
 # Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
 # coupled solvent diffusion and large deformation of hydrogels"
 
-from dolfin import *                # Dolfin module
-import matplotlib.pyplot as plt     # Module matplotlib
-import numpy as np
-from scipy.optimize import curve_fit
+from dolfin import *                    # Dolfin module
+import matplotlib.pyplot as plt         # Module matplotlib for plotting
+import numpy as np                      # Math module
+from scipy.optimize import curve_fit    # Module to curve_fit for time step
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -46,12 +46,10 @@ class TopConstraint(SubDomain):
                     on_boundary)
     # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
     def map(self, x, y):
-        y[1] = x[1] - 1.0   # Gives upper surface by y - 1
-        # Leave x and z coordinates
-        y[0] = x[0]
-        y[2] = x[2]
-
-tb = TopConstraint()
+        # Map to one point at [1, 1, 1]
+        y[0] = 1.0
+        y[1] = 1.0
+        y[2] = 1.0
 
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
@@ -72,7 +70,7 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "results_chi0.5_l01.4.xdmf"    # Name of file
+name = "Result.xdmf"    # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.5                       # Flory Parameter
@@ -102,8 +100,7 @@ a = popt[0]                     # Fitting parameter 1
 b = popt[1]                     # Fitting parameter 2
 x = np.linspace(0, tot_steps, tot_steps)
 dt = a*x + b                    # Change in time between time steps
-Total_Time = np.sum(dt)
-print(dt)
+#print(dt)
 
 '''
 plt.plot(test_x, test_y, 'b--')
@@ -117,13 +114,39 @@ plt.show()
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
 mesh = UnitCubeMesh(5, 5, 5)                        # Unit Cube
+TT = TensorFunctionSpace(mesh,'DG',0)               # For projection of stress
+# Set periodic boundary condition with a tolerance value
+pbc = TopConstraint(1E-5)
 # Define Taylor-Hood Elements
-P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
-    # Second order quadratic interpolation for displacement
-P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
+P2 = VectorFunctionSpace(mesh, "Lagrange", 2, constrained_domain=pbc)
+    # Second order quadratic interpolation for displacement (u)
+P1 = FunctionSpace(mesh, "Lagrange", 1)
     # First order linear interpolation for chemical potential
-TH = MixedElement([P2, P1])
-V  = FunctionSpace(mesh, TH, constrained_domain=tb)
+# Use ufl_element() to return the UFL element of the function spaces
+P2elem = P2.ufl_element()
+P1elem = P1.ufl_element()
+# Define mixed function space specifying underying finite element
+V = FunctionSpace(mesh, P2elem * P1elem)
+
+# P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)  # Displacement (u)
+#     # Second order quadratic interpolation for displacement
+# P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)  # Chemical Potential (mu)
+#     # First order linear interpolation for chemical potential
+# TH = MixedElement([P2, P1])
+# V  = FunctionSpace(mesh, TH, constrained_domain=pbc)
+
+# Define functions in mixed function space V
+#------------------------------------------------------------------------------
+du = TrialFunction(V)                       # Incremental trial function
+v = TestFunction(V)                         # Test Function
+w = Function(V)                             # Current solution for u and mu
+w0 = Function(V)                            # Previous solution for u and mu
+
+# Split test functions and unknowns (produces a shallow copy not a deep copy)
+(v_u, v_mu) = split(v)
+(u, mu) = split(w)                          # Split current
+(u0, mu0) = split(w0)                       # Split previous
+    # Deep copy syntax: w.split(deepcopy=True)
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -152,14 +175,11 @@ chem_max = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
-u_test = Expression(("(l0-1)*x[1]"), l0=l0, degree=1)
-pc = DirichletBC(V.sub(0).sub(1), u_test, tb)
-
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
 bc_u = DirichletBC(V.sub(0), u_bot, bot)
 # Roller displacement BCs on lateral faces
-# Access normal degree of freedom (Ex. V.sub(0).sub(0) gives x direction )
+# Access normal degree of freedom (Ex. V.sub(0).sub(0) gives x direction)
 bc_r_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
 bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
@@ -172,21 +192,8 @@ bc_r = DirichletBC(V.sub(1), chem_p, right)
 bc_b = DirichletBC(V.sub(1), chem_p, back)
 bc_f = DirichletBC(V.sub(1), chem_p, front)
 
-# All boundary conditions
+# Combined boundary conditions
 bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, bc_t]
-
-# Define functions in mixed function space V
-#------------------------------------------------------------------------------
-du = TrialFunction(V)                       # Incremental trial function
-v = TestFunction(V)                         # Test Function
-w = Function(V)                             # Current solution for u and mu
-w0 = Function(V)                            # Previous solution for u and mu
-
-# Split test functions and unknowns (produces a shallow copy not a deep copy)
-(v_u, v_mu) = split(v)
-(u, mu) = split(w)                          # Split current
-(u0, mu0) = split(w0)                       # Split previous
-    # Deep copy syntax: w.split(deepcopy=True)
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -238,9 +245,8 @@ solver_problem.parameters.update(snes_solver_parameters)
 file_results = XDMFFile(name)
 
 # Solve for each value using the previous solution as a starting point
-while (t < Total_Time):
-    # Update total steps
-    steps += 1
+while (steps < tot_steps):
+    steps += 1                      # Update total steps
     # Update the chemical steps for ramping of chemical potential
     if c_steps < t_c_steps:
         c_steps += 1
@@ -253,13 +259,19 @@ while (t < Total_Time):
     # Note that this is now a deep copy not a shallow copy like split(w)
     # allowing us to write the results to file
     (u, mu) = w.split()
+    # Project nominal stress
+    PTensor = project(P(u, mu), TT)
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
-    mu.rename("Chemical Potential","mu")
+    mu.rename("Chemical Potential", "mu")
+    PTensor.rename("Nominal Stress", "P")
+
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
+
     # Write to .xdmf results file
     file_results.write(u,t)
     file_results.write(mu,t)
+    file_results.write(PTensor,t)
