@@ -5,13 +5,11 @@
 
 from dolfin import *                    # Dolfin module
 import matplotlib.pyplot as plt         # Module matplotlib for plotting
-import numpy as np                      # Math module
-from scipy.optimize import curve_fit    # Module to curve_fit for time step
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
                           "symmetric": True,
-                          "snes_solver": {"maximum_iterations": 200,
+                          "snes_solver": {"maximum_iterations": 30,
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
@@ -25,6 +23,8 @@ parameters["form_compiler"]["optimize"] = True
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["quadrature_degree"] = 4
 
+# Defining Classes
+#------------------------------------------------------------------------------
 # Initial condition (IC) class for displacement and chemical potential
 class InitialConditions(UserExpression):
     def eval(self, values, x):
@@ -33,23 +33,9 @@ class InitialConditions(UserExpression):
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
-        values[3] = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
+        values[3] = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
     def value_shape(self):
          return (4,)
-
-# Constraint on top surface
-class TopConstraint(SubDomain):
-    # Top boundary is "target domain" G without one point at [1, 1, 1]
-    def inside(self, x, on_boundary):
-        return bool((x[1] > 1.0 - DOLFIN_EPS and x[0] < 1.0 - DOLFIN_EPS) or \
-                    (x[1] > 1.0 - DOLFIN_EPS and x[2] < 1.0 - DOLFIN_EPS) )#and  on_boundary)
-
-    # Map a coordinate x in top boundary to a coordinate y in target boundary (G)
-    def map(self, x, y):
-        # Map to one point at [1, 1, 1]
-        y[0] = 1.0
-        y[1] = 1.0
-        y[2] = 1.0
 
 # Class for interfacing with the Newton solver
 class Equation(NonlinearProblem):
@@ -70,55 +56,30 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Result_chi0.4_l01.4.xdmf"    # Name of file
+name = "Results_dt10-2_1.1_200.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
-chi = 0.4 #0.6                       # Flory Parameter
-l0 = 1.4 #1.3                        # Initial Stretch (lambda_o)
-# Normalization Parameters
-bulkMod = 10**3                 # Bulk Modulus (K/N k_B T)
-n = 10**(-3)                    # Normalization (N Omega)
-# Time and Stepping Parameters
-#------------------------------------------------------------------------------
+chi = 0.6                       # Flory Parameter
+l0 = 1.4                        # Initial Stretch (lambda_o)
+n = 10**(-3)                    # Normalization Parameter (N Omega)
+# Global stepping and chemical stepping parameters
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-tot_steps = 100                 # Total number of time steps
-# Set up starting and ending time step for exponential fit
-dt_first = 10**(-1)             # Beginning point
-dt_last = 10**(-1)              # End point
-
-test_x = [0, tot_steps]
-test_y = [dt_first, dt_last]
-
-def fit(x, a, b):
-    return a*x + b
-
-popt, pcov = curve_fit(fit, test_x, test_y)
-a = popt[0]                     # Fitting parameter 1
-b = popt[1]                     # Fitting parameter 2
-x = np.linspace(0, tot_steps, tot_steps)
-dt = a*x + b                    # Change in time between time steps
-print(dt)
-
-#DT = Expression("dt", dt=0, degree=0)
-'''
-plt.plot(test_x, test_y, 'b--')
-plt.plot(x, dt, 'g--', label='fit: a=%5.3f b=%5.3f' % tuple(popt))
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
-plt.show()
-'''
+tot_steps = 200                # Total number of time steps
+print(tot_steps)
+# Time parameters
+dt = 10**(-2)              # Starting time step
+t = 0.0                         # Initial time for paraview file
+c_exp = 1.1                     # Control the time step increase
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(5, 5, 5)                        # Unit Cube
-TT = TensorFunctionSpace(mesh,'DG',0)               # For projection of stress
-# Set periodic boundary condition with a tolerance value
-pbc = TopConstraint(1E-5)
+mesh = UnitCubeMesh(5, 5, 5)                # Unit Cube
+# Tensor space for projection of stress
+TT = TensorFunctionSpace(mesh,'DG',0)
 # Define Taylor-Hood Elements
-P2 = VectorFunctionSpace(mesh, "Lagrange", 2) #, constrained_domain=pbc)
+P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
     # Second order quadratic interpolation for displacement (u)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
     # First order linear interpolation for chemical potential
@@ -164,7 +125,7 @@ u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, d
 u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
-chem_max = n*(1/l0-1/l0**3) + 1/l0**3 + chi/l0**6 + ln((l0**3-1)/l0**3)
+chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
@@ -178,7 +139,7 @@ bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Chemical potential in second subspace V.sub(1) on top surfaces
+# Chemical potential in second subspace V.sub(1) on top surface
 bc_t = DirichletBC(V.sub(1), chem_p, top)
 
 # Combined boundary conditions
@@ -187,7 +148,7 @@ bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, bc_t]
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
 # Initial conditions are created by using the class defined and then
-# interpolating into a finite element space:
+# interpolating into a finite element space
 init = InitialConditions(degree=1)          # Expression requires degree def.
 w.interpolate(init)                         # Interpolate current solution
 w0.interpolate(init)                        # Interpolate previous solution
@@ -218,8 +179,7 @@ def Flux(u, mu):
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx \
-     - inner(Flux(u, mu), grad(v_mu))*(dt[steps])*dx)
+F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - dt*inner(Flux(u, mu), grad(v_mu))*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -233,20 +193,19 @@ solver_problem.parameters.update(snes_solver_parameters)
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name)
 
-t = 0.0                         # Initial time (updated within loop)
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
+    dt = dt*c_exp;                # Update time step
+    t = t + dt                    # Update time for paraview file
+
     # Update the chemical steps for ramping of chemical potential
     if c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
-    print(c_steps)
-
     w0.vector()[:] = w.vector()     # Update fields containing u and mu
     solver_problem.solve()          # Solve using the parameters setup
 
-    t += dt[steps-1]                # Update time
     steps += 1                      # Update total steps
     print(steps)
 
