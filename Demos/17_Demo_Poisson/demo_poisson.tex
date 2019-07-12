@@ -1,0 +1,187 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{FEniCS: Poisson Problem \\
+	\large{From documented demonstration number 17 from Dolfin version 1.4.0}}
+\author{Ida Ang (Last edit: July 1, 2019)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+Poisson's equation with Neumann boundary conditions for domain $\Omega$ and boundary $\partial \Omega = \Gamma_D \cup \Gamma_N$
+\begin{align}\label{ProbDef1}
+\begin{split}
+- \nabla^2 u &= f(x,y) \quad \text{in } \Omega \\
+		u &= 0 \quad \quad \quad \text{on } \Gamma_D \\
+\nabla u \cdot n = \pdv{u}{n} &= g \quad \quad \quad \text{on } \Gamma_N
+\end{split}
+\end{align}
+We can rewrite the Neumann boundary condition in indicial: 
+\begin{align}\label{NBoundInd}
+\begin{split}
+\nabla u \cdot n &= \pdv{u_j}{x_i} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \cdot n_k \mathbf{e_k} \\
+			&= \pdv{u_j}{x_i} n_k \mathbf{e_j} (\mathbf{e_i} \times \mathbf{e_k}) \\
+			&= \pdv{u_j}{x_i} n_k \mathbf{e_j} \delta_{ik} \\
+\nabla u \cdot n &= \pdv{u_j}{x_i} n_i \mathbf{e_j} = g_j \mathbf{e_j}
+\end{split}
+\end{align}
+Therefore the Neumann boundary Condition can be written as 
+\begin{equation}\label{NBoundInd}
+\pdv{u_j}{x_i} n_i  = g_j
+\end{equation}
+
+\section{Variational Weak Form}
+Start by writing the laplacian in indicial notation: 
+\begin{align*}
+\nabla u &= \pdv{u_j}{x_i} \mathbf{e_j} \otimes \mathbf{e_i} \\
+\nabla \cdot \nabla u &= \pdv{u_j}{x_i}{x_k} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \cdot \mathbf{e_k} = \pdv{u_j}{x_i}{x_k} \mathbf{e_j} \delta_{ik} \\
+\nabla \cdot \nabla u &= \pdv[2]{u_j}{x_i} \mathbf{e_j}
+\end{align*}
+Write Eq. \ref{ProbDef1} in indicial notation: 
+\begin{equation}\label{ProbDef1Ind}
+- \pdv[2]{u_j}{x_i} \mathbf{e_j} = f_k \mathbf{e_k} 
+\end{equation}
+Multiply Eq. \ref{ProbDef1Ind} by test function, v: 
+\begin{align}\label{befIntParts}
+\begin{split}
+- \pdv[2]{u_j}{x_i} \mathbf{e_j} \cdot v_p \mathbf{e_p} &= f_k \mathbf{e_k} \cdot v_p \mathbf{e_p} \\
+						- \pdv[2]{u_j}{x_i} v_j &= f_k v_k \quad \text{Integrate over domain } \Omega\\
+		      - \int_{\Omega} \pdv[2]{u_j}{x_i} v_j dx &= \int_{\Omega} f_k v_k dx 
+\end{split}
+\end{align}
+Use Integration by Parts:
+\begin{equation}\label{intParts}
+(fg)' = f'g + fg' \rightarrow f'g = (fg)' - fg' \rightarrow f''g = (f'g)' - f'g'
+\end{equation}
+Where we can substitute $f'' = \pdv[2]{u_j}{x_i} $ and $g = v_j$ into Eq. \ref{intParts}
+\begin{equation*}
+\pdv[2]{u_j}{x_i} v_j = \bigg( \pdv{u_j}{x_i} v_j \bigg)_{,i} - \pdv{u_j}{x_i} \pdv{v_j}{x_i}
+\end{equation*}
+Change signs and substitute into Eq. \ref{befIntParts}
+\begin{align}
+\begin{split}
+- \int_{\Omega} \bigg( \pdv{u_j}{x_i} v_j \bigg)_{,i} dx + \int_{\Omega} \pdv{u_j}{x_i} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Use divergence theorem on first term}\\
+- \int_{\partial \Omega}  \pdv{u_j}{x_i} v_j n_i ds + \int_{\Omega} \pdv{u_j}{x_i} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{recognize Eq. \ref{NBoundInd} on first term} \\
+- \int_{\Gamma_N}  g_j v_j ds + \int_{\Omega} \pdv{u_j}{x_i} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{$u = 0$ for Dirichlet boundary} \\
+\int_{\Omega} \pdv{u_j}{x_i} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx + \int_{\Gamma_N}  g_j v_j ds 
+\end{split}
+\end{align}
+Weak form in direct notation: 
+\begin{equation}\label{weakForm}
+\int_{\Omega} \nabla u \cdot \nabla v dx = \int_{\Omega} f v dx + \int_{\Gamma_N} g v dx 
+\end{equation}
+
+
+\section{Bilinear Form and Linear Form}
+We can rewrite eq. \ref{weakForm} in terms of the bilinear form, a(u,v), and linear form, L(v). 
+\begin{equation}
+a(u,v) = L(v)  \indent \forall v \in \hat{V}
+\end{equation}
+Therefore:
+\begin{equation}\label{bilinear}
+a(u,v) = \int_{\Omega} \nabla u \cdot \nabla v dx 
+\end{equation}
+\begin{equation}\label{linear}
+L(v) =  \int_{\Omega} f v dx + \int_{\Gamma_N} g v dx 
+\end{equation}
+
+\section{FEniCS Implementation}
+Import Dolfin module and module for plotting \\
+{\fontfamily{qcr}\selectfont
+from dolfin import *  \\
+import matplotlib.pyplot as plt
+}
+
+\subsection{Domain and Boundaries}
+Domain is a unit square: 
+\[ \Omega = [0,1] \times [0,1] \] 
+We can use the inbuilt function {\fontfamily{qcr}\selectfont UnitSquareMesh} subdivided into 32 elements  \\
+{\fontfamily{qcr}\selectfont
+mesh = UnitSquareMesh(32, 32) \\ \\
+}
+The space {\fontfamily{qcr}\selectfont V} consists of first-order, continuous Lagrange finite element functions \\ 
+{\fontfamily{qcr}\selectfont
+V = FunctionSpace(mesh, "Lagrange", 1) \\ \\
+}
+Complete boundary 
+\[ \partial \Omega = \Gamma_D \cup \Gamma_N \]
+Neumann boundary - On the bottom and top of the square
+\[ \Gamma_N =  {(x,0) \cup (x,1) \subset \partial \Omega } \]
+Dirichlet boundary - On the sides of the square
+\[ \Gamma_D = {(0,y) \cup (1,y) \subset \partial \Omega } \]
+Since the Dirichlet BC is applied to the right and left sides of the square we can define a boundary using a machine precision value, {\fontfamily{qcr}\selectfont DOLFIN\_EPS}. This sets x = 0 and x = 1  \\
+{\fontfamily{qcr}\selectfont
+def boundary(x): \\
+\indent \indent return x[0] < DOLFIN\_EPS or x[0] > 1.0 - DOLFIN\_EPS \\ \\
+}
+On the Dirichlet boundary, u = 0, which can be applied to the boundary defined above using the class {\fontfamily{qcr}\selectfont DirichletBC}: \\
+{\fontfamily{qcr}\selectfont
+u0 = Constant(0.0) \\
+bc = DirichletBC(V, u0, boundary) \\ \\
+}
+\textbf{Note}
+\begin{itemize}
+\item {\fontfamily{qcr}\selectfont u0} is a scalar not a vector because the function space is first-order
+\item The Neumann boundary condition is expressed in the weak form of the Poisson problem. Dirichlet boundary conditions have to be defined explicitly outside of the weak form. 
+\end{itemize}
+
+\subsection{Definitions of input functions}
+The fluid source term is defined below: 
+\begin{equation}\label{f}
+f = 10 \exp (-((x-0.5)^2 +(y -0.5)^2)/0.02)
+\end{equation}
+Normal derivative: 
+\begin{equation}\label{g}
+g = \sin (5x)
+\end{equation}
+Write the defined input functions: Eq. \ref{f} and \ref{g} in C++ syntax (more efficient). The degree is specified for interpolation on the discretized mesh. \\
+{\fontfamily{qcr}\selectfont
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2) \\
+g = Expression("sin(5*x[0])", degree=2)
+}
+
+\subsection{Solve}
+Define the trial and test (unknown we are solving for) function: \\
+{\fontfamily{qcr}\selectfont
+u = TrialFunction(V) \\
+v = TestFunction(V) \\ \\
+}
+Define the bilinear, Eq. \ref{bilinear}, and linear equation, Eq. \ref{linear}: \\
+{\fontfamily{qcr}\selectfont
+a = inner(grad(u), grad(v))*dx \\
+L = f*v*dx + g*v*ds \\ \\
+}
+\textbf{Note}: FEniCS knows that {\fontfamily{qcr}\selectfont ds} specifies the whole boundary. The reason that we can specify the full boundary is because the test function $v$ equals zero on the Dirichlet boundaries on the sides of the unit square. \\ \\
+In this statement, u stores the solution as a function of the space V (originally u is defined as the trial function) \\
+{\fontfamily{qcr}\selectfont
+u = Function(V) \\ \\
+}
+The default solver for the function solve is usually lower-upper (LU) decomposition. Different solvers can be specified depending on the type of problem. \\
+{\fontfamily{qcr}\selectfont
+solve(a == L, u, bc) \\ \\
+}
+The file can be saved and renamed for visualization in Paraview \\
+{\fontfamily{qcr}\selectfont
+file = File("poisson.pvd") \\
+u.rename("Displacement", "u") \\
+file << u \\ \\
+} 
+The file can also be immediately plotted using the imported module matplotlib \\
+{\fontfamily{qcr}\selectfont
+plot(u) \\ 
+plt.show() \\ \\
+}
+
+\end{document}

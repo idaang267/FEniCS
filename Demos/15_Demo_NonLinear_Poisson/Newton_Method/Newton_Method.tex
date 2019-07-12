@@ -1,0 +1,312 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+\title{FEniCS: Non-Linear Poisson Problem with Explicit Newton Method}
+\author{Ida Ang}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+Nonlinear Poisson's equation for domain $\Omega$ and boundary $\partial \Omega = \Gamma_D \cup \Gamma_N$
+\begin{equation}\label{ProbDef1}
+- \nabla \cdot (q(u) \nabla u ) = f(x,y)  \indent \text{in } \Omega
+\end{equation}
+\begin{equation}\label{q}
+q(u) = (1 + u)^m
+\end{equation} 
+\begin{equation}\label{ProbDefD1}
+u = 0 \text{ at } x = 0 \indent  \text{on } \Gamma_D
+\end{equation}
+\begin{equation}\label{ProbDefD2}
+u = 1 \text{ at } x = 1\indent  \text{on } \Gamma_D
+\end{equation}
+\begin{equation}\label{NBoundInd}
+\nabla u \cdot n = \pdv{u}{n} = 0 \rightarrow \pdv{u_j}{x_i} n_i \mathbf{e_j} = g_j \mathbf{e_j} =  0 \indent \text{on } \Gamma_N
+\end{equation}
+Note the definition of \ref{q} in this non-linear problem is different from the online version. In the online version $q(u) = 1 + u^2$ 
+
+
+\section{Variational Weak Form}
+Write Eq. \ref{ProbDef1} in indicial notation where the gradient of a vector field is a 2nd order tensor: 
+\begin{equation*}
+- \nabla \cdot (q(u) \nabla u ) = f \rightarrow - \nabla \cdot \big[ q \pdv{u_j}{x_i} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \big] = f_j \mathbf{e_j}
+\end{equation*}
+Recall that divergence of any tensor A looks like: 
+\begin{equation}\label{divTen}
+\nabla \cdot \mathbf{A} = \pdv{A_{ik}}{x_j} \big( \mathbf{e_i} \otimes \mathbf{e_k} \big) \mathbf{e_j} = \pdv{A_{ik}}{x_j} \mathbf{e_i} \delta_{kj} = \pdv{A_{ij}}{x_j} \mathbf{e_i}
+\end{equation}
+Using this definition (Eq. \ref{divTen}):
+\begin{equation*}
+- q \big[ \nabla \cdot \pdv{u_j}{x_i} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \big] = - q \pdv[2]{u_j}{x_i}{x_k} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \mathbf{e_k} = - q \pdv[2]{u_j}{x_i}{x_k} \mathbf{e_j} \delta_{ik} = -q \pdv[2]{u_j}{x_k} \mathbf{e_j}
+\end{equation*}
+Therefore:
+\begin{equation*}
+-q \pdv[2]{u_j}{x_k} \mathbf{e_j} = f_j \mathbf{e_j}
+\end{equation*}
+Multiply by test function, v: 
+\begin{equation*}
+-q \pdv[2]{u_j}{x_k} \mathbf{e_j} \cdot v_p \mathbf{e_p}= f_j \mathbf{e_j} \cdot v_p \mathbf{e_p} \rightarrow -q \pdv[2]{u_j}{x_k} \mathbf{e_j} v_j = f_j v_j
+\end{equation*}
+Integrate over domain, $\Omega$:
+\begin{equation}\label{befIntParts}
+-q \int_{\Omega} \pdv[2]{u_j}{x_k} \mathbf{e_j} v_j dx = \int_{\Omega} f_j v_j dx
+\end{equation}
+Use Integration by Parts:
+\begin{equation}\label{intParts}
+(fg)' = f'g + fg' \rightarrow f'g = (fg)' - fg' \rightarrow f''g = (f'g)' - f'g'
+\end{equation}
+Where we can substitute $f'= \pdv{x_j}{x_k}$ and $g = v$ into Eq. \ref{intParts}
+\begin{equation*}
+\pdv[2]{u_j}{x_k} \mathbf{e_j} v_j = \big( \pdv{u_j}{x_k} v_j \big)_{,k} - \pdv{u_j}{x_k} \pdv{v_j}{x_k}
+\end{equation*}
+Change signs and substitute into Eq. \ref{befIntParts}
+\begin{equation}\label{befDiv}
+- q \int_{\Omega} \big( \pdv{u_j}{x_k} v_j \big)_{,k} dx + q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx = \int_{\Omega} f_j v_j dx
+\end{equation}
+Use divergence theorem on first term of Eq. \ref{befDiv}
+\begin{equation*}
+- q \int_{\Omega} \pdv{u_j}{x_k} n_k v_j dx + q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx = \int_{\Omega} f_j v_j dx
+\end{equation*}
+Recognize the Neumann boundary condition Eq. \ref{NBoundInd}: 
+\begin{equation*}
+- q \int_{\Omega} g_j v_j dx + q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx = \int_{\Omega} f_j v_j dx
+\end{equation*}
+According to Eq. \ref{NBoundInd}, $g = 0$
+\begin{equation*}
+q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx = \int_{\Omega} f_j v_j dx
+\end{equation*}
+Writing this form in direct notation, we have the following variational (weak) form: 
+\begin{equation}\label{weakForm}
+\int_{\Omega} q(u) \nabla u \cdot \nabla vdx = \int_{\Omega} f v dx
+\end{equation}
+
+
+\section{Newton's Method}
+\subsection{General Formulation}
+Newton's method for the system $F_i(U_1,...U_N)  = 0$ can be formulated as: 
+\begin{equation}\label{GenFormNewton}
+\sum_{j = 1}^N \pdv{}{U_j} F_i(U_1^k,...U_N^k) \delta U_j = - F_i(U_1^k,...U_N^k) \indent \text{i = 1,...,N}
+\end{equation}
+\begin{equation}\label{GenFormRelax}
+U_j^{k+1} = U_j^{k} + \omega \delta U_j \indent \text{i = 1,...N} 
+\end{equation}
+where $\omega \in [0,1]$ is a relaxation parameter and k is an iteration index. We are solving for the unknown parameters, $U_1,...U_N$, the coefficients of the linear combination in the finite element solution. \\
+We can rewrite Eq. \ref{GenFormNewton}
+\begin{equation} \label{SimpGenForm}
+\sum_{j = 1}^N \pdv{F_i}{U_j} \delta U_j = - F_i \indent \text{i = 1,...,N}
+\end{equation}
+
+\subsection{Discretization}
+\textbf{We must compute the Jacobian matrix $\pdv{F_i}{U_j}$ and the right hand side vector $- F_i$} \\
+Rewrite the weak form Eq. \ref{weakForm} 
+\begin{equation}
+F =  \int_{\Omega} q(u) \nabla u \cdot \nabla v dx 
+\end{equation}
+Obtain the Jacobian using the product rule: 
+\begin{equation*}
+\pdv{F}{U_j} = \int_{\Omega} \bigg[ \pdv{q(u)}{U_j} \nabla u + q(u) \pdv{\nabla u}{U_j} \bigg] \cdot \nabla v dx
+\end{equation*}
+Where
+\begin{equation}\label{identities}
+\pdv{q(u)}{U_j} = q'(u) \phi_j \indent \pdv{\nabla u}{U_j} = \nabla \phi_j
+\end{equation}
+Using the identities in Eq. \ref{identities}
+\begin{equation*}
+\pdv{F}{U_j} = \int_{\Omega} \bigg[ q'(u) \phi_j \nabla u + q(u) \nabla \phi_j \bigg] \cdot \nabla v dx
+\end{equation*}
+We can discretize our solution by introducing the following notations for u and v: 
+\begin{equation}\label{u}
+u = \sum_{j=1}^ N U_j \phi_j
+\end{equation}
+and 
+\begin{equation}\label{shapeFcn}
+v = \hat \phi_i
+\end{equation}
+Substitute Eq. \ref{u} and \ref{shapeFcn} into the Jacobian. Note that this problem is discretized by k, the iteration index
+\begin{equation*}
+\pdv{F_i}{U_j} = \int_{\Omega} \bigg[ q' \bigg( \sum_{l=1}^ N U_l^k \phi_l \bigg) \phi_j \nabla \bigg( \sum_{j=1}^ N U_j^k \phi_j \bigg) + q \bigg(\sum_{l=1}^ N U_l^k \phi_l \bigg) \nabla \phi_j \bigg] \cdot \nabla \hat \phi_i dx
+\end{equation*}
+Reformulate the Jacobian matrix by introducing the short notation $u^k = \sum_{j = 1}^N U_j^k \phi_j$ and using Eq. \ref{shapeFcn}
+\begin{equation*}
+\pdv{F_i}{U_j} = \int_{\Omega} \bigg[ q'(u^k) \phi_j \nabla u^k + q(u^k)  \nabla \phi_j \bigg] \cdot \nabla v dx
+\end{equation*}
+Lastly, we want to achieve the general formulation form on the LHS of the equation (Eq. \ref{SimpGenForm}. This requires multiplication of the Jacobian by a function $\sum_{j = 1}^N \delta U_j$ 
+\begin{equation*}
+\pdv{F_i}{U_j} = \int_{\Omega} \bigg[ q'(u^k) \sum_{j = 1}^N \bigg( \delta U_j \phi_j \bigg) \nabla u^k + q(u^k)  \nabla \sum_{j = 1}^N \bigg( \delta U_j \phi_j \bigg) \bigg] \cdot \nabla v dx
+\end{equation*}
+Call the unknown $\delta u = \sum_{j = 1}^N \delta U_j \phi_j$, simplifying the equation: 
+\begin{equation*}
+\sum_{j = 1}^N \pdv{F_i}{U_j} \delta U_j  = \int_{\Omega} \bigg[ q'(u^k) \delta u \nabla u^k + q(u^k)  \nabla \delta u \bigg] \cdot \nabla v dx
+\end{equation*}
+From the linear system, we can go backwards to construct the corresponding discrete weak form. 
+Recall it looks like $\int_{\Omega} q(u) \nabla u \cdot \nabla v dx$
+\begin{equation}\label{disWeakForm}
+\int_{\Omega} \bigg[ q'(u^k) \delta u \nabla u^k + q(u^k)  \nabla \delta u \bigg] \cdot \nabla v dx =
+- \int_{\Omega} q(u^k) \nabla u^k \cdot \nabla v dx
+\end{equation}
+Now that the system is linearized, we can use the bilinear and linear forms to represent this equation:
+\begin{equation}\label{standForm}
+a(\delta u, v) = L(v) 
+\end{equation}
+Therefore we have our bilinear and linear form: 
+\begin{equation}\label{bilinear}
+a(\delta u, v) = \int_{\Omega} \bigg[ q'(u^k) \delta u \nabla u^k + q(u^k)  \nabla \delta u \bigg] \cdot \nabla v dx
+\end{equation}
+\begin{equation}\label{linear}
+L(v) = - \int_{\Omega} q(u^k) \nabla u^k \cdot \nabla v dx
+\end{equation}
+An important feature of Newton's method is that the previous solution $u^k$ replaces u in the formulas when computing the matrix $\pdv{F_i}{U_j}$ and vector $F_i$ for the linear system in each Newton iteration.
+
+
+\section{FEniCS Implementation}
+\subsection{Mesh and Function Space}
+The user controls the degree of the function space and the spacing of the mesh with {\fontfamily{qcr}\selectfont sys.argv} \\
+{\fontfamily{qcr}\selectfont
+degree = int(sys.argv[1]) \\
+divisions = [int(arg) for arg in sys.argv[2:]] \\ \\
+}
+\textbf{Note} that {\fontfamily{qcr}\selectfont sys.argv[1]} takes the first argument and {\fontfamily{qcr}\selectfont sys.argv[2:]} takes any integer argument in the following spaces. In command line enter {\fontfamily{qcr}\selectfont python3 name.py degree divisions} with degree and divisions being some integer value. \\ \\
+The input value for divisions changes the domain type, where three different domain types are listed.  We use standard Lagrange elements which can also be called with {\fontfamily{qcr}\selectfont 'CG'} for Continuous Galerkin. If the degree is 1, we get continuous piecewise linear polynomials. \\
+{\fontfamily{qcr}\selectfont
+d = len(divisions) \\
+domain\_type = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh] \\
+mesh = domain\_type[d-1](*divisions) \\
+V = FunctionSpace(mesh, 'Lagrange', degree) \\ \\
+}
+
+\subsection{Boundary Conditions}
+The Dirichlet boundary conditions are set according to \ref{ProbDefD1}, the left boundary, and \ref{ProbDefD2}, the right boundary. \\
+{\fontfamily{qcr}\selectfont
+tol = 1E-14 \\
+def left\_boundary(x, on\_boundary): \\
+\indent return on\_boundary and abs(x[0]) < tol \\
+def right\_boundary(x, on\_boundary): \\
+\indent return on\_boundary and abs(x[0]-1) < tol \\ \\
+}
+We provide an initial set of boundary conditions for the first guess: \\
+{\fontfamily{qcr}\selectfont
+Gamma\_0 = DirichletBC(V, Constant(0.0), left\_boundary) \\
+Gamma\_1 = DirichletBC(V, Constant(1.0), right\_boundary) \\
+bcs = [Gamma\_0, Gamma\_1] \\ \\
+}
+Later on, we need to define the Dirichlet conditions for the later guesses for the Newton's Iterations. These boundary conditions are specifically for $\delta u$ which must be zero. Recall, Eq.\ref{GenFormRelax} 
+\begin{equation*}
+u^{k+1} = u^k + \omega \delta u 
+\end{equation*}
+In order for $u^k$ to fulfill the Dirichlet conditions for u, $\delta u$ must be 0 \\
+{\fontfamily{qcr}\selectfont
+Gamma\_0\_du = DirichletBC(V, Constant(0.0), left\_boundary) \\
+Gamma\_1\_du = DirichletBC(V, Constant(0.0), right\_boundary) \\
+bcs\_du = [Gamma\_0\_du, Gamma\_1\_du] \\ \\
+}
+Note that Neumann boundary conditions are within the weak form defined in Eq. \ref{weakForm}. 
+
+
+\subsection{Definition of the Variational Problem}
+Recall our system is linearized, so we can directly declare the trial and test functions. If we omit the trial function we are telling FEniCS that the problem is non-linear. \\
+{\fontfamily{qcr}\selectfont
+u = TrialFunction(V) \\
+v = TestFunction(V) \\ \\
+}
+Define variational problem for initial guess. To obtain a good initial guess $u^0$, we can solve a simplified linear problem with q(u) = 1 and f = 0. Note that if q(u) = 1 then m = 0
+\begin{equation*}
+a(u, v) = L(v) = 0 \rightarrow \int_{\Omega} \nabla u \cdot \nabla v dx = \int_{\Omega} fv dx = 0
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+a = inner(nabla\_grad(u), nabla\_grad(v))*dx \\
+f = Constant(0.0) \\ 
+L = f*v*dx \\ \\
+}
+Solve using {\fontfamily{qcr}\selectfont assemble\_system} command with the boundary conditions set for the initial guess. 
+{\fontfamily{qcr}\selectfont
+A, b = assemble\_system(a, L, bcs) \\ \\
+}
+$u_k$ denotes the solution function for the previous iteration where $u_k = u_o$ is the initial guess. The type of solver is specified by, {\fontfamily{qcr}\selectfont lu}, which stands for lower-upper decomposition. \\
+{\fontfamily{qcr}\selectfont
+u\_k = Function(V) \\
+solve(A, u\_k.vector(), b, 'lu') \\ \\
+}
+For later iterations, we define the function q(u), choosing the non-linear coefficient, m = 2. Take the derivative of q in Eq. \ref{q} to use in the discretized weak form.  \\
+{\fontfamily{qcr}\selectfont
+m = 2 \\
+def q(u): \\
+\indent return (1+u)**m \\
+def Dq(u): \\
+\indent return m*(1+u)**(m-1) 
+}
+
+
+\subsection{Discretized Weak Form Definition}
+Define du = $\delta u$ \\
+{\fontfamily{qcr}\selectfont
+du = TrialFunction(V) \\ \\
+}
+Write the discretized weak form, Eq. \ref{disWeakForm} in C++ syntax
+\begin{equation*}
+a(\delta u, v) = \int_{\Omega} \bigg[ q'(u^k) \delta u \nabla u^k + q(u^k)  \nabla \delta u \bigg] \cdot \nabla v dx 
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+a = inner(Dq(u\_k)*du*nabla\_grad(u\_k), nabla\_grad(v))*dx + \\
+\indent inner(q(u\_k)*nabla\_grad(du), nabla\_grad(v))*dx  \\
+}
+\begin{equation*}
+L(v) = - \int_{\Omega} q(u^k) \nabla u^k \cdot \nabla v dx
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+L = -inner(q(u\_k)*nabla\_grad(u\_k), nabla\_grad(v))*dx \\ \\
+}
+Define functions: \\
+{\fontfamily{qcr}\selectfont
+du = Function(V) \\
+u  = Function(V)  
+}
+
+
+\subsection{Newton Iteration Loop}
+Use tol = tolerance, eps = error measure, iter =  iterations, and maxiter =  max iteration number. \\
+{\fontfamily{qcr}\selectfont  
+omega = 1.0 \\       
+eps = 1.0 \\         
+tol = 1.0E-5 \\      
+iter = 0 \\         
+maxiter = 25 \\ \\
+}
+The error measure has to be larger than the tolerance value and the number of iterations can't exceed the max iteration number. Update the iteration count every time the loop is accessed: \\ 
+{\fontfamily{qcr}\selectfont
+while eps > tol and iter < maxiter: \\
+\indent iter += 1 \\ \\
+}
+Eq. \ref{standForm} can be solved using the {\fontfamily{qcr}\selectfont assemble\_system} command with the BCs for $\delta u$. \\
+{\fontfamily{qcr}\selectfont
+\indent  A, b = assemble\_system(a, L, bcs\_du) \\ \\
+}
+The type of solver is not specified in this loop \\ 
+{\fontfamily{qcr}\selectfont
+\indent solve(A, du.vector(), b) \\ \\
+}
+The error measure can be defined as the norm of the initial solution and current solution: $|u - u^k|$.\\
+{\fontfamily{qcr}\selectfont
+\indent eps = numpy.linalg.norm(du.vector().array(), ord=numpy.Inf) \\ \\
+}
+There are multiple ways to write Eq. \ref{GenFormRelax}: $u^{k+1} = u^k + \omega \delta u$. I have included two ways below: \\
+{\fontfamily{qcr}\selectfont
+\indent u.vector()[:] = u\_k.vector() + omega*du.vector() \\
+\indent u.vector()[:] += omega*du.vector() \\ \\
+} 
+Finally assign u ($u^{k+1}$) to $u^k$. Note that we have dropped the k+1 superscript in the code: \\ 
+{\fontfamily{qcr}\selectfont
+\indent u\_k.assign(u)
+}
+
+\end{document}

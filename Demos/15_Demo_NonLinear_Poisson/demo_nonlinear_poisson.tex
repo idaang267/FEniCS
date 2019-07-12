@@ -1,0 +1,152 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{FEniCS: Non-Linear Poisson Problem \\
+	\large{From documented demonstration number 15 from Dolfin version 1.4.0}}
+\author{Ida Ang (Last edit: July 1, 2019)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+Nonlinear Poisson's equation for domain $\Omega$ and boundary $\partial \Omega = \Gamma_D \cup \Gamma_N$
+\begin{align}\label{ProbDef1}
+\begin{split}
+- \nabla \cdot (q(u) \nabla u ) &= f(x,y) \quad \text{in } \Omega \\
+					u &= 1 \quad \text{on } \Gamma_D \\
+		\nabla u \cdot n = \pdv{u}{n} &= 0 \quad \text{on } \Gamma_N \\
+\end{split}
+\end{align}
+We can rewrite the Neumann boundary condition in indicial: 
+\begin{align*}
+\nabla u \cdot n &= \pdv{u_j}{x_i} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \cdot n_k \mathbf{e_k} = \pdv{u_j}{x_i} n_i \mathbf{e_j} = g_j \mathbf{e_j}
+\end{align*}
+Therefore the Neumann boundary Condition can be written as:
+\begin{equation}\label{NBoundInd}
+\pdv{u_j}{x_i} n_i  = 0 
+\end{equation}
+
+\section{Variational Weak Form}
+Write Eq. \ref{ProbDef1} part 1 in indicial notation where the gradient of a vector field is a 2nd order tensor: 
+\begin{align*}
+- \nabla \cdot (q(u) \nabla u ) &= f  \\
+ - q \big[ \nabla \cdot \pdv{u_j}{x_i} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \big] &= f_j \mathbf{e_j} \quad \text{where } \nabla \cdot \mathbf{A} = \pdv{A_{ik}}{x_j} \big( \mathbf{e_i} \otimes \mathbf{e_k} \big) \mathbf{e_j} = \pdv{A_{ij}}{x_j} \mathbf{e_i} \\
+- q \pdv[2]{u_j}{x_i}{x_k} \big( \mathbf{e_j} \otimes \mathbf{e_i} \big) \mathbf{e_k} &= f_j \mathbf{e_j} \\
+- q \pdv[2]{u_j}{x_i}{x_k} \mathbf{e_j} \delta_{ik} &= f_j \mathbf{e_j} \\
+- q \pdv[2]{u_j}{x_k} \mathbf{e_j} &= f_j \mathbf{e_j} 
+\end{align*}
+Multiply by test function, v: 
+\begin{align}\label{befIntParts}
+\begin{split}
+-q \pdv[2]{u_j}{x_k} \mathbf{e_j} \cdot v_p \mathbf{e_p} &= f_j \mathbf{e_j} \cdot v_p \mathbf{e_p} \\
+ -q \pdv[2]{u_j}{x_k} v_j &= f_j v_j \quad \text{Integrate over domain } \Omega \\
+ -q \int_{\Omega} \pdv[2]{u_j}{x_k} v_j dx &= \int_{\Omega} f_j v_j dx
+\end{split}
+\end{align}
+Use Integration by Parts:
+\begin{equation}\label{intParts}
+(fg)' = f'g + fg' \rightarrow f'g = (fg)' - fg' \rightarrow f''g = (f'g)' - f'g'
+\end{equation}
+Where we can substitute $f'= \pdv{x_j}{x_k}$ and $g = v$ into Eq. \ref{intParts}
+\begin{equation*}
+\pdv[2]{u_j}{x_k} v_j = \big( \pdv{u_j}{x_k} v_j \big)_{,k} - \pdv{u_j}{x_k} \pdv{v_j}{x_k}
+\end{equation*}
+Change signs and substitute into Eq. \ref{befIntParts}
+\begin{align}\label{befDiv}
+\begin{split}
+- q \int_{\Omega} \big( \pdv{u_j}{x_k} v_j \big)_{,k} dx + q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx &= \int_{\Omega} f_j v_j dx \quad \text{Divergence theorem on first term} \\
+- q \int_{\Omega} \pdv{u_j}{x_k} n_k v_j dx + q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx &= \int_{\Omega} f_j v_j dx \quad \text{Neumann BC are 0 (Eq. \ref{NBoundInd})} \\
+q \int_{\Omega} \pdv{u_j}{x_k} \pdv{v_j}{x_k} dx &= \int_{\Omega} f_j v_j dx
+\end{split}
+\end{align}
+Writing this form in direct notation, we have the following variational (weak) form: 
+\begin{equation}\label{weakForm}
+\int_{\Omega} q(u) \nabla u \cdot \nabla vdx = \int_{\Omega} f v dx
+\end{equation}
+
+
+\section{Nonlinear Variational Form}
+The canonical form of the nonlinear variational form:
+\begin{equation}\label{CanNonlinear}
+F(u;v) = 0 \indent (\forall v \in \hat V)
+\end{equation}
+F: $V \times \hat V$ is a semi-linear form. The argument u is linear. \\ \\
+Therefore, we can seek a solution for u $\in$ V that satisfies eq. \ref{CanNonlinear}
+\begin{equation}
+F(u;v) = \int_{\Omega} q(u) \nabla u \cdot \nabla vdx - \int_{\Omega} f v dx = \text{residual} = 0 
+\end{equation}
+In the implementation we want to reduce this residual value to a value close to machine precision. 
+
+\section{FEniCS Implementation}
+\textit{Some edits were made to the code based on the FEniCS book} \\
+Domain is a unit square: 
+\[ \Omega = [0,1] \times [0,1] \] 
+This can be implemented with the built-in function UnitSquareMesh: \\
+{\fontfamily{qcr}\selectfont
+mesh = UnitSquareMesh(32, 32) \\  \\ 
+}
+Define the function space using ‘CG’, for Continuous Galerkin, as a synonym for ‘Lagrange’. Degree 1 is for the standard linear Lagrange element, which is a triangle with nodes at the three vertices (or in other words, continuous piecewise linear polynomials). \\
+{\fontfamily{qcr}\selectfont
+V = FunctionSpace(mesh, "CG", 1) \\ \\
+}
+Neumann boundary (Bottom, top, and left side of square):
+\[ \Gamma_N =  {(x,0) \cup (x,1) \cup (0,y) \subset \partial \Omega } \]
+Dirichlet boundary (right side of square):
+\[ \Gamma_D = {(1,y) \subset \partial \Omega } \]
+Define a class which isolates the Dirichlet boundary: \\
+{\fontfamily{qcr}\selectfont
+class DirichletBoundary(SubDomain): \\
+\indent def inside(self, x, on\_boundary): \\
+\indent \indent return abs(x[0] - 1.0) < DOLFIN\_EPS and on\_boundary \\ \\
+}
+Recall that the Dirichlet BC is set to 1 which can be defined by a constant \\ 
+{\fontfamily{qcr}\selectfont
+u\_0 = Constant(1.0) \\
+bc = DirichletBC(V, u\_0, DirichletBoundary()) \\ \\
+}
+\textbf{Note} that the Neumann BC is expressed in the weak form of the nonlinear Poisson problem (Natural). Dirichlet BCs (Essential) have to be defined explicitly outside of the weak form \\ \\
+We can define the unknown, u, and the test function. \\
+{\fontfamily{qcr}\selectfont
+u = Function(V) \\
+v = TestFunction(V) \\ \\ 
+}
+\textbf{Note}
+\begin{itemize}
+\item Note how u is not defined as a trial function but simply as a function (unknown) 
+\item By omitting the trial function {\fontfamily{qcr}\selectfont TrialFunction}, FEniCs assumes the problem is nonlinear 
+\end{itemize}
+Input functions are defined below:
+\begin{equation}\label{f}
+f(x,y) = x \sin(y)
+\end{equation}
+\begin{equation}\label{q}
+q(u) = 1 + u^2
+\end{equation} 
+Write the defined input function f, Eq. \ref{f}, and q, Eq. \ref{q}, in C++ syntax \\
+{\fontfamily{qcr}\selectfont
+f = Expression("x[0]*sin(x[1])", degree=2) \\ 
+q = 1 + u**2 \\ \\
+}
+We can write the semilinear form in one line \\
+{\fontfamily{qcr}\selectfont
+F = q*inner(grad(u), grad(v))*dx - f*v*dx \\ \\ 
+}
+Solve this by specifying the Newton solver within solver parameters: \\
+{\fontfamily{qcr}\selectfont
+solve(F == 0, u, bc, \\
+\indent \indent	solver\_parameters={"newton\_solver":{"relative\_tolerance":1e-6}}) \\ \\
+}
+The Newton procedure has converged when the residual $r_n$ at iteration n is less than the absolute tolerance or the relative residual $\frac{r_n}{r_0}$ is less than the relative tolerance $1 \times 10^{-6}$. \\ \\
+
+\end{document}
