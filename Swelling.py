@@ -56,7 +56,7 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Results_dt10-2_1.1_200.xdmf"   # Name of file
+name = "dt10-3_exp1.1_200.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -66,16 +66,18 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-tot_steps = 200                # Total number of time steps
-print(tot_steps)
+tot_steps = 200                 # Total number of time steps
 # Time parameters
-dt = 10**(-2)              # Starting time step
-t = 0.0                         # Initial time for paraview file
+dt = 10**(-3)                   # Starting time step
+# Expression for time step for updating in loop
+DT = Expression("dt", dt=dt, degree=0)
+# Initial time for paraview file
+t = 0.0
 c_exp = 1.1                     # Control the time step increase
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(5, 5, 5)                # Unit Cube
+mesh = UnitCubeMesh(1, 4, 1)                # Unit Cube
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
 # Define Taylor-Hood Elements
@@ -172,14 +174,14 @@ J0 = det(F0)                    # Previous time step for third invariant
 def P(u, mu):
     return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/(J**2) - mu))*J*inv(F.T)
 
-# Definition for normalized flux (Don't use J)
+# Normalized flux
 def Flux(u, mu):
     p1 = dot(inv(F), grad(mu))
-    return -(J-1)*dot(inv(F), p1)
+    return -(J-1)*dot(p1,inv(F))
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
-F1 = (1/n)*(inner(J-1, v_mu)*dx - inner(J0-1, v_mu)*dx - dt*inner(Flux(u, mu), grad(v_mu))*dx)
+F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
 WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -195,36 +197,43 @@ file_results = XDMFFile(name)
 
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
-    dt = dt*c_exp;                # Update time step
-    t = t + dt                    # Update time for paraview file
 
     # Update the chemical steps for ramping of chemical potential
     if c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
-    w0.vector()[:] = w.vector()     # Update fields containing u and mu
-    solver_problem.solve()          # Solve using the parameters setup
 
+    # Update fields containing u and mu and solve using the setup parameters
+    w0.vector()[:] = w.vector()
+    solver_problem.solve()
+    
     steps += 1                      # Update total steps
-    print(steps)
 
     # Note that this is now a deep copy not a shallow copy like split(w)
     # allowing us to write the results to file
     (u, mu) = w.split()
     # Project nominal stress
     PTensor = project(P(u, mu), TT)
-
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential", "mu")
     PTensor.rename("Nominal Stress", "P")
-
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
-
     # Write to .xdmf results file
     file_results.write(u,t)
     file_results.write(mu,t)
     file_results.write(PTensor,t)
+
+    # Update time parameters
+    dt = dt*c_exp;                # Update time step with exponent value
+    DT.dt = dt                    # Update time step for weak forms
+    t += dt                       # Update total time for paraview file
+
+    # Printouts
+    print(steps)
+    print(dt)
+    #vertex_val_DT = DT.compute_vertex_values(mesh)
+    #print(vertex_val_DT)
