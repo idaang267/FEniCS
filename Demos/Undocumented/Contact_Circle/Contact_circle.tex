@@ -1,0 +1,264 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{Contact Mechanics Problem: Hyperelastic Circle Constrained by Box}
+\author{Ida Ang (Edited July 16, 2019)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+This is a document on a contact mechanics problem (currently undocumented demonstration) using the Scalable Nonlinear Equations Solvers (SNES) and Portable, Extensible Toolkit for Scientific Computation (PETSc)'s Toolkit for Advance Optimization (TAO) solvers coded by Corrado Maurini and updated by Tianyi Li (2014).  \\ \\
+This example considers a hyperelastic circle under body forces in a box of the same size. Contact occurs as the circle drops in the box and is in contact with the bottom (x = 0) and sides of the cube (y = 0, y =1). \\
+This problem is very similar to documented demonstration \#7 hyperelasticity which uses potential energy minimization, an alternative approach to solving static problems 
+
+\subsection{Potential Energy Minimization}
+Minimization of energy,
+\[ \min_{u \in V} \Pi \]
+where V is a suitable function space that satisfies the boundary conditions on u.\\ \\
+The total potential energy is given by the sum of the internal and external energy: 
+\begin{align}\label{totPotEnergy}
+\begin{split}
+\Pi &= \Pi_{int} + \Pi_{ext} \\
+	&= \bigg( \int_{\Omega} \psi(u) dx \bigg) + \bigg( - \int_{\Omega} B \cdot u dx - \int_{\partial \Omega} T \cdot u ds \bigg) 
+\end{split}
+\end{align}
+where $\psi$ is the elastic stored energy density, B is body force (per unit reference volume) and T is a traction force (per unit reference area). \\ \\
+In this problem, there is no traction giving the following potential energy: \\ 
+\begin{equation}\label{PotEnergy}
+\Pi = \int_{\Omega} \psi(u) dx - \int_{\Omega} B \cdot u dx
+\end{equation}
+Minimization of the potential energy corresponds to the directional derivative of $\Pi$ being zero for all possible variations of u. (Note, minimizing $\Pi$ is equivalent to solving the balance of momentum problem.) 
+\begin{equation} \label{dirDer}
+L(u;v) = D_v \Pi = \frac{d \Pi (u + \epsilon v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0} = 0 \indent \forall v \in V
+\end{equation}
+If we use Newton's method, we also want to find the Jacobian of Eq. \ref{dirDer}
+\begin{equation} \label{JacDirDer}
+a(u;du,v) = D_{du} L = \frac{dL(u+ \epsilon du; v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0}
+\end{equation}
+Note: in the final {\fontfamily{qcr}\selectfont solve} function in FEniCS we equate Eq. \ref{JacDirDer} to J = det(F)
+
+\section{FEniCS Implementation}
+Import module \\
+{\fontfamily{qcr}\selectfont
+from dolfin import * \\ \\
+}
+Define SNES solver parameters. {\fontfamily{qcr}\selectfont maximum\_iterations} sets the maximum newton-raphson iterations the solver will try before exiting. {\fontfamily{qcr}\selectfont report} allows for a report of the functional for each iteration as well as a report if the solver fails. {\fontfamily{qcr}\selectfont error\_on\_noncovergence} set to False suppresses the default error message which includes fenics contact information. \\
+{\fontfamily{qcr}\selectfont
+snes\_solver\_parameters = \{"nonlinear\_solver": "snes", \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "snes\_solver": \{"linear\_solver": "lu",	\\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "maximum\_iterations": 20, \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "report": True, \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "error\_on\_nonconvergence": False\}\} \\ \\
+}
+The domain is a unit square in the xy plane enclosing a unit circle, where x is directed to the right and y upwards. 
+\[ \Omega = [0,1] \times [0,1] \] 
+Import and mesh the pre-made circle in the xy plane. NOTE that the origin of the xy-plane is in the center of the circle \\
+{\fontfamily{qcr}\selectfont
+mesh = Mesh("circle\_xyplane.xml") \\ \\
+}
+Setting a vector function space of order 1 works for the xy-plane defined, because each vector will be (x, y) \\
+{\fontfamily{qcr}\selectfont
+V = VectorFunctionSpace(mesh, "Lagrange", 1) \\ \\
+}
+Define the incremental displacement as the trial function, v as the test function, and u is the displacement unknown \\
+{\fontfamily{qcr}\selectfont
+du = TrialFunction(V) \\     
+v  = TestFunction(V) \\        
+u  = Function(V) \\ \\
+}
+\textbf{Kinematics} \\
+The kinematics of the problem involve defining the deformation gradient and right Cauchy-Green tensor. First define the spatial dimension of the problem (d) and the identity tensor \\
+{\fontfamily{qcr}\selectfont
+d = len(u) \\             
+I = Identity(d) \\ \\
+} 
+Use the identity tensor to define the deformation gradient and right Cauchy-Green tensor
+\begin{align*}
+F &= I + \nabla u \\
+C &= F^T F
+\end{align*}
+{\fontfamily{qcr}\selectfont 
+F = I + grad(u) \\        
+C = F.T*F \\ \\       
+} 
+Define the first and third invariants using F and C
+\begin{align*}
+I_c = \tr C \quad J = \det F
+\end{align*}
+{\fontfamily{qcr}\selectfont
+Ic = tr(C) \\
+J  = det(F) \\ \\
+}
+\textbf{Constants} \\
+Define the body force such that the circle experiences body forces in the downwards direction.  \\
+{\fontfamily{qcr}\selectfont
+B  = Constant((0.0, -0.1)) \\ \\
+} 
+Define the elasticity parameters (Note that {\fontfamily{qcr}\selectfont lambda} is a keyword in FEniCS so we define {\fontfamily{qcr}\selectfont lmbda}). \\
+{\fontfamily{qcr}\selectfont
+E, nu = 10.0, 0.3 \\
+mu = Constant(E/(2*(1 + nu))) \\
+lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu))) \\ \\
+}
+\textbf{Strain energy density} \\
+\begin{align*}
+\Psi = \frac{\mu}{2} (I_c - 2 - 2 \ln J ) + \frac{\lambda}{2} (\ln J)^2
+\end{align*}
+{\fontfamily{qcr}\selectfont
+psi = (mu/2)*(Ic - 2 - 2*ln(J)) + (lmbda/2)*(ln(J))**2 \\ \\
+}
+Minimize the potential energy of the problem according to Eq. \ref{PotEnergy}
+\begin{equation*}
+\Pi = \int_{\Omega} \psi(u) dx - \int_{\Omega} B \cdot u dx
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+Pi = psi*dx - dot(B, u)*dx \\ \\
+}
+Compute the first variation of the potential energy, $\Pi$ by taking the directional derivative about u in the direction of v according to Eq. \ref{dirDer}. \\ 
+{\fontfamily{qcr}\selectfont
+F = derivative(Pi, u, v) \\ \\
+} 
+Compute the Jacobian, by taking the directional derivative about u in the direction of du (incremental displacement) according to Eq. \ref{JacDirDer} \\
+{\fontfamily{qcr}\selectfont
+J = derivative(F, u, du) \\ \\
+}
+\textbf{Symmetry and Boundary Conditions} \\
+The purpose of this symmetry condition is to block rigid body rotations. This sets x = 0\\
+{\fontfamily{qcr}\selectfont
+def symmetry\_line(x): \\
+\indent return abs(x[0]) < DOLFIN\_EPS \\ \\
+}
+By subclassing the function space, V, we can constrain displacement in the x direction. The method {\fontfamily{qcr}\selectfont pointwise} ensures the displacement constraint is set on the nodes. \\
+{\fontfamily{qcr}\selectfont
+bc = DirichletBC(V.sub(0), 0.0, symmetry\_line, method="pointwise") \\ \\
+}
+Recall how displacement is defined 
+\begin{align*}
+u &= X (\text{Current configuration}) - x (\text{Reference Configuration}) \\
+x + u	&= X \quad \text{Must remain within the box }
+\end{align*}
+The current configuration x+u must remain within the box [xmin,xmax] x [ymin,ymax], This constraint can be done through the following expressions: 
+\begin{align*}
+\text{con}_l &= (-1.0-x, -1.0-y) \\
+\text{con}_u &= (1.0-x, 1.0-y)
+\end{align*}
+{\fontfamily{qcr}\selectfont constraint\_l} identifies the left side and bottom of the square. {\fontfamily{qcr}\selectfont constraint\_u} identifies the right side and top of the square \\
+{\fontfamily{qcr}\selectfont
+constraint\_l = Expression(("xmin - x[0]","ymin - x[1]"), \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent xmin=-1.0-DOLFIN\_EPS, ymin=-1.0, degree=1) \\ 
+constraint\_u = Expression(("xmax - x[0]", "ymax - x[1]"), \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent xmax=1.0+DOLFIN\_EPS,  ymax=1.0, degree=1) \\ \\
+}
+Interpolate these expressions into the function space \\
+{\fontfamily{qcr}\selectfont
+umin = interpolate(constraint\_l, V) \\
+umax = interpolate(constraint\_u, V)
+}
+
+\subsection{Solver Strategy}
+\textbf{SNES Solver} \\
+Note that it appears that the PETSc's TAO solver appears to be the best optimization strategy, because higher body forces can be used for larger deformations. \\
+{\fontfamily{qcr}\selectfont
+problem = NonlinearVariationalProblem(F, u, bc, J=J) \\ \\
+} 
+Set the boundaries that ensures the circle stays within the box. \\
+{\fontfamily{qcr}\selectfont
+problem.set\_bounds(umin, umax) \\ \\
+}
+Call the solver parameters set above in the update statement. \\
+{\fontfamily{qcr}\selectfont
+solver = NonlinearVariationalSolver(problem) \\
+solver.parameters.update(snes\_solver\_parameters) \\ \\
+}
+If {\fontfamily{qcr}\selectfont info} is set to True, information on all solver parameters will be printed \\
+{\fontfamily{qcr}\selectfont
+info(solver.parameters, True) \\ \\
+}
+Stops at this line when the solution diverges \\ 
+{\fontfamily{qcr}\selectfont
+(iter, converged) = solver.solve() \\ \\ 
+}
+Warning because modification of the body force results in divergence of the problem. (in the y direction to > -1.0)  \\
+{\fontfamily{qcr}\selectfont
+if not converged: \\
+\indent warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.") \\ \\
+} 
+Save to an .xdmf file for multiple fields (time step = 0). \\
+{\fontfamily{qcr}\selectfont
+file = XDMFFile("displacement\_snes.xdmf") \\
+file.write(u, 0.) \\ \\
+}
+\textbf{TAO solver} \\
+This file had been edited by Tianyi Li in 2014 and has some edits not only to the solver but to the boundary constraints: \\ \\
+Instead of returning an expression for which x[0] must satisfy, the function {\fontfamily{qcr}\selectfont near()} returns where x = 0. Functionally, these are equivalent versions of the same definition {\fontfamily{qcr}\selectfont symmetry\_line} \\
+{\fontfamily{qcr}\selectfont
+def symmetry\_line(x, on\_boundary): \\
+\indent \indent return near(x[0], 0) \\ \\
+}
+Enforce boundary condition similarly without extra {\fontfamily{qcr}\selectfont "method=pointwise"} \\
+{\fontfamily{qcr}\selectfont
+bc = DirichletBC(V.sub(0), Constant(0.0), symmetry\_line) \\ \\
+}
+Removes usage of machine precision value {\fontfamily{qcr}\selectfont DOLFIN\_EPS} \\
+{\fontfamily{qcr}\selectfont
+constraint\_l = Expression(("xmin-x[0]", "ymin-x[1]"), \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent xmin=-1.0, ymin=-1.0, degree=1) \\
+constraint\_u = Expression(("xmax-x[0]", "ymax-x[1]"), \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent xmax=1.0, ymax=1.0, degree=1) \\ \\
+}
+Interpolation into function space remains the same: \\
+{\fontfamily{qcr}\selectfont
+u\_min = interpolate(constraint\_l, V) \\ 
+u\_max = interpolate(constraint\_u, V) \\ \\
+}
+Constraining the hyperelastic circle with upper and lower limits requires the {\fontfamily{qcr}\selectfont apply()} function. Boundary conditions are applied differently in the TAO solver.\\
+{\fontfamily{qcr}\selectfont
+bc.apply(u\_min.vector()) \\
+bc.apply(u\_max.vector()) \\ \\
+}
+\textit{Class definition} \\
+Define the minimization problem by using the OptimisationProblem class \\
+{\fontfamily{qcr}\selectfont
+class ContactProblem(OptimisationProblem): \\
+\indent \indent def \_\_init\_\_(self): \\
+\indent \indent \indent \indent OptimisationProblem.\_\_init\_\_(self) \\ \\
+} 
+Objective function \\
+{\fontfamily{qcr}\selectfont
+\indent \indent  def f(self, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent return assemble(Pi) \\ \\
+}
+Define deformation gradient of the objective function \\
+{\fontfamily{qcr}\selectfont
+\indent \indent def F(self, b, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent assemble(F, tensor=b) \\ \\
+}
+Hessian of the objective function. \\
+{\fontfamily{qcr}\selectfont
+\indent \indent def J(self, A, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent assemble(J, tensor=A) \\ \\
+}
+The Hessian is related to the Jacobian by the following equation:
+\begin{equation*}
+\mathbf{H}(f(x)) = \mathbf{J} (\nabla f(x))^T
+\end{equation*}
+Solve the problem by specifying the boundary conditions with u\_min and u\_max  \\
+{\fontfamily{qcr}\selectfont
+solver.solve(ContactProblem(), u.vector(), u\_min.vector(), u\_max.vector())
+}
+\end{document}
