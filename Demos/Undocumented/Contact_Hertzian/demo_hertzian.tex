@@ -1,0 +1,341 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{FEniCS: Hertzian Contact with a Rigid Indenter Using a Penalty Approach \\
+	\large{https://comet-fenics.readthedocs.io/en/latest/demo/contact/penalty.html}}
+\author{Ida Ang (Edited July, 16 2019)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+Formulation of frictionless contact between the rigid surface (indenter) and an elastic domain, representing an infinite half-space. Contact will be solved using a penalty formulation allowing a small amount of interpenetration between the solid and the indenter. \\ \\
+Problem uses a linear elastic isotropic constitutive relationship \\ \\
+\textbf{Indenter Characteristics} \\
+The rigid indenter with a spherical surface can be approximated by a parobolic equation instead of explicitly modeled and meshed. Consider the indenter radius, R, to be sufficiently large with respect to the contact region characteristic size (R >> a). This relationship, R >> a, allows the spherical surface to be approximated by a parabola. 
+\begin{equation}\label{indenter}
+h(x,y) = h_o + \frac{1}{2R} (x^2 + y^2)
+\end{equation}
+where $h_o$ is the initial gap between both surfaces at x = y = 0 (the center of the indenter). 
+ 
+\section{Weak Form}
+Starting from the equilibrium equation:
+\begin{equation}
+- \text{Div} \sigma = f \rightarrow - \div \sigma = f 
+\end{equation}
+Write in indicial and convert to weak form 
+\begin{align}\label{befIntParts}
+\begin{split}
+- \pdv{\sigma_{ij}}{x_j} \mathbf{e_i} &= f_k \mathbf{e_k} \quad \text{Multiply by a test function} \\
+-\pdv{\sigma_{ij}}{x_j} \mathbf{e_i} \cdot v_p \mathbf{e_p} &= f_k \mathbf{e_k} \cdot v_p \mathbf{e_p} \\
+-\pdv{\sigma_{ij}}{x_j} v_p \delta_{ip} &= f_k v_p \delta_{kp} \\
+-\pdv{\sigma_{ij}}{x_j} v_i &= f_k v_k \quad \text{Integrate over the domain} \\
+-\int_{\Omega_o} \pdv{\sigma_{ij}}{x_j} v_i dV &= \int_{\Omega_o} f_k v_k dV
+\end{split}
+\end{align}
+Integration by parts on the LHS of Eq. \ref{befIntParts}
+\begin{align*}
+(fg)' = f'g + fg' \rightarrow f'g &= (fg)' - fg' \\
+\pdv{\sigma_{ij}}{x_j} v_i &= (\sigma_{ij} v_i)_{,j} - \sigma_{ij} \pdv{v_i}{x_j}
+\end{align*}
+Substitute this into Eq. \ref{befIntParts}
+\begin{align*}
+-\int_{\Omega_o}  (\sigma_{ij} v_i)_{,j} dV + \int_{\Omega_o} \sigma_{ij} \pdv{v_i}{x_j} dV &= \int_{\Omega_o} f_k v_k dV \quad \text{Use the divergence theorem} \\
+-\int_{\partial \Omega_o} \sigma_{ij} v_i n_j dS + \int_{\Omega_o} \sigma_{ij} \pdv{v_i}{x_j} dV &= \int_{\Omega_o} f_k v_k dV \quad \text{Recognize the traction term} \\
+-\int_{\partial \Omega_o} t_i v_i dS + \int_{\Omega_o} \sigma_{ij} \pdv{v_i}{x_j} dV &= \int_{\Omega_o} f_k v_k dV \quad \text{Rearrange}\\
+ \int_{\Omega_o} \sigma_{ij} \pdv{v_i}{x_j}  dV &= \int_{\Omega_o} f_k v_k dV + \int_{\partial \Omega_o} t_i v_i dS
+\end{align*}
+The principle of virtual work states that:
+\begin{equation}\label{PVW}
+\int_{\Omega} b_i \delta u_i dV + \int_{\partial \Omega} t_i \delta u_i dS  = \int_{\Omega} \sigma_{ij} \delta \epsilon_{ij} dV = \int_{V} \delta W dV
+\end{equation}
+Applying this principle to the LHS of our equation where f is equivalent to the body force, b:
+\begin{align}\label{tempWF}
+\begin{split}
+\int_{\Omega_o} \sigma_{ij} \pdv{v_i}{x_j}  dV = \int_{\Omega_o} f_k v_k dV + \int_{\partial \Omega_o} t_i v_i dS &= \int_{\Omega} \sigma_{ij}  \epsilon_{ij} dV \quad \text{No traction or body forces} \\
+0 &= \int_{\Omega} \sigma_{ij}  \epsilon_{ij} dV \quad \text{In direct notation}\\
+0 &= \int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega 
+ \end{split}
+\end{align}
+
+\subsection{Contact Problem Formulation and Penalty Approach}
+The unilateral contact condition on the top surface $\Gamma$ is known as the Hertz-Signorini-Moreau conditions for frictionless contact 
+\begin{equation}
+g \geq 0, \quad p \leq 0, \quad g \cdot p = 0 \quad \text{on } \Gamma
+\end{equation}
+Recall that $g$ is the gap between the obstacle surface and the solid surface
+\begin{equation*}
+g = h - u
+\end{equation*}
+ $p = - \sigma_{zz}$ is the pressure. \\ \\
+The simplest way to solve this contact condition is to replace the previous complementary conditions by the following penalized condition:
+\begin{align}\label{penalty}
+\begin{split}
+p &= k\langle-g \rangle_{+} \quad \text{where } g = h - u \\
+	&= k \langle u-h \rangle_{+}
+\end{split}
+\end{align}
+where k is a large penalizing stiffness coefficient, and we have the definition of the Mackauley bracket
+\begin{equation}\label{ppos}
+\langle x \rangle_{+} = \frac{|x| + x}{2} 
+\end{equation}
+Therefore, we can add the penalty term in Eq. \ref{penalty} to Eq. \ref{tempWF} after multiplying by the test function 
+\begin{equation*}
+\int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega + k_{pen} \int_{\Gamma} \langle u - h \rangle_{+} v dS  = 0 
+\end{equation*}
+
+\subsection{Bilinear Form and Linear Form}
+The variational problem can be phrased in the general form.
+\begin{equation*}
+a(u,v) = L(v)  \indent \forall v \in V
+\end{equation*}
+Rearrange 
+\begin{equation*}
+F = a(u,v) - L(v) = 0   \indent \forall v \in V
+\end{equation*}
+Therefore 
+\begin{equation}\label{WeakForm}
+F = \int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega + k_{pen} \int_{\Gamma} \langle u - h \rangle_{+} v dS  = 0 
+\end{equation}
+
+\section{FEniCS Implementation}
+Import modules: \\
+{\fontfamily{qcr}\selectfont
+from dolfin import *	\\
+import numpy as np \\ \\
+}
+\textbf{Geometry and Domain} \\
+The mesh density parameters can be controlled by a number specified in the x and y direction.  \\
+{\fontfamily{qcr}\selectfont
+N = 30 \\ \\
+}
+Same mesh size in x and y direction, and half in the z (upwards) direction. In Python syntax, N//2, means floor division. \\
+{\fontfamily{qcr}\selectfont
+mesh = UnitCubeMesh.create(N, N, N//2, CellType.Type\_hexahedron) \\ \\
+}
+Refine the mesh size to a smaller size closer to the contact area (x = y = z = 0). The indexing [:, :2] refers to the x and y directions where this specifies 0 and 1 \\
+{\fontfamily{qcr}\selectfont
+mesh.coordinates()[:, :2] = mesh.coordinates()[:, :2]**2 \\ \\
+}
+Refine the mesh where indexing [:,2] refers to the z direction. Use a negative sign to indicate downwards from the point of contact at (x = y = z = 0) \\
+{\fontfamily{qcr}\selectfont
+mesh.coordinates()[:, 2] = -mesh.coordinates()[:, 2]**2 \\ \\
+}
+\textbf{Function Spaces} \\ 
+Define function spaces for displacement and gap respectively using Continuous Galerkin (CG) functions (synonymous with Lagrange specification)\\ 
+{\fontfamily{qcr}\selectfont
+V = VectorFunctionSpace(mesh, "CG", 1) \\
+V2 = FunctionSpace(mesh, "CG", 1) \\ \\
+}
+Function space for contact pressure defined using Discontinuous Galerkin (DG) for discontinuous basis functions \\
+{\fontfamily{qcr}\selectfont
+V0 = FunctionSpace(mesh, "DG", 0) \\ \\
+}
+\textbf{Indenter Parameters} \\
+Define the indenter or obstacle recalling Eq. \ref{indenter} which is a parabolic function
+\begin{equation*}
+h(x,y) = h_o + \frac{1}{2R} (x^2 + y^2)
+\end{equation*}
+This equation requires a definition for $h_o$, the initial height difference between the indenter and the solid domain, where $h_o = -d$ and R are specified \\
+{\fontfamily{qcr}\selectfont
+R, d = 0.5, 0.02 \\ \\ 
+}
+Define the variables inside the expression class explicitly \\
+{\fontfamily{qcr}\selectfont
+obstacle = Expression("-d+(pow(x[0],2)+pow(x[1], 2))/(2*R)", \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent  d=d, R=R, degree=2) \\ \\
+}
+\textbf{Boundary Condition} \\
+Functions for imposition of Dirichlet BC on the boundary. Symmetry conditions are applied to the x = 0 and y = 0 surfaces where for our geometry, these are the back walls \\
+{\fontfamily{qcr}\selectfont
+def symmetry\_x(x, on\_boundary): \\
+\indent return near(x[0], 0) and on\_boundary \\
+def symmetry\_y(x, on\_boundary): \\
+\indent return near(x[1], 0) and on\_boundary \\ \\
+}
+The bottom surface is fully fixed (z = -1) \\
+{\fontfamily{qcr}\selectfont
+def bottom(x, on\_boundary): \\
+\indent return near(x[2], -1) and on\_boundary \\ \\
+}
+The top surface is defined as a {\fontfamily{qcr}\selectfont SubDomain}. This is the part of the domain where the indenter will contact. \\
+{\fontfamily{qcr}\selectfont
+class Top(SubDomain): \\
+\indent def inside(self, x, on\_boundary): \\
+\indent \indent return near(x[2], 0.0) and on\_boundary \\ \\
+}
+Recall that the bottom is fully fixed (z = -1) and therefore has no displacement. Each degree of freedom is constrained making the constant a vector of (0, 0, 0). \\
+{\fontfamily{qcr}\selectfont
+bc\_b = DirichletBC(V, Constant((0.0, 0.0, 0.0)), bottom) \\ \\
+}
+Define the symmetry conditions for the boundary (x = y = 0) using the subspaces for function space V for displacement. Since we are utilizing the subspace, we only need to specify a scalar using constant \\
+{\fontfamily{qcr}\selectfont
+bc\_x = DirichletBC(V.sub(0), Constant(0.0), symmetry\_x) \\
+bc\_y = DirichletBC(V.sub(1), Constant(0.0), symmetry\_y) \\ \\
+}
+Combine all symmetry conditions and boundary conditions \\
+{\fontfamily{qcr}\selectfont
+bc = [bc\_b, bc\_x, bc\_y] \\ \\
+}
+Isolate facets of the mesh: {\fontfamily{qcr}\selectfont "size\_t"} gives the topology dimensions of the mesh  \\
+{\fontfamily{qcr}\selectfont
+facets = MeshFunction("size\_t", mesh, 2) \\ \\ 
+}
+First initialize the exterior facets of the full surface of the cube to 0, then set the top surface to 1 using the class created \\
+{\fontfamily{qcr}\selectfont
+facets.set\_all(0) \\ 
+Top().mark(facets, 1) \\ \\
+}
+To express integrals over the boundary part using ds, {\fontfamily{qcr}\selectfont Measure} will redefine ds in terms of our boundary markers: \\
+{\fontfamily{qcr}\selectfont
+ds = Measure('ds', subdomain\_data=facets) \\ \\
+}
+\textbf{Variational Problem} \\
+The trial and test function are defined below. The trial function is the variation of u, du. \\
+{\fontfamily{qcr}\selectfont
+du = TrialFunction(V)      \\
+v = TestFunction(V)          \\   \\
+}
+We are trying to find the displacement, gap function, and contact pressure, which we can name for clearer visualization in Paraview \\
+{\fontfamily{qcr}\selectfont
+u = Function(V, name="Displacement")   \\
+gap = Function(V2, name="Gap") \\
+p = Function(V0, name="Contact pressure") \\ \\
+}
+\textbf{Constitutive Relationship} \\
+Define the material parameters: Young's modulus, Poisson's ratio \\
+{\fontfamily{qcr}\selectfont
+E = Constant(10.)            \\
+nu = Constant(0.3)              \\ \\
+}
+Lamé coefficients
+\begin{equation*}
+\lambda = \frac{E \nu}{(1+ \nu) (1 - 2 \nu)} \quad \mu = \frac{E}{2 (1+ \nu)}
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+mu = E/(2*(1+nu))              \\
+lmbda = E*nu/((1+nu)*(1-2*nu))  \\ \\
+}
+Define the strain equation
+\begin{align*}
+\epsilon_{ij} = \frac{1}{2} (\pdv{u_i}{x_j} + \pdv{u_j}{x_i}) \rightarrow \epsilon &= \frac{1}{2} (\nabla u + \nabla u^T) \quad \text{With symmetry} \\
+ \epsilon &= \nabla u
+\end{align*}
+which can be written as a function definition: \\
+{\fontfamily{qcr}\selectfont
+def eps(v): \\
+\indent return sym(grad(v)) \\ \\
+}
+Define stress using the Neo-Hookean Model in a function definition (Eq. \ref{StressStrain}) 
+\begin{equation*}
+\sigma_{ij} = \lambda \epsilon_{kk} \delta_{ij} + 2 \mu \epsilon_{ij}
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+def sigma(v): \\
+\indent return lmbda*tr(eps(v))*Identity(3) + 2.0*mu*eps(v) \\ \\
+}
+Define the Mackauley bracket, Eq. \ref{ppos} for  $\langle x \rangle^+$
+\begin{equation*}
+\langle x \rangle_{+} = \frac{|x| + x}{2} 
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+def ppos(x): \\
+\indent return (x+abs(x))/2. \\ \\ 
+}
+Define the penalty parameter. A large penalty parameter deteriorates the problem conditioning so that the solving time will drastically increase and the problem can fail: \\ 
+{\fontfamily{qcr}\selectfont
+pen = Constant(1e4) \\ \\
+}
+\textbf{Solve} \\
+Set up the equation according to Eq. \ref{WeakForm} with the penalty parameter \\
+\begin{equation*}
+F = \int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega + k_{pen} \int_{\Gamma} \langle u - h \rangle_{+} v dS  = 0 
+\end{equation*}
+h is the obstacle expression defined above. u[2] gives the z direction of displacement. ds(1) denotes integration over subdomain part 1. \\
+{\fontfamily{qcr}\selectfont
+form = inner(sigma(u), eps(v))*dx \\
+\indent \indent \indent \indent \indent + pen*dot(v[2], ppos(u[2]-obstacle))*ds(1) \\ \\
+}
+Take the directional derivative for the Jacobian \\ 
+{\fontfamily{qcr}\selectfont
+J = derivative(form, u, du) \\ \\ 
+}
+Setup the non-linear variational problem \\
+{\fontfamily{qcr}\selectfont
+problem = NonlinearVariationalProblem(form, u, bc, J=J) \\ 
+solver = NonlinearVariationalSolver(problem) \\ \\
+}
+Setup solver parameters \\
+{\fontfamily{qcr}\selectfont cg} stands for the iterative Conjugate-Gradient solver. \\
+{\fontfamily{qcr}\selectfont
+solver.parameters["newton\_solver"]["linear\_solver"] = "cg" \\ \\
+}
+{\fontfamily{qcr}\selectfont ilu} stands for the incomplete lower-upper factorization method. \\ 
+{\fontfamily{qcr}\selectfont
+solver.parameters["newton\_solver"]["preconditioner"] = "ilu" \\
+solver.solve() \\ \\
+}
+\textbf{Validation \& Output} \\
+The gap and contact pressure must be projected on the appropriate function spaces in order to evaluate the point-wise (nodal) values. \\
+{\fontfamily{qcr}\selectfont
+gap.assign(project(obstacle-u[2], V2)) \\ 
+p.assign(-project(sigma(u)[2, 2], V0)) \\ \\
+}
+The file extensions (.pvd,.vtu) are not suited for multiple fields and parallel writing/reading, but the file extension .xdmf is. \\
+{\fontfamily{qcr}\selectfont
+file\_results = XDMFFile("contact\_penalty\_results.xdmf") \\ \\
+}
+The first option saves the output even if the program terminates prematurely. The second output makes sure that multiple outputs within a single time step writes to the same mesh. \\
+{\fontfamily{qcr}\selectfont
+file\_results.parameters["flush\_output"] = True \\
+file\_results.parameters["functions\_share\_mesh"] = True \\ \\
+}
+Write the results for time step 0 \\
+{\fontfamily{qcr}\selectfont
+file\_results.write(u, 0.) \\
+file\_results.write(gap, 0.) \\
+file\_results.write(p, 0.) 
+}
+
+\subsection{Analytical Solution}
+The analytical problem gives the following: 
+\begin{itemize}
+\item The contact area, a, is of circular shape (d = depth) and radius, R.
+	\begin{equation*}
+	a = \sqrt{Rd}
+	\end{equation*}
+\item The force exerted by the indenter onto the surface is:
+	\begin{equation*}
+	F = \frac{4}{3} \frac{E}{(1+ \nu^2)} ad
+	\end{equation*}
+\item The pressure distribution on the contact region is given by ($p_o$ is the maximal pressure):
+	\begin{equation*}
+	p(r) = p_o \sqrt{1 - (\frac{r}{a})^2} \quad \quad p_o = \frac{3F}{2 \pi a^2}
+	\end{equation*}
+\end{itemize}
+These can be solved for in FEniCS \\
+{\fontfamily{qcr}\selectfont
+a = sqrt(R*d) \\
+F = 4/3.*float(E)/(1-float(nu)**2)*a*d \\
+p0 = 3*F/(2*pi*a**2) \\ \\
+}
+Print the maximum pressure and applied force \\
+{\fontfamily{qcr}\selectfont
+print("Maximum pressure FE: \{0:8.5f\} Hertz: \{1:8.5f\}" \\
+\indent \indent.format(max(np.abs(p.vector().get\_local())), p0)) \\
+print("Applied force FE: \{0:8.5f\} Hertz: \{1:8.5f\}" \\
+\indent \indent .format(4*assemble(p*ds(1)), F)) \\ \\
+}
+\textbf{NOTE}: The file extension .xdmf will not open if Paraview is outdated (Version 5.5.2 works). An option window should pop up asking to open the XDMF file using three different readers. \\ \\
+\end{document}
