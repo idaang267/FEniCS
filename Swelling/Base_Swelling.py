@@ -56,10 +56,10 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "dt10-3_exp1.1_200.xdmf"   # Name of file
+name = "mesh10_chi0.4_dt10-3_exp1.1_200.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
-chi = 0.6                       # Flory Parameter
+chi = 0.4                       # Flory Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping and chemical stepping parameters
@@ -77,7 +77,7 @@ c_exp = 1.1                     # Control the time step increase
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(1, 4, 1)                # Unit Cube
+mesh = UnitCubeMesh(10, 10, 10)                # Unit Cube
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
 # Define Taylor-Hood Elements
@@ -207,7 +207,7 @@ while (steps < tot_steps):
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
     solver_problem.solve()
-    
+
     steps += 1                      # Update total steps
 
     # Note that this is now a deep copy not a shallow copy like split(w)
