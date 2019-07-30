@@ -122,7 +122,8 @@ back  = CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 
 # Exterior facets
-
+#------------------------------------------------------------------------------
+# Note, see 1.4.0 #24 "Marking subdomains of a mesh" for more information
 # Use MeshFunction() to store the numbering of the subdomains. An argument
 # specifying the type of the MeshFunction must be given, where allowed types
 # are ‘int’, ‘size_t’, ‘double’ and ‘bool’. Second argument (optional) specifies
@@ -135,17 +136,6 @@ top.mark(facets, 0)
 # Measure redefines ds
 ds = Measure('ds', subdomain_data=facets)
 
-# Example code
-'''
-sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
-sub_domains.set_all(3)
-noslip = Noslip()
-noslip.mark(sub_domains, 0)
-inflow = Inflow()
-inflow.mark(sub_domains, 1)
-outflow = Outflow()
-outflow.mark(sub_domains, 2)
-'''
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
