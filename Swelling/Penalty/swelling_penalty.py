@@ -13,6 +13,7 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
+                                          # Newton line search
                                           "method": "newtonls",
                                           "absolute_tolerance": 1e-9,
                                           "relative_tolerance": 1e-9,
@@ -56,7 +57,7 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Results.xdmf"   # Name of file
+name = "Result_penalty_100.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -66,36 +67,34 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 75             # Total indentation steps
+t_indent_steps = 100            # Total indentation steps
 tot_steps = 200                 # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
-# Initial time for paraview file
-t = 0.0
-c_exp = 1.1                     # Control the time step increase
+t = 0.0                         # Initial time for paraview file
+c_exp = 1.1                     # Controls time step increase (10% )
 
-# Define the indenter (obstacle) with a parabola
-R = 0.005
-depth = 0.001 #10**(-4)
-obstacle = Expression("-d+(1/(2*R))*(pow(x[0]-0.5,2)+pow(x[2]-0.5,2))", d=depth, R=R, degree=2)
+# Define the indenter with a parabola
+R, depth= 0.005, 0.001          # Indenter radius and depth of indentation
+indenter = Expression("-d+(1/(2*R))*(pow(x[0]-0.5,2)+pow(x[2]-0.5,2))", \
+                        d=depth, R=R, degree=2)
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(10, 5, 10)                # Unit Cube
-# Tensor space for projection of stress
-TT = TensorFunctionSpace(mesh,'DG',0)
-V0 = FunctionSpace(mesh, "DG", 0)           # Contact Pressure
-# Define Taylor-Hood Elements
+mesh = UnitCubeMesh(10, 5, 10)              # Unit Cube
+TT = TensorFunctionSpace(mesh,'DG',0)       # Tensor space for stress projection
+V0 = FunctionSpace(mesh, "DG", 0)           # Vector space for contact pressure
+# Taylor-Hood Elements for displacment (u) and chemical potential (mu)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
-    # Second order quadratic interpolation for displacement (u)
+    # Second order quadratic interpolation for u
 P1 = FunctionSpace(mesh, "Lagrange", 1)
-    # First order linear interpolation for chemical potential
-# Use ufl_element() to return the UFL element of the function spaces
+    # First order linear interpolation for mu
+# Use ufl_element() to return the UFL element for each function space
 P2elem = P2.ufl_element()
 P1elem = P1.ufl_element()
-# Define mixed function space specifying underying finite element
+# Define mixed function space specifying underlying finite element
 V = FunctionSpace(mesh, P2elem * P1elem)
 
 # Define functions in mixed function space V
@@ -104,12 +103,10 @@ du = TrialFunction(V)                       # Incremental trial function
 v = TestFunction(V)                         # Test Function
 w = Function(V)                             # Current solution for u and mu
 w0 = Function(V)                            # Previous solution for u and mu
-
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
-(v_u, v_mu) = split(v)
-(u, mu) = split(w)                          # Split current
-(u0, mu0) = split(w0)                       # Split previous
-    # Deep copy syntax: w.split(deepcopy=True)
+(v_u, v_mu) = split(v)                      # Split test function
+(u, mu) = split(w)                          # Split current solution
+(u0, mu0) = split(w0)                       # Split previous solution
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -124,6 +121,32 @@ right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 back  = CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 
+# Exterior facets
+
+# Use MeshFunction() to store the numbering of the subdomains. An argument
+# specifying the type of the MeshFunction must be given, where allowed types
+# are ‘int’, ‘size_t’, ‘double’ and ‘bool’. Second argument (optional) specifies
+# the mesh, while the third argument (optional) gives the topological dimension
+facets = MeshFunction("size_t", mesh, 2)
+# Only have one domain - mark all facets as part of subdomain 0
+facets.set_all(0)
+# Top exterior facets are marked as subdomain 0, using 'top' boundary
+top.mark(facets, 0)
+# Measure redefines ds
+ds = Measure('ds', subdomain_data=facets)
+
+# Example code
+'''
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+sub_domains.set_all(3)
+noslip = Noslip()
+noslip.mark(sub_domains, 0)
+inflow = Inflow()
+inflow.mark(sub_domains, 1)
+outflow = Outflow()
+outflow.mark(sub_domains, 2)
+'''
+
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
 u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, degree=1)
@@ -137,15 +160,6 @@ u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
-
-# Exterior facets
-facets = MeshFunction("size_t", mesh, 2)
-# All facets are initially set to zero on all surfaces of the cube
-facets.set_all(0)
-# Top exterior facets are marked as 1 using the top class defined above
-top.mark(facets, 1)
-# Measure redefines ds
-ds = Measure('ds', subdomain_data=facets)
 
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
@@ -206,7 +220,7 @@ pen = Constant(1e4)
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-F2 = pen*dot(v_u[1], ppos(u[1]-obstacle))*ds(1)
+F2 = pen*dot(v_u[1], ppos(u[1]-indenter))*ds(0)
 WF = F0 + F1 + F2
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -245,7 +259,7 @@ while (steps < tot_steps):
     # Project nominal stress
     PTensor = project(P(u, mu), TT)
     # Project gap
-    gap.assign(project(obstacle-u[2], P1))
+    gap.assign(project(indenter-u[2], P1))
     p.assign(-project(P(u, mu)[2, 2], V0))
 
     # Rename results for visualization in Paraview
@@ -271,11 +285,9 @@ while (steps < tot_steps):
     if steps < t_indent_steps:
         depth += 0.001
         R += 0.001
-    obstacle.depth = depth          # Update depth in expression class
-    obstacle.R = R                  # Update radius in expression class
+    indenter.depth = depth          # Update depth in expression class
+    indenter.R = R                  # Update radius in expression class
 
-    # Printouts
+    # Print to track code progress
     print(steps)
     print("Depth: " + str(depth))
-    #vertex_val_DT = DT.compute_vertex_values(mesh)
-    #print(vertex_val_DT)
