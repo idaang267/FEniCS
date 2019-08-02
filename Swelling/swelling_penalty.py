@@ -34,7 +34,7 @@ class InitialConditions(UserExpression):
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
-        values[3] = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+        values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
     def value_shape(self):
          return (4,)
 
@@ -57,7 +57,7 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Result_penalty_100.xdmf"   # Name of file
+name = "penalty.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -67,25 +67,24 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 100            # Total indentation steps
-tot_steps = 200                 # Total number of time steps
+t_indent_steps = 2              # Total indentation steps
+tot_steps = 15                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
-DT = Expression("dt", dt=dt, degree=0)
+DT = Expression ("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time for paraview file
-c_exp = 1.1                     # Controls time step increase (10% )
-
-# Define the indenter with a parabola
-R, depth= 0.005, 0.001          # Indenter radius and depth of indentation
-indenter = Expression("-d+(1/(2*R))*(pow(x[0]-0.5,2)+pow(x[2]-0.5,2))", \
-                        d=depth, R=R, degree=2)
+c_exp = 1.2                     # Controls time step increase (10% )
+# Penalty Parameter
+pen = Constant(1e4)
+    # Note: A large penalty parameter deteriorates the problem conditioning,
+    # solving time will drastically increase and the problem can fail
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(10, 5, 10)              # Unit Cube
-TT = TensorFunctionSpace(mesh,'DG',0)       # Tensor space for stress projection
-V0 = FunctionSpace(mesh, "DG", 0)           # Vector space for contact pressure
+mesh = UnitCubeMesh(10, 2, 10)               # Unit Cube
+TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
+V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
     # Second order quadratic interpolation for u
@@ -129,21 +128,19 @@ front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
 # are ‘int’, ‘size_t’, ‘double’ and ‘bool’. Second argument (optional) specifies
 # the mesh, while the third argument (optional) gives the topological dimension
 facets = MeshFunction("size_t", mesh, 2)
-# Only have one domain - mark all facets as part of subdomain 0
+# Mark all facets as part of subdomain 0
 facets.set_all(0)
-# Top exterior facets are marked as subdomain 0, using 'top' boundary
-top.mark(facets, 0)
+# Top exterior facets are marked as subdomain 1, using 'top' boundary
+top.mark(facets, 1)
 # Measure redefines ds
 ds = Measure('ds', subdomain_data=facets)
 
-
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
-u_bot = Expression(("(scale-1)*x[0]", "0.0*x[1]", "(scale-1)*x[2]"), scale=l0, degree=1)
+u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
     # Account for initial configuration: displacement in x & z direction not y
 
-# Roller boundary conditions on lateral surfaces
-# Define the normal direction to the lateral surface
+# Roller boundary conditions (define normal directions) on lateral surfaces
 u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
@@ -154,6 +151,7 @@ chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
 bc_u = DirichletBC(V.sub(0), u_bot, bot)
+
 # Roller displacement BCs on lateral faces
 # Access normal degree of freedom (Ex. V.sub(0).sub(0) gives x direction)
 bc_r_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
@@ -199,18 +197,23 @@ def Flux(u, mu):
     p1 = dot(inv(F), grad(mu))
     return -(J-1)*dot(p1,inv(F))
 
-# Defintion of The Mackauley bracket <x>_+
+# Definition of The Mackauley bracket <x>+
 def ppos(x):
     return (x+abs(x))/2.
 
-# A large penalty parameter deteriorates the problem conditioning so the
-# solving time will drastically increase and the problem can fail
-pen = Constant(1e4)
+# Define the indenter with a parabola
+R_c = 0.001                     # Initial indenter radius
+depth_c = 0.01                 # Initial indenter depth of indentation
+R = Expression("R", l0=l0, R=R_c, degree=1)
+depth = Expression("depth", l0=l0, depth=depth_c, degree=1)
+indenter = Expression("-d+(1/(2*R))*(pow(((l0-1)*x[0]),2)+pow(((l0-1)*x[2]),2))", \
+                        l0=l0, d=depth, R=R, degree=2)
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-F2 = pen*dot(v_u[1], ppos(u[1]-indenter))*ds(0)
+# Penalty method, access the y[1] direction and call subdomain 1 (top)
+F2 = pen*dot((l0-1)*v_u[1], ppos((l0-1)*u[1]-indenter))*ds(1)
 WF = F0 + F1 + F2
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -225,7 +228,6 @@ solver_problem.parameters.update(snes_solver_parameters)
 file_results = XDMFFile(name)
 
 # Define contact outputs (names for Paraview)
-gap = Function(P1, name="Gap")
 p = Function(V0, name="Contact pressure")
 
 # Solve for each value using the previous solution as a starting point
@@ -235,22 +237,19 @@ while (steps < tot_steps):
     if c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
-    chem_p.c_steps = c_steps        # Update steps in expression class
+    chem_p.c_steps = c_steps                # Update steps in expression class
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
     solver_problem.solve()
 
-    steps += 1                      # Update total steps
+    steps += 1                              # Update total steps
 
     # Note that this is now a deep copy not a shallow copy like split(w)
     # allowing us to write the results to file
     (u, mu) = w.split()
-    # Project nominal stress
-    PTensor = project(P(u, mu), TT)
-    # Project gap
-    gap.assign(project(indenter-u[2], P1))
-    p.assign(-project(P(u, mu)[2, 2], V0))
+    PTensor = project(P(u, mu), TT)         # Project nominal stress
+    p.assign(-project(P(u, mu)[1, 1], V0))  # Project pressure
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
@@ -263,7 +262,6 @@ while (steps < tot_steps):
     file_results.write(u,t)
     file_results.write(mu,t)
     file_results.write(PTensor,t)
-    file_results.write(gap, t)
     file_results.write(p, t)
 
     # Update time parameters
@@ -273,11 +271,13 @@ while (steps < tot_steps):
 
     # Update indenter geometry
     if steps < t_indent_steps:
-        depth += 0.001
-        R += 0.001
+        R_c += 0.001
+        depth_c += 0.01
+        R.R_c = R_c
+        depth.depth_c = depth_c
     indenter.depth = depth          # Update depth in expression class
     indenter.R = R                  # Update radius in expression class
 
     # Print to track code progress
     print(steps)
-    print("Depth: " + str(depth))
+    print("Depth: " + str(depth_c))
