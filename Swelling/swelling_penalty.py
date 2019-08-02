@@ -67,7 +67,7 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 2              # Total indentation steps
+t_indent_steps = 3              # Total indentation steps
 tot_steps = 15                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
@@ -75,14 +75,10 @@ dt = 10**(-5)                   # Starting time step
 DT = Expression ("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time for paraview file
 c_exp = 1.2                     # Controls time step increase (10% )
-# Penalty Parameter
-pen = Constant(1e4)
-    # Note: A large penalty parameter deteriorates the problem conditioning,
-    # solving time will drastically increase and the problem can fail
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(10, 2, 10)               # Unit Cube
+mesh = UnitCubeMesh(5, 2, 5)               # Unit Cube
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
@@ -144,6 +140,7 @@ u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
 u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
+# Temp set to 0
 chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
@@ -163,7 +160,7 @@ bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 bc_t = DirichletBC(V.sub(1), chem_p, top)
 
 # Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, bc_t]
+bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f]#, bc_t]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -202,18 +199,20 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-R_c = 0.001                     # Initial indenter radius
-depth_c = 0.01                 # Initial indenter depth of indentation
-R = Expression("R", l0=l0, R=R_c, degree=1)
-depth = Expression("depth", l0=l0, depth=depth_c, degree=1)
-indenter = Expression("-d+(1/(2*R))*(pow(((l0-1)*x[0]),2)+pow(((l0-1)*x[2]),2))", \
+R = 0.001                    # Initial indenter radius
+depth = 0.01                 # Initial indenter depth of indentation
+indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
                         l0=l0, d=depth, R=R, degree=2)
+
+# Note: A large penalty parameter deteriorates the problem conditioning,
+# solving time will drastically increase and the problem can fail
+pen = Constant(1e4)
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
 # Penalty method, access the y[1] direction and call subdomain 1 (top)
-F2 = pen*dot((l0-1)*v_u[1], ppos((l0-1)*u[1]-indenter))*ds(1)
+F2 = pen*dot(v_u[1], ppos(u[1]-indent))*ds(1)
 WF = F0 + F1 + F2
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -238,6 +237,13 @@ while (steps < tot_steps):
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps                # Update steps in expression class
+
+    # Update indenter geometry
+    if steps < t_indent_steps:
+        R += 0.001
+        depth += 0.01
+    indent.depth = depth      # Update depth in expression class
+    indent.R = R              # Update radius in expression class
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
@@ -269,15 +275,6 @@ while (steps < tot_steps):
     DT.dt = dt                    # Update time step for weak forms
     t += dt                       # Update total time for paraview file
 
-    # Update indenter geometry
-    if steps < t_indent_steps:
-        R_c += 0.001
-        depth_c += 0.01
-        R.R_c = R_c
-        depth.depth_c = depth_c
-    indenter.depth = depth          # Update depth in expression class
-    indenter.R = R                  # Update radius in expression class
-
     # Print to track code progress
     print(steps)
-    print("Depth: " + str(depth_c))
+    print("Depth: " + str(depth))
