@@ -1,6 +1,0 @@
-\BOOKMARK [1][-]{section.1}{Problem Definition}{}% 1
-\BOOKMARK [1][-]{section.2}{Weak Form}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{Contact Problem Formulation and Penalty Approach}{section.2}% 3
-\BOOKMARK [2][-]{subsection.2.2}{Bilinear Form and Linear Form}{section.2}% 4
-\BOOKMARK [1][-]{section.3}{FEniCS Implementation}{}% 5
-\BOOKMARK [2][-]{subsection.3.1}{Analytical Solution}{section.3}% 6
