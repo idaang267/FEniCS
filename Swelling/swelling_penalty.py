@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt         # Module matplotlib for plotting
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
                           "symmetric": True,
-                          "snes_solver": {"maximum_iterations": 75,
+                          "snes_solver": {"maximum_iterations": 100,
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
@@ -67,18 +67,20 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 3              # Total indentation steps
-tot_steps = 15                  # Total number of time steps
+t_indent_steps = 5              # Total indentation steps
+tot_steps = 10                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression ("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time for paraview file
 c_exp = 1.2                     # Controls time step increase (10% )
+# Define mesh
+N_plane = 16                               # Number of elements on top plane
+mesh = UnitCubeMesh(N_plane, 3, N_plane)   # Unit Cube
 
-# Define mesh and mixed function space
+# Define function spaces
 #------------------------------------------------------------------------------
-mesh = UnitCubeMesh(5, 2, 5)               # Unit Cube
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
@@ -141,7 +143,7 @@ u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
 # Temp set to 0
-chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+chem_max = 0#ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
@@ -199,9 +201,9 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-R = 0.001                    # Initial indenter radius
-depth = 0.01                 # Initial indenter depth of indentation
-indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
+R = 0.25                        # Indenter radius
+depth = 0.1                     # Initial indenter depth of indentation
+indent = Expression("-d+l0-1+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*(R+l0-1))", \
                         l0=l0, d=depth, R=R, degree=2)
 
 # Note: A large penalty parameter deteriorates the problem conditioning,
@@ -238,12 +240,10 @@ while (steps < tot_steps):
     c_steps += 0
     chem_p.c_steps = c_steps                # Update steps in expression class
 
-    # Update indenter geometry
-    if steps < t_indent_steps:
-        R += 0.001
-        depth += 0.01
-    indent.depth = depth      # Update depth in expression class
-    indent.R = R              # Update radius in expression class
+    # Update indenter indentation depth
+    if t_indent_steps > steps:
+        depth += 0.05
+        indent.depth = depth                # Update depth in expression class
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
@@ -277,4 +277,5 @@ while (steps < tot_steps):
 
     # Print to track code progress
     print(steps)
+    print("Radius: " + str(R))
     print("Depth: " + str(depth))
