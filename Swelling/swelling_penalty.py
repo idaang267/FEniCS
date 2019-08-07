@@ -33,8 +33,9 @@ class InitialConditions(UserExpression):
         values[0] = (l0-1)*x[0]
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
-        # Initial Chemical potential: mu0
-        values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+        # Initial Chemical potential: mu0 = 0
+        values[3] = 0
+        # mu0 = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
     def value_shape(self):
          return (4,)
 
@@ -57,27 +58,33 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "penalty.xdmf"   # Name of file
+name = "penalty.xdmf"           # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
-# Global stepping and chemical stepping parameters
+# Global stepping, chemical, and indenter stepping parameters
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 5              # Total indentation steps
-tot_steps = 10                  # Total number of time steps
+t_indent_steps = 40             # Total indentation steps
+tot_steps = 50                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
-# Expression for time step for updating in loop
+# NOTE: Time step must be in expression for updating the weak form
 DT = Expression ("dt", dt=dt, degree=0)
-t = 0.0                         # Initial time for paraview file
-c_exp = 1.2                     # Controls time step increase (10% )
+t = 0.0                        # Initial time for paraview file
+c_exp = 1.2                    # Controls time step increase (20%)
+# Indeter parameters
+R = 0.25                       # Indenter radius
+depth = 0.01                   # Initial indenter depth of indentation
+# Note: A large penalty parameter deteriorates the problem conditioning,
+# solving time will drastically increase and the problem can fail
+pen = Constant(1e4)
 # Define mesh
-N_plane = 16                               # Number of elements on top plane
-mesh = UnitCubeMesh(N_plane, 3, N_plane)   # Unit Cube
+N_plane = 14                               # Number of elements on top plane
+mesh = UnitCubeMesh(N_plane, 3, N_plane)   # Define unit cube mesh
 
 # Define function spaces
 #------------------------------------------------------------------------------
@@ -143,7 +150,7 @@ u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
 # Chemical potential BC ramped from 0 to mu0 in the IC class
 # Temp set to 0
-chem_max = 0#ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+chem_max = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
@@ -151,18 +158,16 @@ chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
 # Displacement in first subspace V.sub(0)
 bc_u = DirichletBC(V.sub(0), u_bot, bot)
 
-# Roller displacement BCs on lateral faces
-# Access normal degree of freedom (Ex. V.sub(0).sub(0) gives x direction)
+# Roller displacement BCs on lateral faces, access normal degree of freedom
+# V.sub(0).sub(0) gives x direction)
 bc_r_l = DirichletBC(V.sub(0).sub(0), u_lr, left)
 bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
+# V.sub(0).sub(2) gives z direction
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Chemical potential in second subspace V.sub(1) on top surface
-bc_t = DirichletBC(V.sub(1), chem_p, top)
-
 # Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f]#, bc_t]
+bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -201,14 +206,8 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-R = 0.25                        # Indenter radius
-depth = 0.1                     # Initial indenter depth of indentation
-indent = Expression("-d+l0-1+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*(R+l0-1))", \
-                        l0=l0, d=depth, R=R, degree=2)
-
-# Note: A large penalty parameter deteriorates the problem conditioning,
-# solving time will drastically increase and the problem can fail
-pen = Constant(1e4)
+indent = Expression("-depth+l0-1+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)", \
+                        l0=l0, depth=depth, R=R, degree=2)
 
 # Variational problem where we have two equations for the weak form
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
@@ -228,22 +227,21 @@ solver_problem.parameters.update(snes_solver_parameters)
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name)
 
-# Define contact outputs (names for Paraview)
+# Define contact pressure output (name for Paraview)
 p = Function(V0, name="Contact pressure")
 
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
 
-    # Update the chemical steps for ramping of chemical potential
+    # Print to track code progress
+    print("Steps: " + str(steps))
+    print("Depth: " + str(depth))
+
+    # Update chemical steps parameter to ramp chemical potential
     if c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps                # Update steps in expression class
-
-    # Update indenter indentation depth
-    if t_indent_steps > steps:
-        depth += 0.05
-        indent.depth = depth                # Update depth in expression class
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
@@ -251,11 +249,11 @@ while (steps < tot_steps):
 
     steps += 1                              # Update total steps
 
-    # Note that this is now a deep copy not a shallow copy like split(w)
-    # allowing us to write the results to file
+    # NOTE: split() is a deep copy not a shallow copy like split(w) allowing us
+    # to write the results to file
     (u, mu) = w.split()
-    PTensor = project(P(u, mu), TT)         # Project nominal stress
-    p.assign(-project(P(u, mu)[1, 1], V0))  # Project pressure
+    PTensor = project(P(u, mu), TT)                 # Project nominal stress
+    p.assign(project(pen*ppos(u[1]-indent), V0))    # Project pressure
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
@@ -275,7 +273,7 @@ while (steps < tot_steps):
     DT.dt = dt                    # Update time step for weak forms
     t += dt                       # Update total time for paraview file
 
-    # Print to track code progress
-    print(steps)
-    print("Radius: " + str(R))
-    print("Depth: " + str(depth))
+    # Update indenter idndentation depth parameter
+    if t_indent_steps > steps:
+        depth += 0.01
+    indent.depth = depth          # Update depth in expression class
