@@ -34,6 +34,7 @@ class InitialConditions(UserExpression):
 
 # Parameter Definition
 #------------------------------------------------------------------------------
+name = "he_penalty_1E4.xdmf"
 B  = Constant((0.0, 0.0, 0.0))               # Body force per unit volume
 # Elasticity parameters
 E, nu = 10.0, 0.3                            # Young's Modulus, Poisson's ratio
@@ -45,8 +46,8 @@ t_steps = 30                                 # Total number of time steps
 l0 = 1.4                                     # Initial Stretch (lambda_o)
 # Indenter parameters
 R = 0.25                                     # Indenter radius
-depth = 0.02                                 # Indenter depth
-pen = Constant(1e4)                          # Penalty parameter
+depth = 0.01                                 # Indenter depth
+pen = Constant(1e4)                          # Penalty parameter (1e4 usually)
 # Time parameters: Note, formulation isn't time dependent
 dt = 10**(-5)                                # Starting time step
 t = 0.0                                      # Initial time for paraview file
@@ -55,10 +56,10 @@ c_exp = 1.2                                  # Controls time step increase (20%)
 # Definition of mesh and function spaces
 #------------------------------------------------------------------------------
 # Create tetrahedral mesh of the domain and a function space on this mesh
-N_plane = 15                                # Number of elements on top plane
-start_point = Point(0,0,0)
-end_point = Point(1.4, 1.4, 1.4)
-mesh = BoxMesh(start_point, end_point, N_plane, 6, N_plane)
+N_plane = 8                                # Number of elements on top plane
+start_point = Point(0, 0, 0)                # Start point for mesh definition
+end_point = Point(1.4, 1.4, 1.4)            # End point for mesh definition
+mesh = BoxMesh(start_point, end_point, N_plane, 3, N_plane)
 # Define function spaces
 V0 = FunctionSpace(mesh, "DG", 0)           # Vector space for contact pressure
 V = VectorFunctionSpace(mesh, "CG", 2)      # Function space for displacement
@@ -151,8 +152,7 @@ indent = Expression("-depth+(pow((x[0]-l0/2),2)+pow((x[2]-l0/2),2))/(2*R)", \
 psi = (mu/2)*(Ic - 3 - 2*ln(J)) + (lmbda/2)*(ln(J))**2
 
 # Total potential energy
-#Pi = psi*dx - dot(B, u)*dx + pen*dot(u[1], ppos(u[1]-indent))*ds(1)
-Pi = psi*dx - dot(B, u)*dx + pen*ppos(u[1]-indent)*ds(1)
+Pi = psi*dx - dot(B, u)*dx + pen*dot(u[1], ppos(u[1]-indent))*ds(1)
 
 # Directional derivatives are now computed of Pi and L
 # Compute first variation of Pi
@@ -166,7 +166,7 @@ solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Solution 'u' is saved to a file in xdmf format,
-file_results = XDMFFile("hyperelastic_penalty.xdmf");
+file_results = XDMFFile(name);
 
 # Define contact pressure output (name for Paraview)
 p = Function(V0, name="Contact pressure")
@@ -183,7 +183,7 @@ while (steps < t_steps):
     dt = dt*c_exp;                # Update time step with exponent value
     t += dt                       # Update total time for paraview file
     # Update indenter indentation depth parameter
-    depth += 0.02
+    depth += 0.01
     indent.depth = depth          # Update depth in expression class
 
     # Project pressure
