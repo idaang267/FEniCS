@@ -35,8 +35,9 @@ class InitialConditions(UserExpression):
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
         values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
-        # Initial lmbda
-        values[4] = 0
+        # Initial lagrange multiplier, lambda
+        if x[1] <= 1.0 - tol:
+            values[4] = 0
     def value_shape(self):
          return (5,)
 
@@ -69,11 +70,11 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 0                   # Total chemical steps
-t_indent_steps = 4              # Total indentation steps
-tot_steps = 5                   # Total number of time steps
+t_indent_steps = 10             # Total indentation steps
+tot_steps = 10                  # Total number of time steps
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
-depth = 0.01                    # Initial indenter depth of indentation
+depth = 0.00                    # Initial indenter depth of indentation
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
@@ -103,6 +104,7 @@ w = Function(V)                             # Current solution for u and mu
 w0 = Function(V)                            # Previous solution for u and mu
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
 (v_u, v_mu, v_l) = split(v)                 # Split test function
+# Lambda is a reserved keyword in FEniCS
 (u, mu, lmbda) = split(w)                   # Split current solution
 (u0, mu0, lmbda0) = split(w0)               # Split previous solution
 
@@ -118,19 +120,29 @@ left  = CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
 right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 back  = CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
+# Everything but the top surface
+tol = 1E-14
+class bulkWOsurf(SubDomain):
+    # on_bounadry will be false if you use pointwise method
+    def inside(self, x):
+        return x[1] <= 1.0 - tol
 
 # Exterior facets
 #------------------------------------------------------------------------------
-# An argument specifying the type of MeshFunction must be given. Second argument
-# (optional) specifies the mesh, while the third argument (optional) gives the
-# topological dimension
-facets = MeshFunction("size_t", mesh, 2)
+# An argument specifying the type of MeshFunction must be given. The second
+# argument specifies the mesh, while the third argument gives the topological
+# dimension (2 in this case)
+facets = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
 # Mark all facets as part of subdomain 0
 facets.set_all(0)
 # Top exterior facets are marked as subdomain 1, using 'top' boundary
 top.mark(facets, 1)
 # Measure redefines ds
 ds = Measure('ds', subdomain_data=facets)
+
+#bulkWOsurf = bulkWOsurf()
+#bulkWOsurf.mark(facets, 2)
+#File("facets2D+.pvd") << facets
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
@@ -140,11 +152,6 @@ u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
 # Roller boundary conditions (define normal directions) on lateral surfaces
 u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
 u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
-# Chemical potential BC ramped from 0 to mu0 in the IC class
-# Temp set to 0
-chem_max = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
-chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
-                    chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
 # The Dirichlet BCs are specified in respective subspaces
 # Displacement in first subspace V.sub(0)
@@ -157,8 +164,18 @@ bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
+# Test: Set lambda to 0 on borders > How to set in bulk?
+lmbda_val = 0
+t1 = DirichletBC(V.sub(2), lmbda_val, bot)
+t2 = DirichletBC(V.sub(2), lmbda_val, left)
+t3 = DirichletBC(V.sub(2), lmbda_val, right)
+t4 = DirichletBC(V.sub(2), lmbda_val, back)
+t5 = DirichletBC(V.sub(2), lmbda_val, front)
+
+t6 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf(), method="pointwise")
+
 # Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f]
+bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t6]#, t1, t2, t3, t4, t5]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -201,8 +218,8 @@ indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
                         l0=l0, d=depth, R=R, degree=2)
 
 # Variational problem where we have two equations for the weak form
-# Note: Access the y[1] direction and call subdomain 1 (top)
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1)
+F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
+    + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1)
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
 F2 = dot(v_l, ppos(u[1]-indent))*ds(1)
 WF = F0 + F1 + F2
@@ -227,21 +244,25 @@ while (steps < tot_steps):
     # Print to track code progress
     print("Steps: " + str(steps))
     print("Depth: " + str(depth))
-
-    # Update the chemical steps for ramping of chemical potential
-    if c_steps < t_c_steps:
-        c_steps += 1
-    c_steps += 0
-    chem_p.c_steps = c_steps                # Update steps in expression class
+    #print("Time: " + str(t))
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
     solver_problem.solve()
 
-    steps += 1                              # Update total steps
+    # Update total steps
+    steps += 1
+    # Update time parameters
+    dt = dt*c_exp;                # Update time step with exponent value
+    DT.dt = dt                    # Update time step for weak forms
+    t += dt                       # Update total time for paraview file
+    # Update indenter idndentation depth parameter
+    if t_indent_steps > steps:
+        depth += 0.01
+        indent.depth = depth      # Update depth in expression class
 
-    # Note that this is now a deep copy not a shallow copy like split(w)
-    # allowing us to write the results to file
+    # This is a deep copy not a shallow copy like split(w) allowing us to write
+    # the results to file
     (u, mu, lmbda) = w.split()
     PTensor = project(P(u, mu), TT)         # Project nominal stress
     p.assign(-project(P(u, mu)[1, 1], V0))  # Project pressure
@@ -258,13 +279,3 @@ while (steps < tot_steps):
     file_results.write(mu, t)
     file_results.write(PTensor, t)
     file_results.write(p, t)
-
-    # Update time parameters
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
-
-    # Update indenter idndentation depth parameter
-    if t_indent_steps > steps:
-        depth += 0.01
-    indent.depth = depth          # Update depth in expression class
