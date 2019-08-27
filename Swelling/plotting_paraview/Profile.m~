@@ -3,15 +3,15 @@ clear all
 close all
 
 % Path to data 
-path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Pen/";
+path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Pen_Comp/";
 
 % Initiate counter to index each datapoint (indentation and pressure profile)
 count = 0;
 % Name samples according to the time step/sample 
-timeSample = [40];
+timeSample = [10];
 %sub = ["1E15"];
 % SampleRate 
-sampleRate = 24;
+sampleRate = 12;
 % Another counter
 total = 1;
 % For each time sample 
@@ -93,14 +93,14 @@ clear all
 close all
 
 % Path to data 
-path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Pen/";
+path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Data/";
 
 % Initiate counter to index each datapoint (indentation and pressure profile)
 count = 0;
-timestep = [0, 10, 20, 30, 40]; 
+timestep = [0, 10, 20, 30, 32]; 
 %sub = ["1", "1E4", "1E15"];
 % SampleRate 
-sampleRate = 24;
+sampleRate = 45;
 
 for m = 1:length(timestep) 
     % Name file consistently 

@@ -1,7 +1,9 @@
 # Swelling of Unit Cube
 #------------------------------------------------------------------------------
-# Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
-# coupled solvent diffusion and large deformation of hydrogels"
+# Based on the formulation in 2015 paper "Effect of solvent diffusion on
+# crack-tip fields and driving force for fracture of hydrogels" which simplifies
+# the free energy formulation in a prior 2015 paper, "A nonlinear, transient FE
+# method for coupled solvent diffusion and large deformation of hydrogels"
 
 from dolfin import *                    # Dolfin module
 import matplotlib.pyplot as plt         # Module matplotlib for plotting
@@ -56,7 +58,7 @@ class Equation(NonlinearProblem):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "mesh10_chi0.4_dt10-3_exp1.1_200.xdmf"   # Name of file
+name = "mesh.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.4                       # Flory Parameter
@@ -235,5 +237,3 @@ while (steps < tot_steps):
     # Printouts
     print(steps)
     print(dt)
-    #vertex_val_DT = DT.compute_vertex_values(mesh)
-    #print(vertex_val_DT)
