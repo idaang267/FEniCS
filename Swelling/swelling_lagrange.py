@@ -1,10 +1,13 @@
 # Swelling of Unit Cube
 #------------------------------------------------------------------------------
-# Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
-# coupled solvent diffusion and large deformation of hydrogels"
+# Based on the formualation in 2015 paper "Effect of solvent diffusion on
+# crack-tip fields and driving force for fracture of hydrogels" which simplifies
+# the free energy formulation in a prior 2015 paper, "A nonlinear, transient FE
+# method for coupled solvent diffusion and large deformation of hydrogels"
 
-from dolfin import *                    # Dolfin module
-import matplotlib.pyplot as plt         # Module matplotlib for plotting
+# Import all packages in Dolfin module
+from dolfin import *
+from multiphenics import *
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -36,11 +39,7 @@ class InitialConditions(UserExpression):
         # Initial Chemical potential: mu0
         values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
         # Initial lagrange multiplier, lambda
-        #values[4] = 0
-        if x[1] <= 1.0 - tol:
-            values[4] = 0
-        else:
-            values[4] = 1E1
+        values[4] = 0
     def value_shape(self):
          return (5,)
 
@@ -104,7 +103,8 @@ P2 = VectorElement("CG", mesh.ufl_cell(), 2)
 P1 = FiniteElement("CG", mesh.ufl_cell(), 1)
     # First order linear interpolation for mu and lagrange multiplier
 # Define mixed function space specifying underlying finite element
-V = FunctionSpace(mesh, MixedElement([P2, P1, P1]))
+V_element = MixedElement(P2, P1, P1)
+V = FunctionSpace(mesh, V_element)
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
@@ -148,8 +148,8 @@ ds = Measure('ds', subdomain_data=facets)
 bulkWOsurf = bulkWOsurf()
 # Mark as part of subdomain 2
 bulkWOsurf.mark(facets, 2)
-# Visualization
-File("facets2D.pvd") << facets
+# Visualization of marked facets
+File("facets.pvd") << facets
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
@@ -171,9 +171,9 @@ bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Test: Set lambda to 0 on borders > How to set in bulk?
+# Test: Set lambda to 0 in domain
 lmbda_val = Constant(0.0)
-t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, "pointwise")
+t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, method="pointwise")
 
 # Combined boundary conditions
 bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t1]
@@ -185,6 +185,11 @@ bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t1]
 init = InitialConditions(degree=1)          # Expression requires degree def.
 w.interpolate(init)                         # Interpolate current solution
 w0.interpolate(init)                        # Interpolate previous solution
+
+# # Visualization of initial condition for lagrange multiplier
+# ini_con = XDMFFile("InitCond.xdmf")
+# # Parameters will share the same mesh
+# ini_con.write(w0.split()[2], 0)
 
 # Kinematics
 #------------------------------------------------------------------------------
@@ -222,7 +227,7 @@ indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
 F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
     + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1)
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-F2 = dot(v_l, ppos(u[1]-indent))*ds(1)
+F2 = v_l*ppos(u[1] - indent)*ds(1) #dot(v_l, ppos(u[1]-indent))*ds(1)
 WF = F0 + F1 + F2
 
 # Compute directional derivative about w in the direction of du (Jacobian)
@@ -247,7 +252,7 @@ while (steps < tot_steps):
     print("Depth: " + str(depth))
     #print("Time: " + str(t))
 
-    # Update fields containing u and mu and solve using the setup parameters
+    # Update fields containing u, mu, and lmbda and solve
     w0.vector()[:] = w.vector()
     solver_problem.solve()
 
@@ -266,7 +271,6 @@ while (steps < tot_steps):
     # the results to file
     (u, mu, lmbda) = w.split()
     PTensor = project(P(u, mu), TT)         # Project nominal stress
-    p.assign(-project(P(u, mu)[1, 1], V0))  # Project pressure
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
@@ -279,4 +283,3 @@ while (steps < tot_steps):
     file_results.write(u, t)
     file_results.write(mu, t)
     file_results.write(PTensor, t)
-    file_results.write(p, t)
