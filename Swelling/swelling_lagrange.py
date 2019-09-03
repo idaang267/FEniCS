@@ -36,8 +36,11 @@ class InitialConditions(UserExpression):
         # Initial Chemical potential: mu0
         values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
         # Initial lagrange multiplier, lambda
+        #values[4] = 0
         if x[1] <= 1.0 - tol:
             values[4] = 0
+        else:
+            values[4] = 1E1
     def value_shape(self):
          return (5,)
 
@@ -58,9 +61,16 @@ class Equation(NonlinearProblem):
         for bc in self.bcs:
             bc.apply(A)
 
+# Class for marking everything on the domain except the top surface
+class bulkWOsurf(SubDomain):
+    # on_boundary will be false if you use pointwise method
+    def inside(self, x, on_boundary):
+        return x[1] <= 1.0 - tol
+
 # Model parameters
 #------------------------------------------------------------------------------
-name = "penalty.xdmf"   # Name of file
+name = "penalty.xdmf"           # Name of file
+tol = 1E-14                     # Tolerance for coordinate comparisons
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -70,8 +80,8 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 0                   # Total chemical steps
-t_indent_steps = 10             # Total indentation steps
-tot_steps = 10                  # Total number of time steps
+t_indent_steps = 5              # Total indentation steps
+tot_steps = 5                   # Total number of time steps
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
 depth = 0.00                    # Initial indenter depth of indentation
@@ -80,7 +90,7 @@ dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression ("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time for paraview file
-c_exp = 1.2                     # Controls time step increase (20% )
+c_exp = 1.2                     # Controls time step increase (20%)
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
@@ -120,18 +130,12 @@ left  = CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
 right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
 back  = CompiledSubDomain("near(x[2], side) && on_boundary", side = 0.0)
 front = CompiledSubDomain("near(x[2], side) && on_boundary", side = 1.0)
-# Everything but the top surface
-tol = 1E-14
-class bulkWOsurf(SubDomain):
-    # on_bounadry will be false if you use pointwise method
-    def inside(self, x):
-        return x[1] <= 1.0 - tol
 
-# Exterior facets
+# Create mesh function over cell facets
 #------------------------------------------------------------------------------
-# An argument specifying the type of MeshFunction must be given. The second
-# argument specifies the mesh, while the third argument gives the topological
-# dimension (2 in this case)
+# An argument specifying the type of MeshFunction must be given (size_t). The
+# second argument specifies the mesh, while the third argument gives the
+# topological dimension (2 in this case)
 facets = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
 # Mark all facets as part of subdomain 0
 facets.set_all(0)
@@ -140,9 +144,12 @@ top.mark(facets, 1)
 # Measure redefines ds
 ds = Measure('ds', subdomain_data=facets)
 
-#bulkWOsurf = bulkWOsurf()
-#bulkWOsurf.mark(facets, 2)
-#File("facets2D+.pvd") << facets
+# Call class defining the whole domain except the top surface
+bulkWOsurf = bulkWOsurf()
+# Mark as part of subdomain 2
+bulkWOsurf.mark(facets, 2)
+# Visualization
+File("facets2D.pvd") << facets
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
@@ -165,17 +172,11 @@ bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
 # Test: Set lambda to 0 on borders > How to set in bulk?
-lmbda_val = 0
-t1 = DirichletBC(V.sub(2), lmbda_val, bot)
-t2 = DirichletBC(V.sub(2), lmbda_val, left)
-t3 = DirichletBC(V.sub(2), lmbda_val, right)
-t4 = DirichletBC(V.sub(2), lmbda_val, back)
-t5 = DirichletBC(V.sub(2), lmbda_val, front)
-
-t6 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf(), method="pointwise")
+lmbda_val = Constant(0.0)
+t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, "pointwise")
 
 # Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t6]#, t1, t2, t3, t4, t5]
+bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t1]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
