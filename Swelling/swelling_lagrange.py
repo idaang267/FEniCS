@@ -98,25 +98,26 @@ mesh = UnitCubeMesh(N_plane, 5, N_plane)   # Unit Cube
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
-P2 = VectorElement("CG", mesh.ufl_cell(), 2)
-    # Second order quadratic interpolation for u
-P1 = FiniteElement("CG", mesh.ufl_cell(), 1)
-    # First order linear interpolation for mu and lagrange multiplier
+#P2 = VectorElement("CG", mesh.ufl_cell(), 2)
+#P1 = FiniteElement("CG", mesh.ufl_cell(), 1)
+P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
+P1 = FunctionSpace(mesh, "Lagrange", 1)
 # Define mixed function space specifying underlying finite element
-V_element = MixedElement(P2, P1, P1)
-V = FunctionSpace(mesh, V_element)
+#V_element = BlockElement(P2, P1, P1)
+#V = BlockFunctionSpace(mesh, V_element)
+V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, bulkWOsurf()])
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
-du = TrialFunction(V)                       # Incremental trial function
-v = TestFunction(V)                         # Test Function
-w = Function(V)                             # Current solution for u and mu
-w0 = Function(V)                            # Previous solution for u and mu
+du = BlockTrialFunction(V)                       # Incremental trial function
+v = BlockTestFunction(V)                         # Test Function
+w = BlockFunction(V)                             # Current solution for u and mu
+w0 = BlockFunction(V)                            # Previous solution for u and mu
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
-(v_u, v_mu, v_l) = split(v)                 # Split test function
+(v_u, v_mu, v_l) = block_split(v)                 # Split test function
 # Lambda is a reserved keyword in FEniCS
-(u, mu, lmbda) = split(w)                   # Split current solution
-(u0, mu0, lmbda0) = split(w0)               # Split previous solution
+(u, mu, lmbda) = block_split(w)                   # Split current solution
+(u0, mu0, lmbda0) = block_split(w0)               # Split previous solution
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -176,20 +177,15 @@ lmbda_val = Constant(0.0)
 t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, method="pointwise")
 
 # Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t1]
+bc = BlockDirichletBC([[bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f], [], [t1]])
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
 # Initial conditions are created by using the class defined and then
 # interpolating into a finite element space
 init = InitialConditions(degree=1)          # Expression requires degree def.
-w.interpolate(init)                         # Interpolate current solution
-w0.interpolate(init)                        # Interpolate previous solution
-
-# # Visualization of initial condition for lagrange multiplier
-# ini_con = XDMFFile("InitCond.xdmf")
-# # Parameters will share the same mesh
-# ini_con.write(w0.split()[2], 0)
+w.BlockInterpolate(init)                        # Interpolate current solution
+w0.interpolate(init)                       # Interpolate previous solution
 
 # Kinematics
 #------------------------------------------------------------------------------
@@ -223,20 +219,19 @@ def ppos(x):
 indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
                         l0=l0, d=depth, R=R, degree=2)
 
-# Variational problem where we have two equations for the weak form
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
-    + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1)
-F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-F2 = v_l*ppos(u[1] - indent)*ds(1) #dot(v_l, ppos(u[1]-indent))*ds(1)
-WF = F0 + F1 + F2
+# Variational problem
+WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
+    + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1),
+    (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx),
+    v_l*ppos(u[1] - indent)*ds(1)]
 
 # Compute directional derivative about w in the direction of du (Jacobian)
-Jacobian = derivative(WF, w, du)
+Jacobian = block_derivative(WF, w, du)
 
 # SNES solver > Setup Non-linear variational problem
-problem = NonlinearVariationalProblem(WF, w, bc, J=Jacobian)
-solver_problem = NonlinearVariationalSolver(problem)
-solver_problem.parameters.update(snes_solver_parameters)
+problem = BlockNonlinearProblem(WF, w, bc, Jacobian)
+solver_problem = BlockPETScSNESSolver(problem)
+solver_problem.parameters.update(snes_solver_parameters["snes_solver"])
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name)
@@ -253,7 +248,7 @@ while (steps < tot_steps):
     #print("Time: " + str(t))
 
     # Update fields containing u, mu, and lmbda and solve
-    w0.vector()[:] = w.vector()
+    w0.block_vector()[:] = w.block_vector()
     solver_problem.solve()
 
     # Update total steps
@@ -269,7 +264,7 @@ while (steps < tot_steps):
 
     # This is a deep copy not a shallow copy like split(w) allowing us to write
     # the results to file
-    (u, mu, lmbda) = w.split()
+    (u, mu, lmbda) = w.block_split()
     PTensor = project(P(u, mu), TT)         # Project nominal stress
 
     # Rename results for visualization in Paraview
