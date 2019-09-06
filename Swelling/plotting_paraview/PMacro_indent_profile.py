@@ -1,28 +1,29 @@
-# trace generated using paraview version 5.6.0
+# Macro generated to obtain the indentation profile. All user parameters can be
+# edited below
 #
-# To ensure correct image size when batch processing, please search
-# for and uncomment the line `# renderView*.ViewSize = [*,*]`
+# trace generated using paraview version 5.6.0
 
-#### import the simple module from the paraview
-from paraview.simple import *
-import numpy as np
+# Import modules
+from paraview.simple import * 	# import the simple module from the paraview
+import numpy as np				# Import numpy for linspace
 
-#### USER PARAMETERS ####
+# User Parameters
 l0 = 1.4
-TimeStep = 20
-SampleRate = 15
-FolderName = "Data"
+TimeStep = 40
+SampleRate = 24
+FolderName = "HE_Pen"
+SubFolderName = "1"
 
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
 
-# get active source.
+# Get active source
 penaltyxdmf = GetActiveSource()
 
-# set active source
+# Set active source
 SetActiveSource(penaltyxdmf)
 
-# create a new 'Warp By Vector'
+# Create a new 'Warp By Vector'
 warpByVector1 = WarpByVector(Input=penaltyxdmf)
 warpByVector1.Vectors = ['POINTS', 'Displacement']
 
@@ -47,19 +48,14 @@ for val in sample:
 
 	# Show data in view
 	plotOverLineDisplay = Show(PlotOverLineVal, renderView1)
-
 	# Create a new 'Line Chart View'
 	lineChartView = CreateView('XYChartView')
-
 	# get layout
 	layout = GetLayout()
-
 	# place view in the layout
 	layout.AssignView(2, lineChartView)
-
 	# show data in view
 	plotOverLine1Display_1 = Show(PlotOverLineVal, lineChartView)
-
 	# update the view to ensure updated data information
 	lineChartView.Update()
 
@@ -69,8 +65,10 @@ for val in sample:
 	SetActiveSource(plotOverLine)
 
 	# get active source.
-	SaveData("./" + FolderName + "/" + str(TimeStep) + "_" + str(count) + ".csv", proxy=plotOverLine)
-	#np.savetxt("Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/" + str(count) + ".txt", PlotOverLineVal)
+	# Linux
+#	SaveData("./" + FolderName + "/" + str(TimeStep) + "_" + str(count) + ".csv", proxy=plotOverLine)
+	# Mac
+	SaveData("Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/" + FolderName + "/" + str(TimeStep) + "_" + str(count) + ".csv", proxy=plotOverLine)
 
 	# Close in Pipeline Browser
 	Delete(plotOverLine)
