@@ -20,34 +20,23 @@ parameters["form_compiler"]["optimize"] = True
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["quadrature_degree"] = 4
 
-# Defining Classes
-#------------------------------------------------------------------------------
-# Initial condition (IC) class for displacement and chemical potential
-class InitialConditions(UserExpression):
-    def eval(self, values, x):
-        # Displacement u0 = (values[0], values[1], values[2])
-        values[0] = 0.0*x[0]
-        values[1] = 0.0*x[1]
-        values[2] = 0.0*x[2]
-    def value_shape(self):
-         return (3,)
-
 # Parameter Definition
 #------------------------------------------------------------------------------
-name = "he_penalty_1E4.xdmf"
+name = "Test.xdmf"
 B  = Constant((0.0, 0.0, 0.0))               # Body force per unit volume
 # Elasticity parameters
 E, nu = 10.0, 0.3                            # Young's Modulus, Poisson's ratio
 mu = Constant(E/(2*(1 + nu)))                # Lame parameter
 lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu))) # Lame parameter
 # Total steps to control amount of indentation
-steps = 0                                    # Total steps (updated within loop)
-t_steps = 30                                 # Total number of time steps
+steps = 0
+# Total steps (updated within loop)
+t_steps = 50                                # Total number of time steps
 l0 = 1.4                                     # Initial Stretch (lambda_o)
 # Indenter parameters
 R = 0.25                                     # Indenter radius
 depth = 0.01                                 # Indenter depth
-pen = Constant(1e4)                          # Penalty parameter (1e4 usually)
+pen = Constant(1E4)                            # Penalty parameter (1e4 usually)
 # Time parameters: Note, formulation isn't time dependent
 dt = 10**(-5)                                # Starting time step
 t = 0.0                                      # Initial time for paraview file
@@ -56,13 +45,13 @@ c_exp = 1.2                                  # Controls time step increase (20%)
 # Definition of mesh and function spaces
 #------------------------------------------------------------------------------
 # Create tetrahedral mesh of the domain and a function space on this mesh
-N_plane = 8                                # Number of elements on top plane
-start_point = Point(0, 0, 0)                # Start point for mesh definition
-end_point = Point(1.4, 1.4, 1.4)            # End point for mesh definition
-mesh = BoxMesh(start_point, end_point, N_plane, 3, N_plane)
+N_plane = 24                                 # Number of elements on top plane
+start_point = Point(0, 0, 0)
+end_point = Point(1.4, 1.4, 1.4)
+mesh = BoxMesh(start_point, end_point, N_plane, 4, N_plane)
 # Define function spaces
-V0 = FunctionSpace(mesh, "DG", 0)           # Vector space for contact pressure
-V = VectorFunctionSpace(mesh, "CG", 2)      # Function space for displacement
+V0 = FunctionSpace(mesh, "DG", 0)            # Vector space for contact pressure
+V = VectorFunctionSpace(mesh, "CG", 2)       # Function space for displacement
 
 # Define functions in finite element space V
 #------------------------------------------------------------------------------
@@ -116,14 +105,6 @@ bc_r_f = DirichletBC(V.sub(2), u_bf, front)
 # Combined boundary conditions
 bcs = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f]
 
-# Initial Conditions (IC)
-#------------------------------------------------------------------------------
-# Initial conditions are created by using the class defined and then
-# interpolating into a finite element space
-init = InitialConditions(degree=1)          # Expression requires degree def.
-u.interpolate(init)                         # Interpolate current solution
-u0.interpolate(init)                        # Interpolate previous solution
-
 # Kinematics
 #------------------------------------------------------------------------------
 d = len(u)          # Length of displacement vector
@@ -173,6 +154,11 @@ p = Function(V0, name="Contact pressure")
 
 while (steps < t_steps):
 
+    # Print to track code progress
+    print("Steps: " + str(steps))
+    print("Depth: " + str(depth))
+    print("Time: " + str(t))
+
     # Solve for updated indentation
     u0.vector()[:] = u.vector()
     solver_problem.solve()
@@ -195,8 +181,3 @@ while (steps < t_steps):
     # Write displacement and contact pressure to .xdmf results file
     file_results.write(u, t)
     file_results.write(p, t)
-
-    # Print to track code progress
-    print("Steps: " + str(steps))
-    print("Depth: " + str(depth))
-    print("Time: " + str(t))

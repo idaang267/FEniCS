@@ -1,10 +1,13 @@
 # Swelling of Unit Cube
 #------------------------------------------------------------------------------
-# Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
-# coupled solvent diffusion and large deformation of hydrogels"
+# Based on the formualation in 2015 paper "Effect of solvent diffusion on
+# crack-tip fields and driving force for fracture of hydrogels" which simplifies
+# the free energy formulation in a prior 2015 paper, "A nonlinear, transient FE
+# method for coupled solvent diffusion and large deformation of hydrogels"
 
-from dolfin import *                    # Dolfin module
-import matplotlib.pyplot as plt         # Module matplotlib for plotting
+# Import all packages in Dolfin module
+from dolfin import *
+from multiphenics import *
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -26,65 +29,31 @@ parameters["form_compiler"]["quadrature_degree"] = 4
 
 # Defining Classes
 #------------------------------------------------------------------------------
-# Initial condition (IC) class for displacement and chemical potential
-class InitialConditions(UserExpression):
-    def eval(self, values, x):
-        # Displacement u0 = (values[0], values[1], values[2])
-        values[0] = (l0-1)*x[0]
-        values[1] = (l0-1)*x[1]
-        values[2] = (l0-1)*x[2]
-        # Initial Chemical potential: mu0
-        values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
-        # Initial lagrange multiplier, lambda
-        #values[4] = 0
-        if x[1] <= 1.0 - tol:
-            values[4] = 0
-        else:
-            values[4] = 1E1
-    def value_shape(self):
-         return (5,)
-
-# Class for interfacing with the Newton solver
-class Equation(NonlinearProblem):
-    # Bilinear and linear forms are used to compute the residual and Jacobian
-    def __init__(self, a, L, bcs):
-        NonlinearProblem.__init__(self)
-        self.L = L              # Linear form
-        self.a = a              # Bilinear form
-        self.bcs = bcs          # Boundary conditions
-    def F(self, b, x):          # Computes the residual vector "b"
-        assemble(self.L, tensor=b)
-        for bc in self.bcs:
-            bc.apply(b)
-    def J(self, A, x):          # Computes the Jacobian matrix "A"
-        assemble(self.a, tensor=A)
-        for bc in self.bcs:
-            bc.apply(A)
-
 # Class for marking everything on the domain except the top surface
 class bulkWOsurf(SubDomain):
     # on_boundary will be false if you use pointwise method
     def inside(self, x, on_boundary):
         return x[1] <= 1.0 - tol
 
+class topTest(SubDomain):
+    def inside(self, x, on_boundary):
+        return (near(x[1], 1.4) and on_boundary)
+
 # Model parameters
 #------------------------------------------------------------------------------
-name = "penalty.xdmf"           # Name of file
+name = "LagrangeSwelling.xdmf"           # Name of file
 tol = 1E-14                     # Tolerance for coordinate comparisons
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
-# Global stepping and chemical stepping parameters
+# Stepping parameters
 steps = 0                       # Steps (updated within loop)
-c_steps = 0                     # Chemical step counter (updated within loop)
-t_c_steps = 0                   # Total chemical steps
-t_indent_steps = 5              # Total indentation steps
-tot_steps = 5                   # Total number of time steps
+tot_steps = 50                   # Total number of time steps for indentation
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
-depth = 0.00                    # Initial indenter depth of indentation
+depth = 0.01                    # Initial indenter depth of indentation
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
@@ -94,29 +63,29 @@ c_exp = 1.2                     # Controls time step increase (20%)
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-N_plane = 10                               # Number of elements on top plane
+N_plane = 15                               # Number of elements on top plane
 mesh = UnitCubeMesh(N_plane, 5, N_plane)   # Unit Cube
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
-P2 = VectorElement("CG", mesh.ufl_cell(), 2)
-    # Second order quadratic interpolation for u
-P1 = FiniteElement("CG", mesh.ufl_cell(), 1)
-    # First order linear interpolation for mu and lagrange multiplier
+P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
+P1 = FunctionSpace(mesh, "Lagrange", 1)
 # Define mixed function space specifying underlying finite element
-V = FunctionSpace(mesh, MixedElement([P2, P1, P1]))
+# Define lambda on only the top surface and it should remain 0 for the region
+lambdaRes = MeshRestriction(mesh, topTest())
+V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, lambdaRes])
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
-du = TrialFunction(V)                       # Incremental trial function
-v = TestFunction(V)                         # Test Function
-w = Function(V)                             # Current solution for u and mu
-w0 = Function(V)                            # Previous solution for u and mu
+du = BlockTrialFunction(V)                       # Incremental trial function
+v = BlockTestFunction(V)                         # Test Function
+w = BlockFunction(V)                             # Current solution for u and mu
+w0 = BlockFunction(V)                            # Previous solution for u and mu
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
-(v_u, v_mu, v_l) = split(v)                 # Split test function
+(v_u, v_mu, v_l) = block_split(v)                 # Split test function
 # Lambda is a reserved keyword in FEniCS
-(u, mu, lmbda) = split(w)                   # Split current solution
-(u0, mu0, lmbda0) = split(w0)               # Split previous solution
+(u, mu, lmbda) = block_split(w)                   # Split current solution
+(u0, mu0, lmbda0) = block_split(w0)               # Split previous solution
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -148,8 +117,8 @@ ds = Measure('ds', subdomain_data=facets)
 bulkWOsurf = bulkWOsurf()
 # Mark as part of subdomain 2
 bulkWOsurf.mark(facets, 2)
-# Visualization
-File("facets2D.pvd") << facets
+# Visualization of marked facets
+File("facets.pvd") << facets
 
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
@@ -171,20 +140,36 @@ bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Test: Set lambda to 0 on borders > How to set in bulk?
-lmbda_val = Constant(0.0)
-t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, "pointwise")
-
-# Combined boundary conditions
-bc = [bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f, t1]
+# Combined boundary conditions for each subspace
+bc = BlockDirichletBC([[bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f], [], []])
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
-# Initial conditions are created by using the class defined and then
-# interpolating into a finite element space
-init = InitialConditions(degree=1)          # Expression requires degree def.
-w.interpolate(init)                         # Interpolate current solution
-w0.interpolate(init)                        # Interpolate previous solution
+# Extract subfunction
+block_u = w.sub(0)
+block_p = w.sub(1)
+block_l = w.sub(2)
+# Interpolate on subfunction
+u_ini = Expression(("(l0-1)*x[0]", "(l0-1)*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
+block_u.interpolate(u_ini)
+block_p.interpolate(Constant(0.0))
+block_l.interpolate(Constant(1.0))
+# Update the original block functions by assign(receiving_funcs, assigning_func)
+# Current solution
+assign(w.sub(0), block_u)
+assign(w.sub(1), block_p)
+assign(w.sub(2), block_l)
+# Previous solution
+assign(w0.sub(0), block_u)
+assign(w0.sub(1), block_p)
+assign(w0.sub(2), block_l)
+
+# # Visualization of initial condition for lagrange multiplier
+# ini_con = XDMFFile("InitCond.xdmf")
+# # Parameters will share the same mesh
+# ini_con.write(w0.block_split()[0], 0.0)     # Displacement
+# ini_con.write(w0.block_split()[1], 0.0)     # Pressure
+# ini_con.write(w0.block_split()[2], 0.0)     # Lagrange
 
 # Kinematics
 #------------------------------------------------------------------------------
@@ -215,23 +200,22 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
-                        l0=l0, d=depth, R=R, degree=2)
+indent = Expression("-depth+(pow(x[0]-0.5,2)+pow(x[2]-0.5,2))/(2*R)", \
+                    l0=l0, depth=depth, R=R, degree=2)
 
-# Variational problem where we have two equations for the weak form
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
-    + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1)
-F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-F2 = dot(v_l, ppos(u[1]-indent))*ds(1)
-WF = F0 + F1 + F2
+# Variational problem
+WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
+    + lmbda*dot(v_u[1], ppos(u[1]-indent))*ds(1),
+    (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx),
+    v_l*ppos(u[1] - indent)*ds(1)]
 
 # Compute directional derivative about w in the direction of du (Jacobian)
-Jacobian = derivative(WF, w, du)
+Jacobian = block_derivative(WF, w, du)
 
 # SNES solver > Setup Non-linear variational problem
-problem = NonlinearVariationalProblem(WF, w, bc, J=Jacobian)
-solver_problem = NonlinearVariationalSolver(problem)
-solver_problem.parameters.update(snes_solver_parameters)
+problem = BlockNonlinearProblem(WF, w, bc, Jacobian)
+solver_problem = BlockPETScSNESSolver(problem)
+solver_problem.parameters.update(snes_solver_parameters["snes_solver"])
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name)
@@ -240,37 +224,36 @@ file_results = XDMFFile(name)
 p = Function(V0, name="Contact pressure")
 
 # Solve for each value using the previous solution as a starting point
-while (steps < tot_steps):
+while (steps <= tot_steps):
 
-    # Print to track code progress
+    # Print outs to track code progress
     print("Steps: " + str(steps))
     print("Depth: " + str(depth))
     #print("Time: " + str(t))
 
-    # Update fields containing u and mu and solve using the setup parameters
-    w0.vector()[:] = w.vector()
+    # Update fields containing u, mu, and lmbda and solve
+    w0.block_vector()[:] = w.block_vector()
     solver_problem.solve()
 
     # Update total steps
     steps += 1
     # Update time parameters
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
-    # Update indenter idndentation depth parameter
-    if t_indent_steps > steps:
-        depth += 0.01
-        indent.depth = depth      # Update depth in expression class
+    dt = dt*c_exp;                  # Update time step with exponent value
+    DT.dt = dt                      # Update time step for weak forms
+    t += dt                         # Update total time for paraview file
+    # Update indenter depth parameter
+    depth += 0.01
+    indent.depth = depth            # Update depth in expression class
 
     # This is a deep copy not a shallow copy like split(w) allowing us to write
     # the results to file
-    (u, mu, lmbda) = w.split()
-    PTensor = project(P(u, mu), TT)         # Project nominal stress
-    p.assign(-project(P(u, mu)[1, 1], V0))  # Project pressure
+    (u, mu, lmbda) = w.block_split()
+    PTensor = project(P(u, mu), TT) # Project nominal stress
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential", "mu")
+    lmbda.rename("Lagrange Multiplier", "lmbda")
     PTensor.rename("Nominal Stress", "P")
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
@@ -278,5 +261,5 @@ while (steps < tot_steps):
     # Write to .xdmf results file
     file_results.write(u, t)
     file_results.write(mu, t)
+    file_results.write(lmbda, t)
     file_results.write(PTensor, t)
-    file_results.write(p, t)
