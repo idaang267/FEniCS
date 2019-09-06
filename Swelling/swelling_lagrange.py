@@ -29,61 +29,31 @@ parameters["form_compiler"]["quadrature_degree"] = 4
 
 # Defining Classes
 #------------------------------------------------------------------------------
-# Initial condition (IC) class for displacement and chemical potential
-class InitialConditions(UserExpression):
-    def eval(self, values, x):
-        # Displacement u0 = (values[0], values[1], values[2])
-        values[0] = (l0-1)*x[0]
-        values[1] = (l0-1)*x[1]
-        values[2] = (l0-1)*x[2]
-        # Initial Chemical potential: mu0
-        values[3] = 0 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
-        # Initial lagrange multiplier, lambda
-        values[4] = 0
-    def value_shape(self):
-         return (5,)
-
-# Class for interfacing with the Newton solver
-class Equation(NonlinearProblem):
-    # Bilinear and linear forms are used to compute the residual and Jacobian
-    def __init__(self, a, L, bcs):
-        NonlinearProblem.__init__(self)
-        self.L = L              # Linear form
-        self.a = a              # Bilinear form
-        self.bcs = bcs          # Boundary conditions
-    def F(self, b, x):          # Computes the residual vector "b"
-        assemble(self.L, tensor=b)
-        for bc in self.bcs:
-            bc.apply(b)
-    def J(self, A, x):          # Computes the Jacobian matrix "A"
-        assemble(self.a, tensor=A)
-        for bc in self.bcs:
-            bc.apply(A)
-
 # Class for marking everything on the domain except the top surface
 class bulkWOsurf(SubDomain):
     # on_boundary will be false if you use pointwise method
     def inside(self, x, on_boundary):
         return x[1] <= 1.0 - tol
 
+class topTest(SubDomain):
+    def inside(self, x, on_boundary):
+        return (near(x[1], 1.4) and on_boundary)
+
 # Model parameters
 #------------------------------------------------------------------------------
-name = "penalty.xdmf"           # Name of file
+name = "LagrangeSwelling.xdmf"           # Name of file
 tol = 1E-14                     # Tolerance for coordinate comparisons
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
-# Global stepping and chemical stepping parameters
+# Stepping parameters
 steps = 0                       # Steps (updated within loop)
-c_steps = 0                     # Chemical step counter (updated within loop)
-t_c_steps = 0                   # Total chemical steps
-t_indent_steps = 5              # Total indentation steps
-tot_steps = 5                   # Total number of time steps
+tot_steps = 50                   # Total number of time steps for indentation
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
-depth = 0.00                    # Initial indenter depth of indentation
+depth = 0.01                    # Initial indenter depth of indentation
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
@@ -93,19 +63,17 @@ c_exp = 1.2                     # Controls time step increase (20%)
 
 # Define mesh and mixed function space
 #------------------------------------------------------------------------------
-N_plane = 10                               # Number of elements on top plane
+N_plane = 15                               # Number of elements on top plane
 mesh = UnitCubeMesh(N_plane, 5, N_plane)   # Unit Cube
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
 # Taylor-Hood Elements for displacment (u) and chemical potential (mu)
-#P2 = VectorElement("CG", mesh.ufl_cell(), 2)
-#P1 = FiniteElement("CG", mesh.ufl_cell(), 1)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
 # Define mixed function space specifying underlying finite element
-#V_element = BlockElement(P2, P1, P1)
-#V = BlockFunctionSpace(mesh, V_element)
-V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, bulkWOsurf()])
+# Define lambda on only the top surface and it should remain 0 for the region
+lambdaRes = MeshRestriction(mesh, topTest())
+V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, lambdaRes])
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
@@ -172,20 +140,36 @@ bc_r_r = DirichletBC(V.sub(0).sub(0), u_lr, right)
 bc_r_b = DirichletBC(V.sub(0).sub(2), u_bf, back)
 bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, front)
 
-# Test: Set lambda to 0 in domain
-lmbda_val = Constant(0.0)
-t1 = DirichletBC(V.sub(2), lmbda_val, bulkWOsurf, method="pointwise")
-
-# Combined boundary conditions
-bc = BlockDirichletBC([[bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f], [], [t1]])
+# Combined boundary conditions for each subspace
+bc = BlockDirichletBC([[bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f], [], []])
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
-# Initial conditions are created by using the class defined and then
-# interpolating into a finite element space
-init = InitialConditions(degree=1)          # Expression requires degree def.
-w.BlockInterpolate(init)                        # Interpolate current solution
-w0.interpolate(init)                       # Interpolate previous solution
+# Extract subfunction
+block_u = w.sub(0)
+block_p = w.sub(1)
+block_l = w.sub(2)
+# Interpolate on subfunction
+u_ini = Expression(("(l0-1)*x[0]", "(l0-1)*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
+block_u.interpolate(u_ini)
+block_p.interpolate(Constant(0.0))
+block_l.interpolate(Constant(1.0))
+# Update the original block functions by assign(receiving_funcs, assigning_func)
+# Current solution
+assign(w.sub(0), block_u)
+assign(w.sub(1), block_p)
+assign(w.sub(2), block_l)
+# Previous solution
+assign(w0.sub(0), block_u)
+assign(w0.sub(1), block_p)
+assign(w0.sub(2), block_l)
+
+# # Visualization of initial condition for lagrange multiplier
+# ini_con = XDMFFile("InitCond.xdmf")
+# # Parameters will share the same mesh
+# ini_con.write(w0.block_split()[0], 0.0)     # Displacement
+# ini_con.write(w0.block_split()[1], 0.0)     # Pressure
+# ini_con.write(w0.block_split()[2], 0.0)     # Lagrange
 
 # Kinematics
 #------------------------------------------------------------------------------
@@ -216,8 +200,8 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-indent = Expression("-d+(pow((x[0]),2)+pow((x[2]),2))/(2*R)", \
-                        l0=l0, d=depth, R=R, degree=2)
+indent = Expression("-depth+(pow(x[0]-0.5,2)+pow(x[2]-0.5,2))/(2*R)", \
+                    l0=l0, depth=depth, R=R, degree=2)
 
 # Variational problem
 WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
@@ -240,9 +224,9 @@ file_results = XDMFFile(name)
 p = Function(V0, name="Contact pressure")
 
 # Solve for each value using the previous solution as a starting point
-while (steps < tot_steps):
+while (steps <= tot_steps):
 
-    # Print to track code progress
+    # Print outs to track code progress
     print("Steps: " + str(steps))
     print("Depth: " + str(depth))
     #print("Time: " + str(t))
@@ -254,22 +238,22 @@ while (steps < tot_steps):
     # Update total steps
     steps += 1
     # Update time parameters
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
-    # Update indenter idndentation depth parameter
-    if t_indent_steps > steps:
-        depth += 0.01
-        indent.depth = depth      # Update depth in expression class
+    dt = dt*c_exp;                  # Update time step with exponent value
+    DT.dt = dt                      # Update time step for weak forms
+    t += dt                         # Update total time for paraview file
+    # Update indenter depth parameter
+    depth += 0.01
+    indent.depth = depth            # Update depth in expression class
 
     # This is a deep copy not a shallow copy like split(w) allowing us to write
     # the results to file
     (u, mu, lmbda) = w.block_split()
-    PTensor = project(P(u, mu), TT)         # Project nominal stress
+    PTensor = project(P(u, mu), TT) # Project nominal stress
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential", "mu")
+    lmbda.rename("Lagrange Multiplier", "lmbda")
     PTensor.rename("Nominal Stress", "P")
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
@@ -277,4 +261,5 @@ while (steps < tot_steps):
     # Write to .xdmf results file
     file_results.write(u, t)
     file_results.write(mu, t)
+    file_results.write(lmbda, t)
     file_results.write(PTensor, t)
