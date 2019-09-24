@@ -3,15 +3,15 @@ clear all
 close all
 
 % Path to data 
-path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Pen/";
+path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/Lagrange/";
 
 % Initiate counter to index each datapoint (indentation and pressure profile)
 count = 0;
 % Name samples according to the time step/sample 
-timeSample = [40];
+timeSample = [60];
 %sub = ["1E15"];
 % SampleRate 
-sampleRate = 24;
+sampleRate = 20;
 % Another counter
 total = 1;
 % For each time sample 
@@ -27,6 +27,7 @@ for m = timeSample
         len = data.arc_length;
         % Contact Pressure 
         pressure = data.ContactPressure;
+        Lagrange = data.LagrangeMultiplier;
         % Save data
         if total == 1
            com_Data(:, total) = len;
@@ -71,7 +72,7 @@ for i = 1:length(timeSample)
 end
 xlabel("X_3")
 ylabel("u_{top}")
-title("Indentation Profile: R = 0.25, d = 0.01 increments")
+title("Indentation Profile: R = 0.25, d = 0.05 increments")
 set(gca,'fontsize',12)
 legend(string(sub(1)), string(sub(2)), string(sub(end)))
 hold off
@@ -93,14 +94,14 @@ clear all
 close all
 
 % Path to data 
-path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/HE_Pen/";
+path = "/Users/idaang/Dropbox/cartilage_mechanics_IDA/FEniCS/Swelling/Lagrange/0.05Steps/";
 
 % Initiate counter to index each datapoint (indentation and pressure profile)
 count = 0;
-timestep = [0, 10, 20, 30, 40]; 
+timestep = [0, 20, 40, 60]; 
 %sub = ["1", "1E4", "1E15"];
 % SampleRate 
-sampleRate = 24;
+sampleRate = 20;
 
 for m = 1:length(timestep) 
     % Name file consistently 
@@ -134,15 +135,16 @@ for m = 1:length(timestep)
     hold on 
     xlabel("X_3")
     ylabel("Pressure")
-    title("Pressure Profile: R = 0.25, d = 0.01 increments")
-    set(gca,'fontsize',12)
+    title("R = 0.25, d = 0.05 increments")
+    set(gca,'fontsize',20)
     figure(2)
-    plot(refPoint,indPoint,'-','LineWidth',2)
+    plot(refPoint,indPoint,'-','LineWidth',3)
     hold on 
     xlabel("X_3")    
     ylabel("u_{top}")
-    title("Indentation Profile: R = 0.25, d = 0.01 increments")
-    set(gca,'fontsize',12)
+    title("R = 0.25, d = 0.05 increments")
+    set(gca,'fontsize',20)
 end
 
-legend(string(timestep(1)), string(timestep(2)), string(timestep(3)), string(timestep(4)), string(timestep(end)))
+legend(string(timestep(1)), string(timestep(2)), string(timestep(3)), string(timestep(4)))
+%legend(string(timestep(1)), string(timestep(2)), string(timestep(3)), string(timestep(4)), string(timestep(5)), string(timestep(6)), string(timestep(end)))
