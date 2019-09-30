@@ -46,7 +46,7 @@ class OnBoundary(SubDomain):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Sphere_chemBC.xdmf"   # Name of file
+name = "Sphere.xdmf"   # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -56,7 +56,7 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-tot_steps = 50                  # Total number of time steps
+tot_steps = 20                 # Total number of time steps
 # Time parameters
 dt = 10**(-3)                   # Starting time step
 # Expression for time step for updating in loop
@@ -65,12 +65,15 @@ DT = Expression("dt", dt=dt, degree=0)
 t = 0.0
 c_exp = 1.1                     # Control the time step increase
 
-# Define mesh and mixed function space
+# Define mesh
 #------------------------------------------------------------------------------
+# Done through generate_mesh.py with no restrictions set for dirichlet boundary
 mesh = Mesh("data/sphere.xml")
 subdomains = MeshFunction("size_t", mesh, "data/sphere_physical_region.xml")
 boundaries = MeshFunction("size_t", mesh, "data/sphere_facet_region.xml")
 
+# Define mixed function space
+#------------------------------------------------------------------------------
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
 # Define Taylor-Hood Elements
@@ -97,6 +100,10 @@ w0 = Function(V)                            # Previous solution for u and mu
 (u0, mu0) = split(w0)                       # Split previous
     # Deep copy syntax: w.split(deepcopy=True)
 
+# Measures/redefinition for dx and ds according to subdomains and boundaries
+dx = Measure("dx")(subdomain_data=subdomains)
+ds = Measure("ds")(subdomain_data=boundaries)
+
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
 # Mark Boundary Subdomains for surface
@@ -108,15 +115,11 @@ chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
 chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
                     chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
-# Roller boundary conditions on lateral surfaces
-# Define the normal direction to the lateral surface
-u_0 = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
-u_2 = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
+#u_0 = Expression(("(l0-1)*x[0]"), l0=l0, degree=2)
 
 # The Dirichlet BCs are specified in respective subspaces
-# Roller displacement BCs on lateral faces
-bc_0 = DirichletBC(V.sub(0).sub(0), u_0, OnBoundary())
-bc_2 = DirichletBC(V.sub(0).sub(2), u_2, OnBoundary())
+# Roller displacement BCs
+#bc_0 = DirichletBC(V.sub(0).sub(0), u_0, OnBoundary())
 
 # Chemical potential
 bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
@@ -145,11 +148,22 @@ Ic = tr(CG)                     # First invariant
 J = det(F)                      # Current time step for third invariant
 J0 = det(F0)                    # Previous time step for third invariant
 
+N = FacetNormal(mesh)                    # Normal vector in the reference configuration
+NansonOp = (cofac(F))                    # Element of area transformation operator
+deformed_N = dot(NansonOp,N)             # Surface element vector in the deformed configuration
+Jsurf = sqrt(dot(deformed_N,deformed_N)) # Norm of the surface element vector in the current configuration
+
+Isurf = I - cross(N,N)
+Fsurf = dot(F, Isurf)
+
 # Definitions
 #------------------------------------------------------------------------------
 # Normalized nominal stress tensor: P = dU/dF
 def P(u, mu):
     return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/(J**2) - mu))*J*inv(F.T)
+
+def Psurf(u):
+    return inv(Fsurf.T)*Jsurf
 
 # Normalized flux
 def Flux(u, mu):
@@ -157,7 +171,7 @@ def Flux(u, mu):
     return -(J-1)*dot(p1,inv(F))
 
 # Variational problem where we have two equations for the weak form
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
+F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx + inner(Psurf(u), dot(grad(v_u),Isurf))
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
 WF = F0 + F1
 
@@ -178,22 +192,20 @@ while (steps < tot_steps):
     print("Steps: " + str(steps))
     #print("Time: " + str(t))
 
+    # Update fields containing u and mu and solve using the setup parameters
+    w0.vector()[:] = w.vector()
+    solver_problem.solve()
+
     # Update the chemical steps for ramping of chemical potential
     if c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
-
-    # Update fields containing u and mu and solve using the setup parameters
-    w0.vector()[:] = w.vector()
-    solver_problem.solve()
-
     steps += 1                      # Update total steps
 
-    # Note that this is now a deep copy not a shallow copy like split(w)
-    # allowing us to write the results to file
+    # Deep copy not a shallow copy like split(w) for writing the results to file
     (u, mu) = w.split()
-    # Project nominal stress
+    # Project nominal stress to tensor function space
     PTensor = project(P(u, mu), TT)
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
@@ -202,7 +214,7 @@ while (steps < tot_steps):
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
-    # Write to .xdmf results file
+    # Write multiple time-dependent parameters to .xdmf results file
     file_results.write(u,t)
     file_results.write(mu,t)
     file_results.write(PTensor,t)
