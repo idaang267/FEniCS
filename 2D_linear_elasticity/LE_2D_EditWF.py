@@ -32,27 +32,24 @@ Ny = 10
 # Mesh density defined with a criss-crossed structured mesh
 mesh = RectangleMesh(Point(0, 0), Point(L, H), Nx, Ny, "crossed")
 boundaries = MeshFunction("size_t", mesh, mesh.topology().dim() - 1, 0)
+
+# Define boundaries for boundary conditions and weak form definition
+bot = CompiledSubDomain("near(x[1], 0.0) && on_boundary")
 top = CompiledSubDomain("near(x[1], 1.0) && on_boundary")
-# Marking for visualization
+# Marking for visualization and reference
 boundaries.set_all(0)
 top.mark(boundaries, 1)
-# Measure redefines ds
+# Measure redefines ds (IMPORTANT)
 ds = Measure('ds', subdomain_data=boundaries)
-
-#XDMFFile("boundaries.xdmf").write(boundaries)
 
 # Define the function space
 V = VectorFunctionSpace(mesh, 'Lagrange', degree=2)
+# For projection of stress
 Vsig = TensorFunctionSpace(mesh, "DG", degree=0)
 
 # Boundary Condition
 # ---------------------
-bot = CompiledSubDomain("near(x[1], 0.0) && on_boundary")
-indent = Expression(("-depth"), depth=depth, degree=1)
-
-bc_bot = DirichletBC(V, Constant((0.,0.)), bot)
-bc_top = DirichletBC(V.sub(1), indent, top)
-bc = [bc_bot, bc_top]
+bc = DirichletBC(V, Constant((0.,0.)), bot)
 
 # Constitutive relation
 # ---------------------
@@ -63,9 +60,6 @@ def eps(v):
 # Stress operator computed
 def sigma(v):
     return lmbda*Identity(2)*tr(eps(v)) + 2.0*mu*eps(v)
-# Definition of The Mackauley bracket <x>+
-def ppos(x):
-    return (x+abs(x))/2.
 
 # Variational Problem
 # ---------------------
@@ -74,6 +68,8 @@ v = TestFunction(V)                     # Test Function
 u = Function(V, name="Displacement")    # Function named for paraview output
 sig = Function(Vsig, name="Stress")
 
+indent = Expression(("depth"), depth=depth, degree=1)
+# Weak form
 form = inner(sigma(u),eps(v))*dx - inner(f,v)*dx - inner(t,v)*ds \
         - pen*inner(v[1],u[1]-indent)*ds(1)
 
