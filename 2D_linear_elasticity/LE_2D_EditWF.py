@@ -36,6 +36,8 @@ top = CompiledSubDomain("near(x[1], 1.0) && on_boundary")
 # Marking for visualization
 boundaries.set_all(0)
 top.mark(boundaries, 1)
+# Measure redefines ds
+ds = Measure('ds', subdomain_data=boundaries)
 
 #XDMFFile("boundaries.xdmf").write(boundaries)
 
@@ -46,7 +48,7 @@ Vsig = TensorFunctionSpace(mesh, "DG", degree=0)
 # Boundary Condition
 # ---------------------
 bot = CompiledSubDomain("near(x[1], 0.0) && on_boundary")
-indent = Expression(("-depth"), depth=depth, degree=0)
+indent = Expression(("-depth"), depth=depth, degree=1)
 
 bc_bot = DirichletBC(V, Constant((0.,0.)), bot)
 bc_top = DirichletBC(V.sub(1), indent, top)
@@ -72,8 +74,8 @@ v = TestFunction(V)                     # Test Function
 u = Function(V, name="Displacement")    # Function named for paraview output
 sig = Function(Vsig, name="Stress")
 
-form = inner(sigma(u),eps(v))*dx - inner(f,v)*dx - inner(t,v)*ds
-    #    - pen*inner(v[1],u[1]-indent))*ds(1)
+form = inner(sigma(u),eps(v))*dx - inner(f,v)*dx - inner(t,v)*ds \
+        - pen*inner(v[1],u[1]-indent)*ds(1)
 
 # Calculate Jacobian
 J = derivative(form, u, du)
