@@ -1,20 +1,4 @@
-# Copyright (C) 2016-2019 by the multiphenics authors
-#
-# This file is part of multiphenics.
-
-'''
-In this example, a Laplace problem is solved with non-homogeneous Dirichlet
-boundary conditions (BCs), which are imposed with Lagrange multipliers. Standard
-FEniCS code does not easily support Lagrange multipliers, because FEniCS does
-not support subdomain/boundary restricted function spaces. One would have to
-declare the Lagrange multiplier on the entire domain and constrain it in the
-interior. This procedure would require the definition of suitable MeshFunctions
-to constrain the additional DOFs, resulting in a (1) cumbersome mesh definition
-for the user and (2) unnecessarily large linear system. This task is more easily
-handled by multiphenics by providing a restriction in the definition of the
-(block) function space. Such a restriction (which is basically a collection of
-MeshFunctions) can be generated from a SubDomain object.
-'''
+# Increasing complexity
 
 # Import all modules
 from dolfin import *
@@ -34,11 +18,18 @@ steps = 0
 tot_steps = 5
 # Define the indenter (obstacle) with a parabola
 R = 0.25                            # Radius
-depth = 0.01                        # Depth
+depth = 0.00                        # Depth
+# Material Parameters
+E = Constant(10.0)                  # Young's Modulus
+nu = Constant(0.3)                  # Poisson's Ratio
+mu = E/(2*(1+nu))                   # Lamé Coefficient
+lmbda = E*nu/((1+nu)*(1-2*nu))      # Lamé Coefficient
+# Initial Stretch (lambda_o)
+l0 = 1.4
 
 # Create Mesh
-domain = Rectangle(Point(0., 0.), Point(1.0, 1.0))
-mesh = generate_mesh(domain, 15)
+domain = Box(Point(0., 0., 0.), Point(1.0, 1.0, 1.0))
+mesh = generate_mesh(domain, 20)
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
@@ -80,18 +71,68 @@ v = BlockTestFunction(W)
 dx = Measure("dx")(subdomain_data=subdomains)
 ds = Measure("ds")(subdomain_data=boundaries)
 
-indent = Expression(("0.0","0.0"), depth=depth, degree=0)
-bc_bot = DirichletBC(W.sub(0), indent, bot)
-bc = BlockDirichletBC([bc_bot, None])
+# Boundary Conditions
+# Lateral surfaces
+# left and right surfaces
+class symmetry_x(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0) or near(x[0], 1.0) and on_boundary
+# front and back surfaces
+class symmetry_z(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[2], 0.0) or near(x[2], 1.0) and on_boundary
+
+sym_x = symmetry_x()
+sym_z = symmetry_z()
+
+# Roller boundary conditions (define normal directions) on lateral surfaces
+u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
+u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
+
+u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
+bc_bot = DirichletBC(W.sub(0), u_bot, bot)
+bc_r_l = DirichletBC(W.sub(0).sub(0), u_lr, sym_x)
+bc_r_r = DirichletBC(W.sub(0).sub(0), u_lr, sym_x)
+bc_r_b = DirichletBC(W.sub(0).sub(2), u_bf, sym_z)
+bc_r_f = DirichletBC(W.sub(0).sub(2), u_bf, sym_z)
+
+bc = BlockDirichletBC([[bc_bot, bc_r_l, bc_r_r, bc_r_b, bc_r_f], []])
+
+# Initial Conditions (IC)
+#------------------------------------------------------------------------------
+# Initial conditions are created by using the class defined and then
+# interpolating into a finite element space
+block_u = ul.sub(0)
+block_l = ul.sub(1)
+# Interpolate on subfunction
+u_ini = Expression(("(l0-1)*x[0]", "(l0-1)*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
+block_u.interpolate(u_ini)
+block_l.interpolate(Constant(0.0))
+# Update the original block functions by assign(receiving_funcs, assigning_func)
+# Current solution
+assign(ul.sub(0), block_u)
+assign(ul.sub(1), block_l)
+
+# Constitutive relation
+# -----------------------------------------------------------------------------
+# Strain function
+def eps(u):
+    return sym(grad(u))
+# Stress function defined using the Neo-Hookean Model
+def sigma(u):
+    return lmbda*tr(eps(u))*Identity(3) + 2.0*mu*eps(u)
+
+# Indenter
+indent = Expression(("-depth"), depth=depth, R=R, degree=0)
 
 # Assemble
-# Type of source term?
-f = Expression(("0.0","0.0"), element=V.ufl_element())
-g = Expression(("-depth+(pow(x[0]-0.5,2))/(2*R)"), depth=depth, R=R, degree=0)
-F = [inner(grad(u), grad(v_u))*dx + inner(l,v_u[1])*ds + inner(f,v_u)*dx,
-    v_l*(u[1]-g)*ds]
-
+# Weak form
+F = [inner(sigma(u), eps(v_u))*dx + inner(l,v_u[1])*ds,
+    v_l*(u[1]-indent)*ds]
+# Jacobian
 J = block_derivative(F, ul, du)
+
+# Solve with PETsc SNES solver
 problem = BlockNonlinearProblem(F, ul, bc, J)
 solver = BlockPETScSNESSolver(problem)
 solver.parameters.update(snes_solver_parameters["snes_solver"])
@@ -103,7 +144,7 @@ while steps <= tot_steps:
     # Update
     steps += 1
     depth += 0.01
-    g.depth = depth
+    indent.depth = depth
     # Split results
     (u, l) = ul.block_split()
     # Save results
