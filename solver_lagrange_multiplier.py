@@ -29,7 +29,6 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                                           "error_on_nonconvergence": False}}
 
 # Parameters
-depth = 0.1
 # Steps
 steps = 0
 tot_steps = 5
@@ -65,8 +64,9 @@ boundary_restriction = MeshRestriction(mesh, top)
 
 # Function space
 V = VectorFunctionSpace(mesh, "Lagrange", 2)
+V1 = FunctionSpace(mesh, "Lagrange", 2)
 # Block mixed equal order function space
-W = BlockFunctionSpace([V, V], restrict=[None, boundary_restriction])
+W = BlockFunctionSpace([V, V1], restrict=[None, boundary_restriction])
 
 # Define trial and test functions
 du = BlockTrialFunction(W)
@@ -80,16 +80,16 @@ v = BlockTestFunction(W)
 dx = Measure("dx")(subdomain_data=subdomains)
 ds = Measure("ds")(subdomain_data=boundaries)
 
-indent = Expression(("0.0","0.0"), depth=depth, degree=1)
+indent = Expression(("0.0","0.0"), depth=depth, degree=0)
 bc_bot = DirichletBC(W.sub(0), indent, bot)
 bc = BlockDirichletBC([bc_bot, None])
 
 # Assemble
 # Type of source term?
 f = Expression(("0.0","0.0"), element=V.ufl_element())
-g = Expression(("0.0","-depth+(pow(x[0],2))/(2*R)"), depth=depth, R=R, element=V.ufl_element())
-F = [inner(grad(u), grad(v_u))*dx + inner(l,v_u)*ds + inner(f,v_u)*dx,
-    dot(v_l,(u-g))*ds]
+g = Expression(("-depth+(pow(x[0]-0.5,2))/(2*R)"), depth=depth, R=R, degree=0)
+F = [inner(grad(u), grad(v_u))*dx + inner(l,v_u[1])*ds + inner(f,v_u)*dx,
+    v_l*(u[1]-g)*ds]
 
 J = block_derivative(F, ul, du)
 problem = BlockNonlinearProblem(F, ul, bc, J)
