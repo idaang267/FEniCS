@@ -1,0 +1,121 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{FEniCS: Lagrange formulation for Stokes Equation \\
+	\large{Based on DOLFIN 1.4.0 Demo 21: Stokes equations}}
+	\vspace{-5ex}
+\author{Ida Ang \\
+	\small{Made: 10/4/19} \quad \small{Edited: 10/4/19}}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Problem Definition}
+The Stokes equations represent a considerable simplification of the full Navier–Stokes equations, especially in the incompressible Newtonian case. There is no longer a time dependency. 
+
+\subsection{Strong Form}
+ The following equations solve for velocity, u, and pressure, p, with the second equation enforcing incompressibility. 
+\begin{align}\label{ProbDef}
+\begin{split}
+- \nabla \cdot (\nabla \mathbf{u} + p \mathbf{I}) &= \mathbf{f} \\
+\nabla \cdot \mathbf{u} &= 0 
+\end{split}
+\end{align}
+Boundary conditions:
+\begin{align}
+\begin{split}
+u &= u_o \quad \text{on } \Gamma_D \\
+\nabla u \cdot n + p n &= g \quad \text{on } \Gamma_N
+\end{split}
+\end{align}
+Note that consulting Wikipedia, the classical definition is written in the following form ($\mu$ = dynamic viscosity). Note that the sign of pressure is changed from the classical definition (body forces can be defined as negative or positive).
+\begin{align*}
+\mu \nabla^2 u -\nabla p + f &= 0 \\
+\nabla \cdot u &= 0 
+\end{align*}
+The sign difference for pressure is done in order to have a symmetric (but not positive-definite) system of equations rather than a non-symmetric (but positive-definite) system of equations.
+
+\subsection{Weak Form}
+We have two partial differential equations, leading to the introduction of two different test functions, v and q. 
+\subsubsection{Equation 1} 
+\begin{align*} 
+- \nabla \cdot \bigg[ \pdv{}{x_i} \mathbf{e_i} \otimes u_k \mathbf{e_k} + p \mathbf{I} \bigg] &= f \\
+- \nabla \cdot \bigg[ \pdv{u_k}{x_i} \mathbf{e_i} \otimes \mathbf{e_k} + p \bigg] &= f \\
+- \nabla \cdot \pdv{u_k}{x_i} \mathbf{e_i} \otimes \mathbf{e_k} - \nabla \cdot p &= f \\
+- \pdv{}{x_l} \mathbf{e_l} \cdot \pdv{u_k}{x_i} \mathbf{e_i} \otimes \mathbf{e_k} - \pdv{}{x_l} \mathbf{e_l} \cdot p &= f \\
+- \pdv{^2 u_k}{x_l x_i} \mathbf{e_l} \cdot \mathbf{e_i} \otimes \mathbf{e_k} - \pdv{p}{x_l} \mathbf{e_l} &= f \\
+- \pdv{^2 u_k}{x_l x_i} \delta_{li} \mathbf{e_k} - \pdv{p}{x_l} \mathbf{e_l} &= f _q \mathbf{e_q} \\
+- \pdv[2]{u_k}{x_l} \mathbf{e_k} - \pdv{p}{x_l} \mathbf{e_l} &= f _q \mathbf{e_q} \quad \text{Multiply by test function} \\
+- \pdv[2]{u_k}{x_l} \mathbf{e_k} \cdot v_p \mathbf{e_p} - \pdv{p}{x_l} \mathbf{e_l} \cdot v_p \mathbf{e_p} &= f _q \mathbf{e_q} \cdot v_p \mathbf{e_p} \\
+- \pdv[2]{u_k}{x_l} v_k - \pdv{p}{x_l} v_l &= f _q v_q \quad \text{Integrate over domain} \\
+- \int_{\Omega} \pdv[2]{u_k}{x_l} v_k dx - \int_{\Omega} \pdv{p}{x_l} v_l dx &= \int_{\Omega} f _q v_q dx 
+\end{align*}
+Use integration by parts on the left hand side terms 
+\begin{align}\label{intParts}
+\begin{split}
+(fg)' = f'g + fg' \rightarrow f'g &= (fg)' - fg' \\
+					f''g &= (f'g)' - f'g'
+\end{split}
+\end{align}
+Where, we can use integration by parts twice 
+\begin{align*}
+\pdv[2]{u_k}{x_l} v_k &= \bigg(\pdv{u_k}{x_l} v_k \bigg)_{,l} - \pdv{u_k}{x_l} \pdv{v_k}{x_l} \\
+\pdv{p}{x_l} v_l &= (p v_l)_{,l} - p \pdv{v_l}{x_l}
+\end{align*}
+Substitute: 
+\begin{align*}
+- \int_{\Omega} \pdv[2]{u_k}{x_l} v_k dx - \int_{\Omega} \pdv{p}{x_l} v_l dx &= \int_{\Omega} f _q v_q dx \\
+- \int_{\Omega} \bigg(\pdv{u_k}{x_l} v_k \bigg)_{,l} dx + \int_{\Omega} \pdv{u_k}{x_l} \pdv{v_k}{x_l} dx - \int_{\Omega} (p v_l)_{,l} dx + \int_{\Omega} p \pdv{v_l}{x_l} dx &= \int_{\Omega} f _q v_q dx \quad \text{Use divergence theorem} \\
+- \int_{\delta \Omega} \pdv{u_k}{x_l} v_k n_l ds + \int_{\Omega} \pdv{u_k}{x_l} \pdv{v_k}{x_l} dx - \int_{\partial \Omega} p v_l n_l ds + \int_{\Omega} p \pdv{v_l}{x_l} dx &= \int_{\Omega} f _q v_q dx 
+\end{align*}
+Rearrange and change from indicial to direct notation: 
+\begin{align*}
+\begin{split}
+\int_{\Omega} \pdv{u_k}{x_l} \pdv{v_k}{x_l} dx + \int_{\Omega} p \pdv{v_l}{x_l} dx - \int_{\partial \Omega} \pdv{u_k}{x_l} v_k n_l ds - \int_{\partial \Omega} p v_l n_l ds&= \int_{\Omega} f _q v_q dx   \\ 
+\int_{\Omega} \pdv{u_k}{x_l} \pdv{v_k}{x_l} dx + \int_{\Omega} p \pdv{v_l}{x_l} dx - \int_{\partial \Omega} \bigg( \pdv{u_k}{x_l} v_k n_l + p v_l n_l \bigg) ds &= \int_{\Omega} f _q v_q dx  \\
+\int_{\Omega} \nabla u \cdot \nabla v dx +  \int_{\Omega} p (\nabla \cdot v) dx - \int_{\partial \Omega} \big( \nabla u \cdot n  + p n \big) v ds&=  \int_{\Omega} f v dx 
+\end{split}
+\end{align*}
+
+\subsubsection{Equation 2} 
+Multiply the second equation of Eq. \ref{ProbDef} with test function q:
+\begin{align*}
+\begin{split}
+\nabla \cdot u &= 0 \quad \text{Multiply by test function q}\\
+(\nabla \cdot u) q &= 0 \quad \text{Integrate over domain} \\
+\end{split}
+\end{align*}
+\begin{equation}\label{WeakForm2}
+\int_{\Omega} q (\nabla \cdot u) dx = 0 
+\end{equation}
+
+\subsubsection{Boundary Conditions}
+ Relabeling to match with FEniCS implementation, (v $\rightarrow v_u$ and q $\rightarrow v_p$). Utilize the Neumann boundary condition on the surface integral term.
+\begin{align*}
+\int_{\Omega} \nabla u \cdot \nabla v_u dx +  \int_{\Omega} p (\nabla \cdot v_u) dx - \int_{\partial \Omega} g v ds &= f v dx \\
+\int_{\Omega} v_p (\nabla \cdot u) dx &= 0 
+\end{align*}
+
+\section{Lagrange Multiplier}
+Pressure and lagrange multiplier space are equal order. Displacement is a higher order space. 
+\begin{align*}
+\int_{\Omega} \nabla u \cdot \nabla v_u dx +  \int_{\Omega} p (\nabla \cdot v_u) dx + \int_{\partial \Omega} \lambda v_u[1] ds &= 0 \\
+\int_{\Omega} v_p (\nabla \cdot u) dx &= 0 \\ 
+\int_{\partial \Omega} v_l (u[1] - u_in) ds &= 0 
+\end{align*}
+%Save the solution in VTK format: \\ 
+%{\fontfamily{qcr}\selectfont
+%file
+%}
+\end{document}
