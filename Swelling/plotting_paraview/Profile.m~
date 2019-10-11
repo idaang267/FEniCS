@@ -30,17 +30,19 @@ for m = timeSample
         % Gap 
         Gap = data.Gap;
         % Lagrange Multiplier 
-        pre = data.ContactPressure;
+        Lagrange = data.LagrangeMultiplier;
         % Save data
-        if total == 1 
-            com_Data(:, total) = len;
+        if total == 1
+           com_Data(:, total) = len;
+           total = total + 1;
+           com
+          
         end
+        
         total = total + 1; 
-        com_Data(:, total) = ref; 
-        total = total + 1;
         com_Data(:, total) = Gap;
         total = total + 1;
-        com_Data(:, total) = pre;            
+        com_Data(:, total) = Lagrange;
     end     
 end
 
