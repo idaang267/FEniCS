@@ -8,6 +8,7 @@
 from dolfin import *                    # Dolfin module
 import matplotlib.pyplot as plt         # Module matplotlib for plotting
 from mshr import *
+from ufl import cofac, rank
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -46,17 +47,22 @@ class OnBoundary(SubDomain):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "Sphere.xdmf"   # Name of file
+# Name of file
+name = "sphere_surface_tension.xdmf"
+mesh_res = 10                   # Mesh resolution
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
-# Global stepping and chemical stepping parameters
+# Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
+tot_steps = 100                 # Total number of time steps
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-tot_steps = 20                 # Total number of time steps
+g_steps = 0                     # Surface parameter counter (updated within loop)
+t_g_steps = 50                  # Total surface parameter (gamma) steps
+
 # Time parameters
 dt = 10**(-3)                   # Starting time step
 # Expression for time step for updating in loop
@@ -64,13 +70,26 @@ DT = Expression("dt", dt=dt, degree=0)
 # Initial time for paraview file
 t = 0.0
 c_exp = 1.1                     # Control the time step increase
+# Surface Energy: Gamma term
+gamma = 0.001
+Gamma = Expression("gamma", gamma=gamma, degree=0)
 
 # Define mesh
 #------------------------------------------------------------------------------
-# Done through generate_mesh.py with no restrictions set for dirichlet boundary
-mesh = Mesh("data/sphere.xml")
-subdomains = MeshFunction("size_t", mesh, "data/sphere_physical_region.xml")
-boundaries = MeshFunction("size_t", mesh, "data/sphere_facet_region.xml")
+# Create spherical domain with radius of 1.0
+domain = Sphere(Point(0.0, 0.0, 0.0), 1.0)
+# Discretize mesh by mesh_res
+mesh = generate_mesh(domain, mesh_res)
+
+# Create subdomains
+subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
+
+# Create boundaries
+boundaries = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+
+# Measures/redefinition for dx and ds according to subdomains and boundaries
+dx = Measure("dx")(subdomain_data=subdomains)
+ds = Measure("ds")(subdomain_data=boundaries)
 
 # Define mixed function space
 #------------------------------------------------------------------------------
@@ -98,34 +117,6 @@ w0 = Function(V)                            # Previous solution for u and mu
 (v_u, v_mu) = split(v)
 (u, mu) = split(w)                          # Split current
 (u0, mu0) = split(w0)                       # Split previous
-    # Deep copy syntax: w.split(deepcopy=True)
-
-# Measures/redefinition for dx and ds according to subdomains and boundaries
-dx = Measure("dx")(subdomain_data=subdomains)
-ds = Measure("ds")(subdomain_data=boundaries)
-
-# Boundary Conditions (BC)
-#------------------------------------------------------------------------------
-# Mark Boundary Subdomains for surface
-# Note: these subdomains are set according to ParaView default view where
-# x is right, y is up, and z-direction is out-of-plane
-
-# Chemical potential BC ramped from mu0 to 0 in the IC class
-chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
-chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
-                    chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
-
-#u_0 = Expression(("(l0-1)*x[0]"), l0=l0, degree=2)
-
-# The Dirichlet BCs are specified in respective subspaces
-# Roller displacement BCs
-#bc_0 = DirichletBC(V.sub(0).sub(0), u_0, OnBoundary())
-
-# Chemical potential
-bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
-
-# Combined boundary conditions
-bc = [bc_chem]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -148,13 +139,36 @@ Ic = tr(CG)                     # First invariant
 J = det(F)                      # Current time step for third invariant
 J0 = det(F0)                    # Previous time step for third invariant
 
+# Define terms for surface tension
 N = FacetNormal(mesh)                    # Normal vector in the reference configuration
 NansonOp = (cofac(F))                    # Element of area transformation operator
 deformed_N = dot(NansonOp,N)             # Surface element vector in the deformed configuration
 Jsurf = sqrt(dot(deformed_N,deformed_N)) # Norm of the surface element vector in the current configuration
 
-Isurf = I - cross(N,N)
+Isurf = I - outer(N,N)
 Fsurf = dot(F, Isurf)
+
+# Boundary Conditions (BC)
+#------------------------------------------------------------------------------
+# Mark Boundary Subdomains for surface
+# Note: ParaView default view, x is right, y is up, and z-direction is out-of-plane
+
+# Chemical potential BC ramped from mu0 to 0 in the IC class
+chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+chem_p = Expression(("chem_max - (chem_max*c_steps)/t_c_steps"), \
+                    chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
+
+#u_0 = Expression(("(l0-1)*x[0]"), l0=l0, degree=2)
+
+# The Dirichlet BCs are specified in respective subspaces
+# Roller displacement BCs
+#bc_0 = DirichletBC(V.sub(0).sub(0), u_0, OnBoundary())
+
+# Chemical potential
+bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
+
+# Combined boundary conditions
+bc = [bc_chem]
 
 # Definitions
 #------------------------------------------------------------------------------
@@ -163,7 +177,7 @@ def P(u, mu):
     return F + (-1/J + (1/n)*(1/J + ln((J-1)/J) + chi/(J**2) - mu))*J*inv(F.T)
 
 def Psurf(u):
-    return inv(Fsurf.T)*Jsurf
+    return 0.1*inv(Fsurf.T)*Jsurf
 
 # Normalized flux
 def Flux(u, mu):
@@ -171,9 +185,12 @@ def Flux(u, mu):
     return -(J-1)*dot(p1,inv(F))
 
 # Variational problem where we have two equations for the weak form
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx + inner(Psurf(u), dot(grad(v_u),Isurf))
+F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
-WF = F0 + F1
+surface_energy_density = Gamma*Jsurf
+surface_energy = surface_energy_density*ds
+F2 = derivative(surface_energy, u, v_u)
+WF = F0 + F1 + F2
 
 # Compute directional derivative about w in the direction of du (Jacobian)
 Jacobian = derivative(WF, w, du)
@@ -201,7 +218,18 @@ while (steps < tot_steps):
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
+
+    if g_steps < t_g_steps:
+        g_steps += 1
+        gamma += 0.001
+    Gamma.gamma = gamma
+
     steps += 1                      # Update total steps
+
+    # Update time parameters
+    dt = dt*c_exp;                # Update time step with exponent value
+    DT.dt = dt                    # Update time step for weak forms
+    t += dt                       # Update total time for paraview file
 
     # Deep copy not a shallow copy like split(w) for writing the results to file
     (u, mu) = w.split()
@@ -218,8 +246,3 @@ while (steps < tot_steps):
     file_results.write(u,t)
     file_results.write(mu,t)
     file_results.write(PTensor,t)
-
-    # Update time parameters
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
