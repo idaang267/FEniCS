@@ -37,28 +37,28 @@ solver_par.rename("solver")
 
 # Parameters
 # -----------------------------------------------------------------------------
-name = "HE_AugL.xdmf"       # File name
-E = 10.0                    # Material Parameter: Young's Modulus
-nu = 0.3                    # Material Parameter: Poisson's Ratio
-# Lame parameters
-mu = Constant(E/(2*(1 + nu)))
-lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu)))
+name = "HE_AugL_1E2.xdmf"           # File name
+# Material Parameters
+E = 10.0                            # Young's Modulus
+nu = 0.3                            # Poisson's Ratio
+mu = E/(2*(1 + nu))                 # First Lame parameters
+lmbda = E*nu/((1 + nu)*(1 - 2*nu))  # Second Lame parameter
 # Definitions of body force and traction
-B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
-T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
+B  = Constant((0.0, 0.0, 0.0))      # Body force per unit volume
+T  = Constant((0.0, 0.0, 0.0))      # Traction force on the boundary
 # Stepping parameters
-steps = 0
-tot_steps = 40
-# depth
-depth = 0.00
-R = 0.25
-# Augmented lagrangian constant: epsilon_N
-k_pen = 1E4
+steps = 0                           # Updates in the loop
+tot_steps = 10                       # Total amount of steps
+# Indenter parameters
+depth = 0.00                        # Initial Depth (Updates in loop)
+R = 0.25                            # Fixed radius of indenter
+# Augmented lagrangian constant
+k_pen = 1E2
 
 # Create Mesh and define subdomains for restrictions and boundary conditions
 # -----------------------------------------------------------------------------
 domain = Box(Point(0., 0., 0.), Point(1.0, 1.0, 1.0))
-mesh = generate_mesh(domain, 15)
+mesh = generate_mesh(domain, 20)
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
@@ -74,31 +74,32 @@ class bot(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[1], 0.0) and on_boundary
 
-# Mark boundary to restrict the lagrange multiplier to
+# Convert classes
 top = top()
 bot = bot()
+# Mark top boundary to restrict the lagrange multiplier
 top.mark(boundaries, 1)
-
-# Dirichlet boundary
 boundary_restriction = MeshRestriction(mesh, top)
 
-# Measure
+# Measure redefines the subdomains and boundaries
 dx = Measure("dx")(subdomain_data=subdomains)
 ds = Measure("ds")(subdomain_data=boundaries)
 
 # Taylor-Hood Function space
 V = VectorFunctionSpace(mesh, "Lagrange", 2)
 V1 = FunctionSpace(mesh, "Lagrange", 2)
-V2 = FunctionSpace(mesh, "CG", 1)       # To plot Gap function
 # Block mixed equal order function space
 W = BlockFunctionSpace([V, V1], restrict=[None, boundary_restriction])
+# Function spaces for interpolation
+V2 = FunctionSpace(mesh, "Lagrange", 1)       # For Gap function
 
-# Define trial and test functions and
-# unknown solutions (u,p) = (displacement, lagrange multiplier)
+# Define trial and test functions and unknown solutions
 du = BlockTrialFunction(W)
-ul = BlockFunction(W)
+ul = BlockFunction(W)           # (u,l) = (displacement, lagrange multiplier)
 v = BlockTestFunction(W)
+# Create gap function on V2 function space and name for paraview
 gap = Function(V2, name="Gap")
+lagrange = Function(V2, name="Augmented Lagrangian")
 
 # Split trial and test functions into displacement and lagrange multiplier
 (u, l) = block_split(ul)
@@ -106,8 +107,8 @@ gap = Function(V2, name="Gap")
 
 # Boundary Conditions
 # -----------------------------------------------------------------------------
-# Define Dirichlet boundary (x = 0 or x = 1)
-c = Constant((0.0, 0.0, 0.0))
+# Define Dirichlet boundary
+u_bot = Constant((0.0, 0.0, 0.0))
 # Roller boundary conditions (define normal directions) on lateral surfaces
 u_lr = Expression(("(0.0)*x[0]"), degree=1)
 u_bf = Expression(("(0.0)*x[2]"), degree=1)
@@ -120,11 +121,13 @@ class symmetry_z(SubDomain):    # front and back surfaces
     def inside(self, x, on_boundary):
         return near(x[2], 0.0) or near(x[2], 1.0) and on_boundary
 
+# Convert classes
 sym_x = symmetry_x()
 sym_z = symmetry_z()
 
-# The Dirichlet BCs are specified in a subspace
-bc_bot = DirichletBC(W.sub(0), c, bot)
+# The Dirichlet BCs are specified in the first subspace
+# Fixed bottom boundary condition
+bc_bot = DirichletBC(W.sub(0), u_bot, bot)
 # Sub displacement subspace to obtain direction of interest
 bc_r_l = DirichletBC(W.sub(0).sub(0), u_lr, sym_x)
 bc_r_r = DirichletBC(W.sub(0).sub(0), u_lr, sym_x)
@@ -139,32 +142,29 @@ d = len(u)                      # Spatial dimension
 I = Identity(d)                 # Identity tensor
 F = I + grad(u)                 # Deformation gradient
 C = F.T*F                       # Right Cauchy-Green tensor
-J  = det(F)                     # 3rd invariant of the deformation tensor
+J = det(F)                      # 3rd invariant of the deformation tensor
 
 # Constitutive relation
 # -----------------------------------------------------------------------------
-# P = dW/dF:
-def P(u):
+def P(u):                       # P = dW/dF:
     return mu*(F - inv(F.T)) + lmbda*ln(J)*inv(F.T)
-# Definition of The Mackauley bracket <x>+
-def ppos(x):
+def ppos(x):                    # Definition of The Mackauley bracket <x>+
     return (x+abs(x))/2.
-# Define the augmented lagrangian
-def aug_l(x):
+def aug_l(x):                   # Define the augmented lagrangian
     return l + k_pen*(u[1] - indent)
 
-# Expression for indenter
+# Parabolic expression for indenter
 indent = Expression(("-depth+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)"), \
                     depth=depth, R=R, degree=0)
 
-# Weak Form
+# Two equations for the weak form
 F = [inner(P(u), grad(v_u))*dx - dot(B, v_u)*dx - dot(T, v_u)*ds + v_u[1]*ppos(aug_l(l))*ds,
     v_l*(u[1]-indent)*ds - (1/k_pen)*l*v_l*ds]
 
 # Directional derivative
 Jacobian = block_derivative(F, ul, du)
 
-# Solve variational problem
+# Solve variational problem using PETSc SNES solver
 varproblem = BlockNonlinearProblem(F, ul, bcs, Jacobian)
 solver = BlockPETScSNESSolver(varproblem)
 solver.parameters.update(snes_solver_parameters["snes_solver"])
@@ -172,26 +172,22 @@ solver.parameters.update(snes_solver_parameters["snes_solver"])
 # Save results to an .xdmf file since we have multiple fields
 file_results = XDMFFile(name)
 
-# Solve with Newton solver for each displacement value using the previous
-# solution as a starting point
+# Solve with Newton solver using the previous solution as a starting point
 while steps <= tot_steps:
     # Print outs to track code progress
     print("Steps: " + str(steps))
     print("Depth: " + str(depth))
 
-    # Solve the nonlinear problem
-    solver.solve()
-
-    # Update the displacement value
-    depth += 0.005
-    indent.depth = depth
-    steps += 1
-    # Split results
-    (u, l) = ul.block_split()
+    solver.solve()              # Solve the nonlinear problem
+    depth += 0.01               # Update the depth of the indenter
+    indent.depth = depth        # Update depth in expression class
+    steps += 1                  # Update steps
+    (u, l) = ul.block_split()   # Split results (hard not soft copy)
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     l.rename("Lagrange Multiplier", "l")
-    gap.assign(project(indent-u[1], V2))
+    gap.assign(project(indent-u[1], V2))        # Project gap into V2 space
+    lagrange.assign(project(aug_l(l), V2))
     # Parameters will share the same mesh
     file_results.parameters["flush_output"] = True
     file_results.parameters["functions_share_mesh"] = True
@@ -199,3 +195,4 @@ while steps <= tot_steps:
     file_results.write(u,steps)
     file_results.write(l, steps)
     file_results.write(gap, steps)
+    file_results.write(lagrange, steps)
