@@ -48,22 +48,12 @@ B  = Constant((0.0, 0.0, 0.0))      # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))      # Traction force on the boundary
 # Stepping parameters
 steps = 0                           # Updates in the loop
-tot_steps = 10                       # Total amount of steps
+tot_steps = 10                      # Total amount of steps
 # Indenter parameters
 depth = 0.00                        # Initial Depth (Updates in loop)
 R = 0.25                            # Fixed radius of indenter
 # Augmented lagrangian constant
 k_pen = 1E3
-
-# Create Mesh and define subdomains for restrictions and boundary conditions
-# -----------------------------------------------------------------------------
-domain = Box(Point(0., 0., 0.), Point(1.0, 1.0, 1.0))
-mesh = generate_mesh(domain, 20)
-
-# Create subdomains
-subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
-# Create boundaries
-boundaries = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 
 # Define class
 class top(SubDomain):
@@ -74,24 +64,54 @@ class bot(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[1], 0.0) and on_boundary
 
+class refDomain(SubDomain):
+    def inside(self, x, on_boundary):
+        return (pow(x[0]-0.5,2) <= pow(0.25,2) - pow(x[1]-1,2) - pow(x[2]-0.5,2) - DOLFIN_EPS)
+
 # Convert classes
 top = top()
 bot = bot()
+refDomain = refDomain()
+
+# Create Mesh and define subdomains for restrictions and boundary conditions
+# -----------------------------------------------------------------------------
+inPlaneRes = 28
+outPlaneRes = 8
+# Define mesh and subdomain:
+mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), inPlaneRes, outPlaneRes, inPlaneRes)
+d = mesh.topology().dim()
+
+# Refinement using the `refine()` function and a Boolean `MeshFunction`:
+r_markers = MeshFunction("bool", mesh, d, False)
+refDomain.mark(r_markers, True)
+refinedMesh = refine(mesh, r_markers)
+
+# Transfering a non-negative integer-valued (`size_t`) `MeshFunction` to the
+# refined mesh using the `adapt()` function:
+meshFunctionToAdapt = MeshFunction("size_t", mesh, d, 0)
+refDomain.mark(meshFunctionToAdapt,1)
+adaptedMeshFunction = adapt(meshFunctionToAdapt,refinedMesh)
+
+# Create subdomains
+subdomains = MeshFunction("size_t", refinedMesh, refinedMesh.topology().dim(), refinedMesh.domains())
+# Create boundaries
+boundaries = MeshFunction("size_t", refinedMesh, refinedMesh.topology().dim() - 1)
+
 # Mark top boundary to restrict the lagrange multiplier
 top.mark(boundaries, 1)
-boundary_restriction = MeshRestriction(mesh, top)
+boundary_restriction = MeshRestriction(refinedMesh, top)
 
 # Measure redefines the subdomains and boundaries
 dx = Measure("dx")(subdomain_data=subdomains)
 ds = Measure("ds")(subdomain_data=boundaries)
 
 # Taylor-Hood Function space
-V = VectorFunctionSpace(mesh, "Lagrange", 2)
-V1 = FunctionSpace(mesh, "Lagrange", 2)
+V = VectorFunctionSpace(refinedMesh, "Lagrange", 2)
+V1 = FunctionSpace(refinedMesh, "Lagrange", 2)
 # Block mixed equal order function space
 W = BlockFunctionSpace([V, V1], restrict=[None, boundary_restriction])
 # Function spaces for interpolation
-V2 = FunctionSpace(mesh, "Lagrange", 1)       # For Gap function
+V2 = FunctionSpace(refinedMesh, "Lagrange", 1)       # For Gap function
 
 # Define trial and test functions and unknown solutions
 du = BlockTrialFunction(W)
@@ -148,7 +168,7 @@ J = det(F)                      # 3rd invariant of the deformation tensor
 # -----------------------------------------------------------------------------
 def P(u):                       # P = dW/dF:
     return mu*(F - inv(F.T)) + lmbda*ln(J)*inv(F.T)
-def ppos(x):                    # Definition of The Mackauley bracket <x>+
+def ppos(x):                    # Define the Mackauley bracket <x>+
     return (x+abs(x))/2.
 def aug_l(x):                   # Define the augmented lagrangian
     return l + k_pen*(u[1] - indent)
