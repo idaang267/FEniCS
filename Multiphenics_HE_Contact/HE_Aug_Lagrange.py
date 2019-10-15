@@ -37,7 +37,7 @@ solver_par.rename("solver")
 
 # Parameters
 # -----------------------------------------------------------------------------
-name = "HE_AugL_1E2.xdmf"           # File name
+name = "HE_AugL.xdmf"           # File name
 # Material Parameters
 E = 10.0                            # Young's Modulus
 nu = 0.3                            # Poisson's Ratio
@@ -53,7 +53,7 @@ tot_steps = 10                       # Total amount of steps
 depth = 0.00                        # Initial Depth (Updates in loop)
 R = 0.25                            # Fixed radius of indenter
 # Augmented lagrangian constant
-k_pen = 1E2
+k_pen = 1E3
 
 # Create Mesh and define subdomains for restrictions and boundary conditions
 # -----------------------------------------------------------------------------
