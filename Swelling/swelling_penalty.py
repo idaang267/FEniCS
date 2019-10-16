@@ -1,10 +1,12 @@
 # Swelling of Unit Cube
 #------------------------------------------------------------------------------
-# Model is based on Bouklas 2015 Paper "A nonlinear, transient FE method for
-# coupled solvent diffusion and large deformation of hydrogels"
+# Based on the formualation in 2015 paper "Effect of solvent diffusion on
+# crack-tip fields and driving force for fracture of hydrogels" which simplifies
+# the free energy formulation in a prior 2015 paper, "A nonlinear, transient FE
+# method for coupled solvent diffusion and large deformation of hydrogels"
 
+# Import module
 from dolfin import *                    # Dolfin module
-import matplotlib.pyplot as plt         # Module matplotlib for plotting
 
 # Solver parameters: Using PETSc SNES solver
 snes_solver_parameters = {"nonlinear_solver": "snes",
@@ -13,8 +15,7 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
-                                          # Newton line search
-                                          "method": "newtonls",
+                                          "method": "newtonls",         # Newton line search
                                           "absolute_tolerance": 1e-9,
                                           "relative_tolerance": 1e-9,
                                           "error_on_nonconvergence": False}}
@@ -35,26 +36,10 @@ class InitialConditions(UserExpression):
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0 = 0
         values[3] = 0
+        # Before we were ramping to zero from mu0 below (negative value)
         # mu0 = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
     def value_shape(self):
          return (4,)
-
-# Class for interfacing with the Newton solver
-class Equation(NonlinearProblem):
-    # Bilinear and linear forms are used to compute the residual and Jacobian
-    def __init__(self, a, L, bcs):
-        NonlinearProblem.__init__(self)
-        self.L = L              # Linear form
-        self.a = a              # Bilinear form
-        self.bcs = bcs          # Boundary conditions
-    def F(self, b, x):          # Computes the residual vector "b"
-        assemble(self.L, tensor=b)
-        for bc in self.bcs:
-            bc.apply(b)
-    def J(self, A, x):          # Computes the Jacobian matrix "A"
-        assemble(self.a, tensor=A)
-        for bc in self.bcs:
-            bc.apply(A)
 
 # Model parameters
 #------------------------------------------------------------------------------
@@ -69,28 +54,28 @@ steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
 t_indent_steps = 40             # Total indentation steps
-tot_steps = 50                  # Total number of time steps
+tot_steps = 40                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # NOTE: Time step must be in expression for updating the weak form
 DT = Expression ("dt", dt=dt, degree=0)
 t = 0.0                        # Initial time for paraview file
 c_exp = 1.2                    # Controls time step increase (20%)
-# Indeter parameters
+# Indenter parameters
 R = 0.25                       # Indenter radius
 depth = 0.01                   # Initial indenter depth of indentation
 # Note: A large penalty parameter deteriorates the problem conditioning,
 # solving time will drastically increase and the problem can fail
 pen = Constant(1e4)
 # Define mesh
-N_plane = 14                               # Number of elements on top plane
+N_plane = 8                               # Number of elements on top plane
 mesh = UnitCubeMesh(N_plane, 3, N_plane)   # Define unit cube mesh
 
 # Define function spaces
 #------------------------------------------------------------------------------
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
-# Taylor-Hood Elements for displacment (u) and chemical potential (mu)
+# Taylor-Hood Elements for displacement (u) and chemical potential (mu)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
     # Second order quadratic interpolation for u
 P1 = FunctionSpace(mesh, "Lagrange", 1)
