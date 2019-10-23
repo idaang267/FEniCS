@@ -30,22 +30,23 @@ parameters["form_compiler"]["quadrature_degree"] = 4
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "LTest.xdmf"             # Name of file
-inPlaneRes = 17                 #
-outPlaneRes = 10
-tol = 1E-14                     # Tolerance for coordinate comparisons
+name = "TestL.xdmf"              # Name of file
+k_pen = 1E3                     # Penalty Parameter
+l0 = 1.4                        # Initial Stretch (lambda_o)
+# Mesh Resolution
+inPlaneRes = 12                 # Along top surface (without refinement)
+outPlaneRes = 6                 # Resolution along cube height
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
-l0 = 1.4                        # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
-k_pen = 1E3                     # Penalty Parameter
 # Stepping parameters
 steps = 0                       # Steps (updated within loop)
-tot_steps = 20                  # Total number of time steps for indentation
+tot_steps = 10                  # Total number of time steps for indentation
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
 depth = 0.00                    # Initial indenter depth of indentation
+depth_indent = 0.01             # Amount to indent in each iteration
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
@@ -55,9 +56,15 @@ c_exp = 1.1                     # Controls time step increase (20%)
 
 # Create specific boundaries using classes
 #------------------------------------------------------------------------------
-# Mark Boundary Subdomains for each surface of the cube
-# Note: these subdomains are set according to ParaView default view where
-# x is right, y is up, and z-direction is out-of-plane
+# Mark Boundary Subdomains for each surface of the cube. These subdomains are
+# set according to ParaView default view where x is right, y is up, and
+# z-direction is out-of-plane
+
+# Bottom and top
+bot = CompiledSubDomain("near(x[1], 0.0) && on_boundary")
+class top(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[1], 1.0) and on_boundary
 
 # Lateral surfaces
 class symmetry_x(SubDomain):    # left and right surfaces
@@ -66,11 +73,7 @@ class symmetry_x(SubDomain):    # left and right surfaces
 class symmetry_z(SubDomain):    # front and back surfaces
     def inside(self, x, on_boundary):
         return near(x[2], 0.0) or near(x[2], 1.0) and on_boundary
-# Bottom and top
-bot = CompiledSubDomain("near(x[1], 0.0) && on_boundary")
-class top(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], 1.0) and on_boundary
+# Region where mesh is refined
 class refDomain(SubDomain):
     def inside(self, x, on_boundary):
         return (pow(x[0]-0.5,2) <= pow(0.35,2) - pow(x[1]-1,2) - pow(x[2]-0.5,2) - DOLFIN_EPS)
@@ -83,13 +86,11 @@ refDomain = refDomain()
 
 # Create and define mesh using mshr
 #------------------------------------------------------------------------------
-# Create unit cube
-
-# Define mesh and subdomain:
+# Create unit cube mesh
 mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), inPlaneRes, outPlaneRes, inPlaneRes)
-d = mesh.topology().dim()
 
-# Refinement using the `refine()` function and a Boolean `MeshFunction`:
+# Refinement of domain using the refine() function
+d = mesh.topology().dim()           # Topology dimension
 r_markers = MeshFunction("bool", mesh, d, False)
 refDomain.mark(r_markers, True)
 refinedMesh = refine(mesh,r_markers)
@@ -100,9 +101,9 @@ meshFunctionToAdapt = MeshFunction("size_t", mesh, d, 0)
 refDomain.mark(meshFunctionToAdapt,1)
 adaptedMeshFunction = adapt(meshFunctionToAdapt,refinedMesh)
 
-# Create subdomains
+# Create subdomains from refined mesh
 subdomains = MeshFunction("size_t", refinedMesh, refinedMesh.topology().dim(), refinedMesh.domains())
-# Create boundaries
+# Create boundaries from refined mesh
 boundaries = MeshFunction("size_t", refinedMesh, refinedMesh.topology().dim() - 1, 0)
 
 # Marking for visualization
@@ -118,35 +119,33 @@ ds = Measure("ds")(subdomain_data=boundaries)
 
 # Define mixed function space
 #------------------------------------------------------------------------------
-TT = TensorFunctionSpace(refinedMesh,'DG',0)      # Tensor space for stress projection
-V0 = FunctionSpace(refinedMesh, "DG", 0)          # Vector space for contact pressure
-# Taylor-Hood Elements for displacment (u) and chemical potential (mu)
+# Function spaces for projection
+TT = TensorFunctionSpace(refinedMesh,'DG',0) # Tensor space for stress
+V0 = FunctionSpace(refinedMesh, "DG", 0)     # Vector space for contact pressure
+# Taylor-Hood Elements for displacment (u), chemical potential (mu), lambda (lmbda)
 P2 = VectorFunctionSpace(refinedMesh, "Lagrange", 2)
 P1 = FunctionSpace(refinedMesh, "Lagrange", 1)
-P3 = FunctionSpace(refinedMesh, "Lagrange", 2)
-# Define mixed function space specifying underlying finite element
-# Define lambda on only the top surface and it should remain 0 for the region
+# Define mixed function space where lambda is restricted to the top surface
+# and should remain 0 for the bulk
 V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, top_restrict])
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
-du = BlockTrialFunction(V)                       # Incremental trial function
-v = BlockTestFunction(V)                         # Test Function
-w = BlockFunction(V)                             # Current solution for u and mu
-w0 = BlockFunction(V)                            # Previous solution for u and mu
+du = BlockTrialFunction(V)                  # Incremental trial function
+v = BlockTestFunction(V)                    # Test Function
+w = BlockFunction(V)                        # Current solution for u and mu
+w0 = BlockFunction(V)                       # Previous solution for u and mu
 # Split test functions and unknowns (produces a shallow copy not a deep copy)
-(v_u, v_mu, v_l) = block_split(v)                 # Split test function
+(v_u, v_mu, v_l) = block_split(v)           # Split test function
 # Lambda is a reserved keyword in FEniCS
-(u, mu, lmbda) = block_split(w)                   # Split current solution
-(u0, mu0, lmbda0) = block_split(w0)               # Split previous solution
+(u, mu, lmbda) = block_split(w)             # Split current solution
+(u0, mu0, lmbda0) = block_split(w0)         # Split previous solution
 
 # Define contact pressure and augmented lmbda output (name for Paraview)
 p = Function(V0, name="Contact pressure")
-aug_lmbda = Function(P1, name="Augmented Lagrangian")
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
-
 # Bottom of the cube is attached to substrate and has fixed displacement from
 # the reference relative to the current configuration
 u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
@@ -168,7 +167,6 @@ bc_r_f = DirichletBC(V.sub(0).sub(2), u_bf, sym_z)
 
 # Combined boundary conditions for each subspace
 bc = BlockDirichletBC([[bc_u, bc_r_l, bc_r_r, bc_r_b, bc_r_f], [], []])
-#bc = BlockDirichletBC([[bc_u], [], []])
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -216,18 +214,15 @@ def Flux(u, mu):
 # Definition of The Mackauley bracket <x>+
 def ppos(x):
     return (x+abs(x))/2.
-# Define the augmented lagrangian
-def aug_l(x):
-    return lmbda + k_pen*(u[1] - indent)
 
-# Define the indenter with a parabola
+# Define the indenter with a pabola
 indent = Expression("-depth+(l0-1)+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)", \
                         l0=l0, depth=depth, R=R, degree=2)
 
 # Variational problem
-WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx + v_u[1]*ppos(aug_l(lmbda))*ds,
+WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx + lmbda*v_u[1]*ds,
     (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx),
-    v_l*(u[1] - indent)*ds - (1/k_pen)*lmbda*v_l*ds]
+    ppos(u[1] - indent)*v_l*ds]
 
 # Compute directional derivative about w in the direction of du (Jacobian)
 Jacobian = block_derivative(WF, w, du)
@@ -238,7 +233,6 @@ solver = BlockPETScSNESSolver(problem)
 solver.parameters.update(snes_solver_parameters["snes_solver"])
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name)
-
 
 # Solve for each value using the previous solution as a starting point
 while (steps <= tot_steps):
@@ -258,15 +252,14 @@ while (steps <= tot_steps):
     dt = dt*c_exp;                  # Update time step with exponent value
     DT.dt = dt                      # Update time step for weak forms
     t += dt                         # Update total time for paraview file
-    # Update indenter depth parameter
-    depth += 0.005
-    indent.depth = depth            # Update depth in expression class
+    # Update indenter depth parameter then update in expression class
+    depth += depth_indent
+    indent.depth = depth
 
     # Write the results to a file using a deep copy not a shallow copy
     (u, mu, lmbda) = w.block_split()
     PTensor = project(P(u, mu), TT)                 # Project nominal stress
     p.assign(project(P(u, mu)[2, 2], V0))           # Project pressure
-    aug_lmbda.assign(project(aug_l(l)), P1)         # Project augmented lambda
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
     mu.rename("Chemical Potential", "mu")
@@ -281,4 +274,3 @@ while (steps <= tot_steps):
     file_results.write(lmbda, t)
     file_results.write(PTensor, t)
     file_results.write(p, t)
-    file_results.write(aug_lmbda, t)
