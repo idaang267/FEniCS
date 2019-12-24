@@ -58,7 +58,7 @@ userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.9)
 userpar.add("l0", 3.0)
-userpar.add("tot_steps", 25)
+userpar.add("tot_steps", 100)
 userpar.parse()
 
 # Other user parameters
@@ -75,7 +75,7 @@ tot_steps = userpar["tot_steps"]# Total number of time steps
 g_steps = 0                     # Surface parameter counter (updated within loop)
 t_g_steps = 10                  # Total surface parameter (gamma) steps
 # TEST
-eq_steps = 15
+eq_steps = 50
 c_steps = 0                         # Chemical step counter (updated within loop)
 t_c_steps = tot_steps - t_g_steps   # Total chemical steps
 # Name of file
