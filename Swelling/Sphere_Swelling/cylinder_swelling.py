@@ -243,7 +243,7 @@ while (steps < tot_steps):
     print("Gamma: " + str(gamma))
 
     # Update the chemical potential
-    if steps >= eq_steps && c_steps < t_c_steps:
+    if steps >= eq_steps and c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
