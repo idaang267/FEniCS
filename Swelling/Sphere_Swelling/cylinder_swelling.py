@@ -58,7 +58,7 @@ userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.9)
 userpar.add("l0", 3.0)
-userpar.add("tot_steps", 100)
+userpar.add("tot_steps", 200)
 userpar.parse()
 
 # Other user parameters
@@ -75,9 +75,9 @@ tot_steps = userpar["tot_steps"]# Total number of time steps
 g_steps = 0                     # Surface parameter counter (updated within loop)
 t_g_steps = 10                  # Total surface parameter (gamma) steps
 # TEST
-eq_steps = 50
-c_steps = 0                         # Chemical step counter (updated within loop)
-t_c_steps = tot_steps - t_g_steps   # Total chemical steps
+eq_steps = 100
+c_steps = 0                     # Chemical step counter (updated within loop)
+t_c_steps = 10                  # Total chemical steps
 # Name of file
 name = "2D"
 sim_param1 = "_chi_%.1f" % (chi)
@@ -222,6 +222,8 @@ problem = NonlinearVariationalProblem(WF, w, bc, J=Jacobian)
 solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
+data_steps = np.zeros((len(tot_steps), 3))
+
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name + sim_param1 + sim_param2 + sim_param3 + sim_param4 + ".xdmf")
 
@@ -252,8 +254,10 @@ while (steps < tot_steps):
 
     c_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
     c_max = 0.0
-    val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
-    print("Chemical value: " + str(val))
+    chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
+    print("Chemical value: " + str(chem_val))
+
+    data_steps[steps] = np.array([steps, chem_val, gamma])
 
     # Update time parameters
     dt = dt*c_exp;                # Update time step with exponent value
@@ -275,3 +279,18 @@ while (steps < tot_steps):
     file_results.write(u,t)
     file_results.write(mu,t)
     file_results.write(PTensor,t)
+
+    plt.figure(1)
+    plt.plot(data_steps[:, 0], data_steps[:, 1], 'k-')
+    plt.xlabel("Time")
+    plt.ylabel("Chemical Potential")
+    plt.savefig('ChemPotential.pdf', transparent=True)
+    plt.close()
+
+    plt.figure(2)
+    p2, = plt.plot(data_steps[:, 0], data_steps[:, 2], 'k-')
+    plt.xlabel("Time")
+    plt.ylabel("Gamma")
+    plt.savefig('gamma.pdf', transparent=True)
+    plt.close()
+    
