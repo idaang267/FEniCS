@@ -7,6 +7,8 @@
 
 from dolfin import *                    # Dolfin module
 import matplotlib.pyplot as plt         # Module matplotlib for plotting
+import numpy as np
+
 from mshr import *
 from ufl import cofac, rank
 
@@ -293,4 +295,3 @@ while (steps < tot_steps):
     plt.ylabel("Gamma")
     plt.savefig('gamma.pdf', transparent=True)
     plt.close()
-    
