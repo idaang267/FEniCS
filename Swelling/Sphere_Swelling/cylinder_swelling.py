@@ -241,7 +241,7 @@ while (steps < tot_steps):
     solver_problem.solve()
 
     # Update the surface stress
-    if g_steps < t_g_steps:
+    if g_steps <= t_g_steps:
         g_steps += 1
         gamma += 0.01
     gamma += 0
@@ -250,7 +250,7 @@ while (steps < tot_steps):
     # Update the chemical potential
     crit1 = t_g_steps + eq_steps
     crit2 = t_g_steps + eq_steps + t_c_steps
-    if (steps >= crit1 and steps < crit2) and c_steps < t_c_steps:
+    if (steps > crit1 and steps <= crit2) and c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
@@ -297,11 +297,3 @@ while (steps < tot_steps):
     plt.ylabel("Gamma")
     plt.savefig('gamma.pdf', transparent=True)
     plt.close()
-
-    plt.figure(3)
-    p1, = plt.plot(data_steps[:, 0], data_steps[:, 1])
-    p2, = plt.plot(data_steps[:, 0], data_steps[:, 2])
-    plt.legend([p1, p2], ["Chemical Potential", "Gamma"], loc="best", frameon=False)
-    plt.xlabel("Time")
-    plt.ylabel("Magnitude")
-    plt.savefig('RampingSequence.pdf', transparent=True)
