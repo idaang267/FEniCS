@@ -59,8 +59,8 @@ def pinPoint(x, on_boundary):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("chi", 0.4)
-userpar.add("gamma", 0.6)
+userpar.add("chi", 0.2)
+userpar.add("gamma", 0.9)
 userpar.add("l0", 1.6)
 userpar.add("eq_steps1", 0)
 userpar.add("eq_steps2", 100)
@@ -92,7 +92,7 @@ sim_param1 = "_chi_%.1f" % (chi)
 sim_param2 = "_g_%.1f" % (gamma)
 sim_param3 = "_l0_%.1f" % (l0)
 sim_param4 = "_steps_%.0f" % (tot_steps)
-savedir = name + sim_param4 + "/"
+savedir = name + sim_param1 + sim_param4 + "/"
 
 # If directory exists, remove recursively and create new directory
 if MPI.rank(MPI.comm_world) == 0:
@@ -100,7 +100,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Time parameters
-dt = 10**(-3)                   # Starting time step
+dt = 10**(-2)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
 # Initial time for paraview file
