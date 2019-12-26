@@ -226,7 +226,7 @@ solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Initialize data array
-data_steps = np.zeros((tot_steps+1, 3))
+data_steps = np.zeros((tot_steps, 3))
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
 file_results = XDMFFile(name + sim_param1 + sim_param2 + sim_param3 + sim_param4 + ".xdmf")
