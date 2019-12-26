@@ -60,7 +60,7 @@ userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.9)
 userpar.add("l0", 3.0)
-userpar.add("tot_steps", 200)
+userpar.add("eq_steps", 20)
 userpar.parse()
 
 # Other user parameters
@@ -73,13 +73,15 @@ l0 = userpar["l0"]              # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
-tot_steps = userpar["tot_steps"]# Total number of time steps
 g_steps = 0                     # Surface parameter counter (updated within loop)
 t_g_steps = 10                  # Total surface parameter (gamma) steps
-# TEST
-eq_steps = 100
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 10                  # Total chemical steps
+# Number of steps to reach equilibrium for stress or chemical ramping case
+eq_steps = userpar["eq_steps"]
+# Total number of time steps
+tot_steps = 2*eq_steps + t_g_steps + t_c_steps
+
 # Name of file
 name = "2D"
 sim_param1 = "_chi_%.1f" % (chi)
@@ -125,10 +127,10 @@ ds = Measure("ds")(subdomain_data=boundaries)
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
 # Define Taylor-Hood Elements
+# Second order quadratic interpolation for displacement (u)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
-    # Second order quadratic interpolation for displacement (u)
+# First order linear interpolation for chemical potential
 P1 = FunctionSpace(mesh, "Lagrange", 1)
-    # First order linear interpolation for chemical potential
 # Use ufl_element() to return the UFL element of the function spaces
 P2elem = P2.ufl_element()
 P1elem = P1.ufl_element()
@@ -173,16 +175,15 @@ N = FacetNormal(mesh)                    # Normal vector in the reference config
 NansonOp = (cofac(F))                    # Element of area transformation operator
 deformed_N = dot(NansonOp,N)             # Surface element vector in the deformed configuration
 Jsurf = sqrt(dot(deformed_N,deformed_N)) # Norm of the surface element vector in the current configuration
-
-Isurf = I - outer(N,N)
-Fsurf = dot(F, Isurf)
+Isurf = I - outer(N,N)                   # Surface identity
+Fsurf = dot(F, Isurf)                    # Surface deformation gradient
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
 # Mark Boundary Subdomains for surface
 # Note: ParaView default view, x is right, y is up, and z-direction is out-of-plane
 
-# Chemical potential BC ramped from mu0 to 0 in the IC class
+# Chemical potential BC ramped from mu0 (negative) to 0 in the IC class
 chem_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
 chem_max = 0.0
 chem_p = Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
@@ -224,6 +225,7 @@ problem = NonlinearVariationalProblem(WF, w, bc, J=Jacobian)
 solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
+# Initialize data array
 data_steps = np.zeros((tot_steps+1, 3))
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
@@ -233,7 +235,6 @@ file_results = XDMFFile(name + sim_param1 + sim_param2 + sim_param3 + sim_param4
 while (steps < tot_steps):
     # Print outs to track code progress
     print("Steps: " + str(steps))
-    #print("Time: " + str(t))
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
@@ -242,31 +243,29 @@ while (steps < tot_steps):
     # Update the surface stress
     if g_steps < t_g_steps:
         g_steps += 1
-        gamma += 0.001
+        gamma += 0.01
+    gamma += 0
     Gamma.gamma = gamma
-    print("Gamma: " + str(gamma))
 
     # Update the chemical potential
-    if steps >= eq_steps and c_steps < t_c_steps:
+    crit1 = t_g_steps + eq_steps
+    crit2 = t_g_steps + eq_steps + t_c_steps
+    if (steps >= crit1 and steps < crit2) and c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
 
-    steps += 1                      # Update total steps
 
-    c_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-    c_max = 0.0
-    chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
-    print("Chemical value: " + str(chem_val))
-
+    # Save data to plot
     data_steps[steps] = np.array([steps, chem_val, gamma])
 
-    # Update time parameters
+    # Update total steps and time parameters
+    steps += 1                     # Update total steps
     dt = dt*c_exp;                # Update time step with exponent value
     DT.dt = dt                    # Update time step for weak forms
     t += dt                       # Update total time for paraview file
 
-    # Deep copy not a shallow copy like split(w) for writing the results to file
+    # Writing the results to file
     (u, mu) = w.split()
     # Project nominal stress to tensor function space
     PTensor = project(P(u, mu), TT)
@@ -290,8 +289,16 @@ while (steps < tot_steps):
     plt.close()
 
     plt.figure(2)
-    p2, = plt.plot(data_steps[:, 0], data_steps[:, 2], 'k-')
+    plt.plot(data_steps[:, 0], data_steps[:, 2], 'k-')
     plt.xlabel("Time")
     plt.ylabel("Gamma")
     plt.savefig('gamma.pdf', transparent=True)
     plt.close()
+
+    plt.figure(3)
+    p1, = plt.plot(data_steps[:, 0], data_steps[:, 1])
+    p2, = plt.plot(data_steps[:, 0], data_steps[:, 2])
+    plt.legend([p1, p2], ["Chemical Potential", "Gamma"], loc="best", frameon=False)
+    plt.xlabel("Time")
+    plt.ylabel("Magnitude")
+    plt.savefig('RampingSequence.pdf', transparent=True)
