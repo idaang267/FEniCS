@@ -10,7 +10,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/0/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0011000000000000001" />
+        <Time Value="0.011000000000000001" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/0</DataItem>
         </Attribute>
@@ -28,7 +28,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/3/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0023100000000000004" />
+        <Time Value="0.023100000000000002" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/3</DataItem>
         </Attribute>
@@ -46,7 +46,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/6/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0036410000000000006" />
+        <Time Value="0.036410000000000005" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/6</DataItem>
         </Attribute>
@@ -64,7 +64,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/9/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0051051000000000013" />
+        <Time Value="0.051051000000000006" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/9</DataItem>
         </Attribute>
@@ -82,7 +82,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/12/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0067156100000000021" />
+        <Time Value="0.06715610000000001" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/12</DataItem>
         </Attribute>
@@ -100,7 +100,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/15/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.0084871710000000034" />
+        <Time Value="0.084871710000000017" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/15</DataItem>
         </Attribute>
@@ -118,7 +118,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/18/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.010435888100000004" />
+        <Time Value="0.10435888100000003" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/18</DataItem>
         </Attribute>
@@ -136,7 +136,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/21/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.012579476910000005" />
+        <Time Value="0.12579476910000004" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/21</DataItem>
         </Attribute>
@@ -154,7 +154,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/24/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.014937424601000006" />
+        <Time Value="0.14937424601000004" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/24</DataItem>
         </Attribute>
@@ -172,7 +172,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/27/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.017531167061100007" />
+        <Time Value="0.17531167061100006" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/27</DataItem>
         </Attribute>
@@ -190,7 +190,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/30/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.02038428376721001" />
+        <Time Value="0.20384283767210007" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/30</DataItem>
         </Attribute>
@@ -208,7 +208,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/33/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.023522712143931014" />
+        <Time Value="0.2352271214393101" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/33</DataItem>
         </Attribute>
@@ -226,7 +226,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/36/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.026974983358324118" />
+        <Time Value="0.26974983358324112" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/36</DataItem>
         </Attribute>
@@ -244,7 +244,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/39/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.030772481694156532" />
+        <Time Value="0.30772481694156528" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/39</DataItem>
         </Attribute>
@@ -262,7 +262,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/42/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.034949729863572185" />
+        <Time Value="0.34949729863572182" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/42</DataItem>
         </Attribute>
@@ -280,7 +280,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/45/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.039544702849929406" />
+        <Time Value="0.39544702849929403" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/45</DataItem>
         </Attribute>
@@ -298,7 +298,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/48/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.04459917313492235" />
+        <Time Value="0.44599173134922349" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/48</DataItem>
         </Attribute>
@@ -316,7 +316,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/51/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.050159090448414587" />
+        <Time Value="0.50159090448414589" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/51</DataItem>
         </Attribute>
@@ -334,7 +334,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/54/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.056274999493256053" />
+        <Time Value="0.5627499949325605" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/54</DataItem>
         </Attribute>
@@ -352,7 +352,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/57/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.063002499442581669" />
+        <Time Value="0.63002499442581661" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/57</DataItem>
         </Attribute>
@@ -370,7 +370,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/60/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.070402749386839839" />
+        <Time Value="0.70402749386839836" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/60</DataItem>
         </Attribute>
@@ -388,7 +388,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/63/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.078543024325523833" />
+        <Time Value="0.78543024325523825" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/63</DataItem>
         </Attribute>
@@ -406,7 +406,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/66/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.087497326758076227" />
+        <Time Value="0.8749732675807621" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/66</DataItem>
         </Attribute>
@@ -424,7 +424,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/69/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.097347059433883859" />
+        <Time Value="0.97347059433883842" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/69</DataItem>
         </Attribute>
@@ -442,7 +442,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/72/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.10818176537727225" />
+        <Time Value="1.0818176537727224" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/72</DataItem>
         </Attribute>
@@ -460,7 +460,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/75/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.12009994191499948" />
+        <Time Value="1.2009994191499946" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/75</DataItem>
         </Attribute>
@@ -478,7 +478,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/78/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.13320993610649945" />
+        <Time Value="1.3320993610649943" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/78</DataItem>
         </Attribute>
@@ -496,7 +496,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/81/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.14763092971714942" />
+        <Time Value="1.4763092971714937" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/81</DataItem>
         </Attribute>
@@ -514,7 +514,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/84/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.16349402268886437" />
+        <Time Value="1.6349402268886433" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/84</DataItem>
         </Attribute>
@@ -532,7 +532,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/87/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.18094342495775081" />
+        <Time Value="1.8094342495775078" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/87</DataItem>
         </Attribute>
@@ -550,7 +550,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/90/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.20013776745352591" />
+        <Time Value="2.0013776745352585" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/90</DataItem>
         </Attribute>
@@ -568,7 +568,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/93/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.22125154419887852" />
+        <Time Value="2.2125154419887845" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/93</DataItem>
         </Attribute>
@@ -586,7 +586,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/96/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.24447669861876639" />
+        <Time Value="2.4447669861876631" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/96</DataItem>
         </Attribute>
@@ -604,7 +604,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/99/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.27002436848064304" />
+        <Time Value="2.7002436848064297" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/99</DataItem>
         </Attribute>
@@ -622,7 +622,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/102/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.29812680532870739" />
+        <Time Value="2.981268053287073" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/102</DataItem>
         </Attribute>
@@ -640,7 +640,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/105/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.32903948586157816" />
+        <Time Value="3.2903948586157807" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/105</DataItem>
         </Attribute>
@@ -658,7 +658,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/108/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.36304343444773601" />
+        <Time Value="3.6304343444773592" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/108</DataItem>
         </Attribute>
@@ -676,7 +676,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/111/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.40044777789250963" />
+        <Time Value="4.0044777789250956" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/111</DataItem>
         </Attribute>
@@ -694,7 +694,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/114/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.44159255568176065" />
+        <Time Value="4.415925556817605" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/114</DataItem>
         </Attribute>
@@ -712,7 +712,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/117/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.48685181124993676" />
+        <Time Value="4.8685181124993662" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/117</DataItem>
         </Attribute>
@@ -730,7 +730,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/120/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.53663699237493045" />
+        <Time Value="5.3663699237493034" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/120</DataItem>
         </Attribute>
@@ -748,7 +748,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/123/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.59140069161242359" />
+        <Time Value="5.9140069161242339" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/123</DataItem>
         </Attribute>
@@ -766,7 +766,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/126/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.65164076077366595" />
+        <Time Value="6.5164076077366575" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/126</DataItem>
         </Attribute>
@@ -784,7 +784,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/129/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.71790483685103257" />
+        <Time Value="7.1790483685103235" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/129</DataItem>
         </Attribute>
@@ -802,7 +802,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/132/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.79079532053613588" />
+        <Time Value="7.9079532053613564" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/132</DataItem>
         </Attribute>
@@ -820,7 +820,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/135/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.8709748525897496" />
+        <Time Value="8.709748525897492" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/135</DataItem>
         </Attribute>
@@ -838,7 +838,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/138/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="0.95917233784872469" />
+        <Time Value="9.5917233784872415" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/138</DataItem>
         </Attribute>
@@ -856,7 +856,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/141/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.0561895716335972" />
+        <Time Value="10.561895716335966" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/141</DataItem>
         </Attribute>
@@ -874,7 +874,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/144/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.1629085287969569" />
+        <Time Value="11.629085287969565" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/144</DataItem>
         </Attribute>
@@ -892,7 +892,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/147/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.2802993816766528" />
+        <Time Value="12.802993816766522" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/147</DataItem>
         </Attribute>
@@ -910,7 +910,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/150/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.4094293198443182" />
+        <Time Value="14.094293198443175" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/150</DataItem>
         </Attribute>
@@ -928,7 +928,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/153/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.5514722518287503" />
+        <Time Value="15.514722518287494" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/153</DataItem>
         </Attribute>
@@ -946,7 +946,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/156/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.7077194770116255" />
+        <Time Value="17.077194770116243" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/156</DataItem>
         </Attribute>
@@ -964,7 +964,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/159/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1.8795914247127883" />
+        <Time Value="18.795914247127868" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/159</DataItem>
         </Attribute>
@@ -982,7 +982,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/162/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2.0686505671840671" />
+        <Time Value="20.686505671840656" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/162</DataItem>
         </Attribute>
@@ -1000,7 +1000,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/165/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2.2766156239024742" />
+        <Time Value="22.766156239024724" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/165</DataItem>
         </Attribute>
@@ -1018,7 +1018,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/168/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2.5053771862927219" />
+        <Time Value="25.053771862927199" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/168</DataItem>
         </Attribute>
@@ -1036,7 +1036,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/171/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2.7570149049219941" />
+        <Time Value="27.570149049219921" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/171</DataItem>
         </Attribute>
@@ -1054,7 +1054,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/174/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="3.0338163954141937" />
+        <Time Value="30.338163954141915" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/174</DataItem>
         </Attribute>
@@ -1072,7 +1072,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/177/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="3.3382980349556135" />
+        <Time Value="33.382980349556107" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/177</DataItem>
         </Attribute>
@@ -1090,7 +1090,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/180/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="3.6732278384511754" />
+        <Time Value="36.732278384511723" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/180</DataItem>
         </Attribute>
@@ -1108,7 +1108,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/183/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="4.0416506222962933" />
+        <Time Value="40.416506222962902" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/183</DataItem>
         </Attribute>
@@ -1126,7 +1126,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/186/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="4.4469156845259228" />
+        <Time Value="44.469156845259192" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/186</DataItem>
         </Attribute>
@@ -1144,7 +1144,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/189/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="4.8927072529785152" />
+        <Time Value="48.927072529785114" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/189</DataItem>
         </Attribute>
@@ -1162,7 +1162,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/192/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="5.3830779782763676" />
+        <Time Value="53.830779782763628" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/192</DataItem>
         </Attribute>
@@ -1180,7 +1180,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/195/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="5.9224857761040051" />
+        <Time Value="59.224857761039999" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/195</DataItem>
         </Attribute>
@@ -1198,7 +1198,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/198/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="6.5158343537144061" />
+        <Time Value="65.158343537144006" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/198</DataItem>
         </Attribute>
@@ -1216,7 +1216,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/201/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="7.1685177890858478" />
+        <Time Value="71.685177890858412" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/201</DataItem>
         </Attribute>
@@ -1234,7 +1234,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/204/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="7.8864695679944337" />
+        <Time Value="78.864695679944262" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/204</DataItem>
         </Attribute>
@@ -1252,7 +1252,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/207/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="8.6762165247938778" />
+        <Time Value="86.762165247938697" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/207</DataItem>
         </Attribute>
@@ -1270,7 +1270,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/210/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="9.5449381772732664" />
+        <Time Value="95.449381772732579" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/210</DataItem>
         </Attribute>
@@ -1288,7 +1288,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/213/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="10.500531995000594" />
+        <Time Value="105.00531995000584" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/213</DataItem>
         </Attribute>
@@ -1306,7 +1306,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/216/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="11.551685194500655" />
+        <Time Value="115.51685194500644" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/216</DataItem>
         </Attribute>
@@ -1324,7 +1324,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/219/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="12.707953713950721" />
+        <Time Value="127.0795371395071" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/219</DataItem>
         </Attribute>
@@ -1342,7 +1342,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/222/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="13.979849085345794" />
+        <Time Value="139.79849085345782" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/222</DataItem>
         </Attribute>
@@ -1360,7 +1360,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/225/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="15.378933993880375" />
+        <Time Value="153.78933993880361" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/225</DataItem>
         </Attribute>
@@ -1378,7 +1378,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/228/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="16.917927393268414" />
+        <Time Value="169.179273932684" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/228</DataItem>
         </Attribute>
@@ -1396,7 +1396,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/231/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="18.610820132595258" />
+        <Time Value="186.10820132595242" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/231</DataItem>
         </Attribute>
@@ -1414,7 +1414,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/234/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="20.473002145854785" />
+        <Time Value="204.7300214585477" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/234</DataItem>
         </Attribute>
@@ -1432,7 +1432,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/237/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="22.521402360440266" />
+        <Time Value="225.21402360440248" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/237</DataItem>
         </Attribute>
@@ -1450,7 +1450,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/240/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="24.774642596484295" />
+        <Time Value="247.74642596484276" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/240</DataItem>
         </Attribute>
@@ -1468,7 +1468,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/243/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="27.253206856132728" />
+        <Time Value="272.53206856132704" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/243</DataItem>
         </Attribute>
@@ -1486,7 +1486,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/246/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="29.979627541746002" />
+        <Time Value="299.79627541745975" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/246</DataItem>
         </Attribute>
@@ -1504,7 +1504,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/249/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="32.978690295920607" />
+        <Time Value="329.78690295920575" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/249</DataItem>
         </Attribute>
@@ -1522,7 +1522,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/252/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="36.277659325512673" />
+        <Time Value="362.77659325512639" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/252</DataItem>
         </Attribute>
@@ -1540,7 +1540,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/255/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="39.906525258063944" />
+        <Time Value="399.06525258063908" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/255</DataItem>
         </Attribute>
@@ -1558,7 +1558,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/258/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="43.898277783870341" />
+        <Time Value="438.98277783870304" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/258</DataItem>
         </Attribute>
@@ -1576,7 +1576,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/261/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="48.289205562257379" />
+        <Time Value="482.89205562257337" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/261</DataItem>
         </Attribute>
@@ -1594,7 +1594,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/264/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="53.11922611848312" />
+        <Time Value="531.19226118483073" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/264</DataItem>
         </Attribute>
@@ -1612,7 +1612,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/267/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="58.432248730331438" />
+        <Time Value="584.32248730331389" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/267</DataItem>
         </Attribute>
@@ -1630,7 +1630,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/270/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="64.276573603364582" />
+        <Time Value="642.76573603364534" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/270</DataItem>
         </Attribute>
@@ -1648,7 +1648,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/273/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="70.705330963701044" />
+        <Time Value="707.05330963700999" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/273</DataItem>
         </Attribute>
@@ -1666,7 +1666,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/276/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="77.776964060071151" />
+        <Time Value="777.769640600711" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/276</DataItem>
         </Attribute>
@@ -1684,7 +1684,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/279/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="85.555760466078269" />
+        <Time Value="855.5576046607822" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/279</DataItem>
         </Attribute>
@@ -1702,7 +1702,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/282/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="94.112436512686102" />
+        <Time Value="941.12436512686054" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/282</DataItem>
         </Attribute>
@@ -1720,7 +1720,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/285/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="103.52478016395472" />
+        <Time Value="1035.2478016395467" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/285</DataItem>
         </Attribute>
@@ -1738,7 +1738,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/288/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="113.8783581803502" />
+        <Time Value="1138.7835818035014" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/288</DataItem>
         </Attribute>
@@ -1756,7 +1756,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/291/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="125.26729399838524" />
+        <Time Value="1252.6729399838516" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/291</DataItem>
         </Attribute>
@@ -1774,7 +1774,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/294/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="137.79512339822378" />
+        <Time Value="1377.9512339822368" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/294</DataItem>
         </Attribute>
@@ -1792,7 +1792,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/297/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="151.57573573804618" />
+        <Time Value="1515.7573573804605" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/297</DataItem>
         </Attribute>
@@ -1810,7 +1810,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/300/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="166.73440931185081" />
+        <Time Value="1667.3440931185066" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/300</DataItem>
         </Attribute>
@@ -1828,7 +1828,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/303/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="183.40895024303592" />
+        <Time Value="1834.0895024303575" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/303</DataItem>
         </Attribute>
@@ -1846,7 +1846,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/306/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="201.75094526733952" />
+        <Time Value="2017.5094526733933" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/306</DataItem>
         </Attribute>
@@ -1864,7 +1864,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/309/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="221.9271397940735" />
+        <Time Value="2219.2713979407326" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/309</DataItem>
         </Attribute>
@@ -1882,7 +1882,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/312/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="244.12095377348086" />
+        <Time Value="2441.209537734806" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/312</DataItem>
         </Attribute>
@@ -1900,7 +1900,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/315/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="268.53414915082897" />
+        <Time Value="2685.3414915082867" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/315</DataItem>
         </Attribute>
@@ -1918,7 +1918,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/318/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="295.38866406591188" />
+        <Time Value="2953.8866406591155" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/318</DataItem>
         </Attribute>
@@ -1936,7 +1936,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/321/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="324.92863047250307" />
+        <Time Value="3249.2863047250275" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/321</DataItem>
         </Attribute>
@@ -1954,7 +1954,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/324/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="357.42259351975343" />
+        <Time Value="3574.2259351975308" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/324</DataItem>
         </Attribute>
@@ -1972,7 +1972,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/327/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="393.16595287172879" />
+        <Time Value="3931.659528717284" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/327</DataItem>
         </Attribute>
@@ -1990,7 +1990,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/330/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="432.4836481589017" />
+        <Time Value="4324.8364815890127" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/330</DataItem>
         </Attribute>
@@ -2008,7 +2008,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/333/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="475.73311297479194" />
+        <Time Value="4757.331129747914" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/333</DataItem>
         </Attribute>
@@ -2026,7 +2026,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/336/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="523.30752427227117" />
+        <Time Value="5233.0752427227062" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/336</DataItem>
         </Attribute>
@@ -2044,7 +2044,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/339/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="575.63937669949837" />
+        <Time Value="5756.3937669949773" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/339</DataItem>
         </Attribute>
@@ -2062,7 +2062,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/342/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="633.20441436944827" />
+        <Time Value="6332.0441436944757" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/342</DataItem>
         </Attribute>
@@ -2080,7 +2080,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/345/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="696.5259558063932" />
+        <Time Value="6965.2595580639245" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/345</DataItem>
         </Attribute>
@@ -2098,7 +2098,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/348/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="766.17965138703255" />
+        <Time Value="7661.7965138703175" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/348</DataItem>
         </Attribute>
@@ -2116,7 +2116,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/351/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="842.79871652573581" />
+        <Time Value="8427.9871652573493" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/351</DataItem>
         </Attribute>
@@ -2134,7 +2134,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/354/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="927.07968817830942" />
+        <Time Value="9270.7968817830861" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/354</DataItem>
         </Attribute>
@@ -2152,7 +2152,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/357/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1019.7887569961405" />
+        <Time Value="10197.887569961396" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/357</DataItem>
         </Attribute>
@@ -2170,7 +2170,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/360/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1121.7687326957546" />
+        <Time Value="11217.687326957537" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/360</DataItem>
         </Attribute>
@@ -2188,7 +2188,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/363/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1233.94670596533" />
+        <Time Value="12339.467059653292" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/363</DataItem>
         </Attribute>
@@ -2206,7 +2206,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/366/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1357.3424765618631" />
+        <Time Value="13573.424765618623" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/366</DataItem>
         </Attribute>
@@ -2224,7 +2224,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/369/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1493.0778242180495" />
+        <Time Value="14930.778242180488" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/369</DataItem>
         </Attribute>
@@ -2242,7 +2242,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/372/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1642.3867066398545" />
+        <Time Value="16423.867066398539" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/372</DataItem>
         </Attribute>
@@ -2260,7 +2260,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/375/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1806.6264773038401" />
+        <Time Value="18066.264773038394" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/375</DataItem>
         </Attribute>
@@ -2278,7 +2278,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/378/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="1987.2902250342242" />
+        <Time Value="19872.902250342235" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/378</DataItem>
         </Attribute>
@@ -2296,7 +2296,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/381/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2186.020347537647" />
+        <Time Value="21860.20347537646" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/381</DataItem>
         </Attribute>
@@ -2314,7 +2314,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/384/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2404.6234822914121" />
+        <Time Value="24046.23482291411" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/384</DataItem>
         </Attribute>
@@ -2332,7 +2332,7 @@
         <Geometry GeometryType="XY">
           <DataItem Dimensions="1860 2" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/Mesh/387/mesh/geometry</DataItem>
         </Geometry>
-        <Time Value="2645.0869305205533" />
+        <Time Value="26450.869305205524" />
         <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="1860 3" Format="HDF">2D_chi_0.6_g_0.5_l0_1.6_steps_130.h5:/VisualisationVector/387</DataItem>
         </Attribute>
