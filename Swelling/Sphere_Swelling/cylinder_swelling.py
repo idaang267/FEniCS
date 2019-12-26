@@ -80,7 +80,8 @@ t_g_steps = 10                  # Total surface parameter (gamma) steps
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 10                  # Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
-eq_steps = userpar["eq_steps"]
+eq_steps1 = userpar["eq_steps1"]
+eq_steps2 = userpar["eq_steps2"]
 # Total number of time steps
 tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
 
