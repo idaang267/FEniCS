@@ -61,7 +61,8 @@ userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.9)
 userpar.add("l0", 3.0)
-userpar.add("eq_steps", 20)
+userpar.add("eq_steps1", 20)
+userpar.add("eq_steps2", 50)
 userpar.parse()
 
 # Other user parameters
@@ -81,7 +82,7 @@ t_c_steps = 10                  # Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
 eq_steps = userpar["eq_steps"]
 # Total number of time steps
-tot_steps = 2*eq_steps + t_g_steps + t_c_steps
+tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
 
 # Name of file
 name = "2D"
@@ -255,8 +256,8 @@ while (steps < tot_steps):
     Gamma.gamma = gamma
 
     # Update the chemical potential
-    crit1 = t_g_steps + eq_steps
-    crit2 = t_g_steps + eq_steps + t_c_steps
+    crit1 = t_g_steps + eq_steps1
+    crit2 = t_g_steps + eq_steps1 + t_c_steps
     if (steps > crit1 and steps <= crit2) and c_steps < t_c_steps:
         c_steps += 1
     c_steps += 0
