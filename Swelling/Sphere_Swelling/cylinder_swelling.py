@@ -8,6 +8,7 @@
 from dolfin import *                    # Dolfin module
 import matplotlib.pyplot as plt         # Module matplotlib for plotting
 import numpy as np
+import os
 
 from mshr import *
 from ufl import cofac, rank
@@ -88,6 +89,12 @@ sim_param1 = "_chi_%.1f" % (chi)
 sim_param2 = "_g_%.1f" % (gamma)
 sim_param3 = "_l0_%.1f" % (l0)
 sim_param4 = "_steps_%.0f" % (tot_steps)
+savedir = name + sim_param4 + "/"
+
+# If directory exists, remove recursively and create new directory
+if MPI.rank(MPI.comm_world) == 0:
+    if os.path.isdir(savedir):
+        shutil.rmtree(savedir)
 
 # Time parameters
 dt = 10**(-3)                   # Starting time step
@@ -229,7 +236,7 @@ solver_problem.parameters.update(snes_solver_parameters)
 data_steps = np.zeros((tot_steps, 3))
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
-file_results = XDMFFile(name + sim_param1 + sim_param2 + sim_param3 + sim_param4 + ".xdmf")
+file_results = XDMFFile(savedir + "/" + name + sim_param1 + sim_param2 + sim_param3 + sim_param4 + ".xdmf")
 
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
@@ -288,12 +295,12 @@ while (steps < tot_steps):
     plt.plot(data_steps[:, 0], data_steps[:, 1], 'k-')
     plt.xlabel("Time")
     plt.ylabel("Chemical Potential")
-    plt.savefig('ChemPotential.pdf', transparent=True)
+    plt.savefig(savedir + 'ChemPotential.pdf', transparent=True)
     plt.close()
 
     plt.figure(2)
     plt.plot(data_steps[:, 0], data_steps[:, 2], 'k-')
     plt.xlabel("Time")
     plt.ylabel("Gamma")
-    plt.savefig('gamma.pdf', transparent=True)
+    plt.savefig(savedir + 'gamma.pdf', transparent=True)
     plt.close()
