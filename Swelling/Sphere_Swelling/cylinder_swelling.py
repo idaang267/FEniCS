@@ -40,8 +40,7 @@ class InitialConditions(UserExpression):
         values[0] = (l0-1)*x[0]
         values[1] = (l0-1)*x[1]
         # Initial Chemical potential: mu0
-        chem_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-        values[2] = chem_ini
+        values[2] = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
     def value_shape(self):
          return (3,)
 
@@ -195,7 +194,7 @@ Fsurf = dot(F, Isurf)                    # Surface deformation gradient
 
 # Chemical potential BC ramped from mu0 (negative) to 0 in the IC class
 chem_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-chem_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
+chem_max = 0.0
 chem_p = Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
                     chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 # Displacement BC: pinned center to prevent translation
