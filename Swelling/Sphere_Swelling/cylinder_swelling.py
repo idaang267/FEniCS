@@ -61,9 +61,9 @@ parameters.parse()
 userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.9)
-userpar.add("l0", 1.6)
-userpar.add("eq_steps1", 0)
-userpar.add("eq_steps2", 100)
+userpar.add("l0", 3.0)
+userpar.add("eq_steps1", 50)
+userpar.add("eq_steps2", 50)
 userpar.parse()
 
 # Other user parameters
@@ -77,7 +77,7 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
 g_steps = 0                     # Surface parameter counter (updated within loop)
-t_g_steps = 0                    # Total surface parameter (gamma) steps
+t_g_steps = 10                  # Total surface parameter (gamma) steps
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 10                  # Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
@@ -100,7 +100,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Time parameters
-dt = 10**(-2)                   # Starting time step
+dt = 10**(-1)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
 # Initial time for paraview file
