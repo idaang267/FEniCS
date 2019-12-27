@@ -58,11 +58,11 @@ def pinPoint(x, on_boundary):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("chi", 0.2)
-userpar.add("gamma", 0.9)
+userpar.add("chi", 0.4)
+userpar.add("gamma", 0.6)
 userpar.add("l0", 3.0)
 userpar.add("eq_steps1", 50)
-userpar.add("eq_steps2", 50)
+userpar.add("eq_steps2", 60)
 userpar.parse()
 
 # Other user parameters
