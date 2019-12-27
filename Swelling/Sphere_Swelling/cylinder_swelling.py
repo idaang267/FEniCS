@@ -265,7 +265,7 @@ while (steps < tot_steps):
     chem_p.c_steps = c_steps        # Update steps in expression class
 
     c_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-    c_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
+    c_max = 0.0
     chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
 
     # Save data to plot
