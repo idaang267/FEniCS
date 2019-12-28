@@ -58,9 +58,9 @@ def pinPoint(x, on_boundary):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("chi", 0.4)
-userpar.add("gamma", 0.6)
-userpar.add("l0", 3.0)
+userpar.add("chi", 0.6)
+userpar.add("gamma", 0.5)
+userpar.add("l0", 1.6)
 userpar.add("eq_steps1", 50)
 userpar.add("eq_steps2", 60)
 userpar.parse()
@@ -76,7 +76,7 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
 g_steps = 0                     # Surface parameter counter (updated within loop)
-t_g_steps = 10                  # Total surface parameter (gamma) steps
+t_g_steps = 0                   # Total surface parameter (gamma) steps
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 10                  # Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
@@ -194,7 +194,7 @@ Fsurf = dot(F, Isurf)                    # Surface deformation gradient
 
 # Chemical potential BC ramped from mu0 (negative) to 0 in the IC class
 chem_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-chem_max = 0.0
+chem_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
 chem_p = Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
                     chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 # Displacement BC: pinned center to prevent translation
@@ -250,7 +250,7 @@ while (steps < tot_steps):
     solver_problem.solve()
 
     # Update the surface stress
-    if g_steps <= t_g_steps:
+    if g_steps < t_g_steps:
         g_steps += 1
         gamma += 0.01
     gamma += 0
@@ -265,7 +265,7 @@ while (steps < tot_steps):
     chem_p.c_steps = c_steps        # Update steps in expression class
 
     c_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-    c_max = 0.0
+    c_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
     chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
 
     # Save data to plot
