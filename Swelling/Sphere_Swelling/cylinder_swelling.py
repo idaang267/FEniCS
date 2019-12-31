@@ -61,8 +61,8 @@ userpar = Parameters("user")
 userpar.add("chi", 0.4)
 userpar.add("gamma", 0.6)
 userpar.add("l0", 1.0448)
-userpar.add("eq_steps1", 60)
-userpar.add("eq_steps2", 60)
+userpar.add("eq_steps1", 50)
+userpar.add("eq_steps2", 50)
 userpar.parse()
 
 # Other user parameters
