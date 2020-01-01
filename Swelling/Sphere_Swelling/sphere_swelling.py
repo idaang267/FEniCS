@@ -1,4 +1,5 @@
-# Swelling of Unit Cube
+#------------------------------------------------------------------------------
+# Swelling of Unit Sphere (Modeled in 3D)
 #------------------------------------------------------------------------------
 # Based on the formulation in 2015 paper "Effect of solvent diffusion on
 # crack-tip fields and driving force for fracture of hydrogels" which simplifies
@@ -72,7 +73,7 @@ B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 gamma = userpar["gamma"]        # Surface Energy: Gamma term
 chi = userpar["chi"]            # Flory Parameter
-l0 = 1.4                        # Initial Stretch (lambda_o)
+l0 = userpar["l0"]              # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
@@ -87,20 +88,20 @@ eq_steps2 = userpar["eq_steps2"]
 tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
 
 # Name of file
-name = "sphere"
+name = "3D"
 sim_param1 = "_chi_%.1f" % (chi)
 sim_param2 = "_g_%.1f" % (gamma)
 sim_param3 = "_l0_%.1f" % (l0)
 sim_param4 = "_steps_%.0f" % (tot_steps)
-savedir = name + sim_param1 + sim_param4 + "/"
+savedir = name + sim_param1 + sim_param3 + sim_param4 + "/"
 
-# If directory exists, remove recursively and create new directory
-if MPI.rank(MPI.comm_world) == 0:
-    if os.path.isdir(savedir):
-        shutil.rmtree(savedir)
+# # If directory exists, remove recursively and create new directory
+# if MPI.rank(MPI.comm_world) == 0:
+#     if os.path.isdir(savedir):
+#         shutil.rmtree(savedir)
 
 # Time parameters
-dt = 10**(-3)                   # Starting time step
+dt = 10**(-1)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
 # Initial time for paraview file
