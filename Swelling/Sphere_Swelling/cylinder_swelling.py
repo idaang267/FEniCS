@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# Swelling of Unit Cube
+# Swelling of cylinder (modeled in 2D)
 #------------------------------------------------------------------------------
 # Based on the formulation in 2015 paper "Effect of solvent diffusion on
 # crack-tip fields and driving force for fracture of hydrogels" which simplifies
