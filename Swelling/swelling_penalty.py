@@ -15,7 +15,8 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                                           "report": True,
                                           "line_search": "bt",
                                           "linear_solver": "mumps",
-                                          "method": "newtonls",         # Newton line search
+                                          # Newton line search
+                                          "method": "newtonls",
                                           "absolute_tolerance": 1e-9,
                                           "relative_tolerance": 1e-9,
                                           "error_on_nonconvergence": False}}
@@ -43,7 +44,7 @@ class InitialConditions(UserExpression):
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "penalty.xdmf"           # Name of file
+name = "penalty_present.xdmf"           # Name of file
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
@@ -53,8 +54,8 @@ n = 10**(-3)                    # Normalization Parameter (N Omega)
 steps = 0                       # Steps (updated within loop)
 c_steps = 0                     # Chemical step counter (updated within loop)
 t_c_steps = 6                   # Total chemical steps
-t_indent_steps = 40             # Total indentation steps
-tot_steps = 40                  # Total number of time steps
+t_indent_steps = 10             # Total indentation steps
+tot_steps = 25                  # Total number of time steps
 # Time parameters
 dt = 10**(-5)                   # Starting time step
 # NOTE: Time step must be in expression for updating the weak form
@@ -63,18 +64,20 @@ t = 0.0                        # Initial time for paraview file
 c_exp = 1.2                    # Controls time step increase (20%)
 # Indenter parameters
 R = 0.25                       # Indenter radius
-depth = 0.01                   # Initial indenter depth of indentation
+depth = 0.00                   # Initial indenter depth of indentation
 # Note: A large penalty parameter deteriorates the problem conditioning,
 # solving time will drastically increase and the problem can fail
-pen = Constant(1e4)
+k_pen = Constant(1e4)
 # Define mesh
-N_plane = 8                               # Number of elements on top plane
-mesh = UnitCubeMesh(N_plane, 3, N_plane)   # Define unit cube mesh
+N_plane = 15                               # Number of elements on top plane
+mesh = UnitCubeMesh(N_plane, 5, N_plane)   # Define unit cube mesh
 
 # Define function spaces
 #------------------------------------------------------------------------------
+# Function spaces for interpolation
 TT = TensorFunctionSpace(mesh,'DG',0)      # Tensor space for stress projection
 V0 = FunctionSpace(mesh, "DG", 0)          # Vector space for contact pressure
+V2 = FunctionSpace(mesh, "Lagrange", 1)    # For Gap function
 # Taylor-Hood Elements for displacement (u) and chemical potential (mu)
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
     # Second order quadratic interpolation for u
@@ -96,6 +99,8 @@ w0 = Function(V)                            # Previous solution for u and mu
 (v_u, v_mu) = split(v)                      # Split test function
 (u, mu) = split(w)                          # Split current solution
 (u0, mu0) = split(w0)                       # Split previous solution
+
+gap = Function(V2, name="Gap")
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
@@ -191,15 +196,15 @@ def ppos(x):
     return (x+abs(x))/2.
 
 # Define the indenter with a parabola
-indent = Expression("-depth+l0-1+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)", \
+indent = Expression("-depth+(l0-1)+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)", \
                         l0=l0, depth=depth, R=R, degree=2)
 
 # Variational problem where we have two equations for the weak form
-F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx
+F0 = inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
+        + k_pen*ppos(u[1]-indent)*v_u[1]*ds
 F1 = (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx)
 # Penalty method, access the y[1] direction and call subdomain 1 (top)
-F2 = pen*dot(v_u[1], ppos(u[1]-indent))*ds(1)
-WF = F0 + F1 + F2
+WF = F0 + F1
 
 # Compute directional derivative about w in the direction of du (Jacobian)
 Jacobian = derivative(WF, w, du)
@@ -222,23 +227,33 @@ while (steps < tot_steps):
     print("Steps: " + str(steps))
     print("Depth: " + str(depth))
 
-    # Update chemical steps parameter to ramp chemical potential
-    if c_steps < t_c_steps:
-        c_steps += 1
-    c_steps += 0
-    chem_p.c_steps = c_steps                # Update steps in expression class
-
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
     solver_problem.solve()
 
+    # Update chemical steps parameter to ramp chemical potential
+    if c_steps < t_c_steps:
+        c_steps += 1
+    c_steps += 0
+    chem_p.c_steps = c_steps      # Update steps in expression class
+
+    # Update time parameters
+    dt = dt*c_exp;                # Update time step with exponent value
+    DT.dt = dt                    # Update time step for weak forms
+    t += dt                       # Update total time for paraview file
+
+    # Update indenter idndentation depth parameter
+    if t_indent_steps > steps:
+        depth += 0.01
+    indent.depth = depth          # Update depth in expression class
+
     steps += 1                              # Update total steps
 
-    # NOTE: split() is a deep copy not a shallow copy like split(w) allowing us
-    # to write the results to file
+    # Write results to file with split(), a deep copy, not split(w), a shallow copy
     (u, mu) = w.split()
-    PTensor = project(P(u, mu), TT)                 # Project nominal stress
-    p.assign(project(pen*ppos(u[1]-indent), V0))    # Project pressure
+    gap.assign(project(u[1] - indent, V2))              # Project gap
+    PTensor = project(P(u, mu), TT)                     # Project nominal stress
+    p.assign(project(k_pen*(u[1] - indent), V2))    # Project pressure
 
     # Rename results for visualization in Paraview
     u.rename("Displacement", "u")
@@ -250,15 +265,6 @@ while (steps < tot_steps):
     # Write to .xdmf results file
     file_results.write(u,t)
     file_results.write(mu,t)
+    file_results.write(gap, t)
     file_results.write(PTensor,t)
     file_results.write(p, t)
-
-    # Update time parameters
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
-
-    # Update indenter idndentation depth parameter
-    if t_indent_steps > steps:
-        depth += 0.01
-    indent.depth = depth          # Update depth in expression class
