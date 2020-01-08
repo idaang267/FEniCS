@@ -30,19 +30,19 @@ parameters["form_compiler"]["quadrature_degree"] = 4
 
 # Model parameters
 #------------------------------------------------------------------------------
-name = "AugL.xdmf"              # Name of file
-k_pen = 1E4                     # Penalty Parameter
+name = "nonStabilizedPresent.xdmf"      # Name of file
+k_pen = 1E2                     # Penalty Parameter
 l0 = 1.4                        # Initial Stretch (lambda_o)
 # Mesh Resolution
-inPlaneRes = 16                 # Along top surface (without refinement)
-outPlaneRes = 8                 # Resolution along cube height
+inPlaneRes = 30                 # Along top surface (without refinement)
+outPlaneRes = 15                # Resolution along cube height
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 chi = 0.6                       # Flory Parameter
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Stepping parameters
 steps = 0                       # Steps (updated within loop)
-tot_steps = 10                  # Total number of time steps for indentation
+tot_steps = 20                  # Total number of time steps for indentation
 # Indenter parameters
 R = 0.25                        # Initial indenter radius
 depth = 0.00                    # Initial indenter depth of indentation
@@ -123,12 +123,12 @@ TT = TensorFunctionSpace(refinedMesh,'DG',0)    # Tensor space for stress
 V0 = FunctionSpace(refinedMesh, "DG", 0)        # Vector space for contact pressure
 V2 = FunctionSpace(refinedMesh, "Lagrange", 1)  # For Gap function
 # Taylor-Hood Elements for displacment (u), chemical potential (mu), lambda (lmbda)
-P2 = VectorFunctionSpace(refinedMesh, "Lagrange", 2)
+P2v = VectorFunctionSpace(refinedMesh, "Lagrange", 1)
+P2 = FunctionSpace(refinedMesh, "Lagrange", 1)
 P1 = FunctionSpace(refinedMesh, "Lagrange", 1)
 # Define mixed function space where lambda is restricted to the top surface
 # and should remain 0 for the bulk
-V = BlockFunctionSpace([P2, P1, P1], restrict=[None, None, top_restrict])
-
+V = BlockFunctionSpace([P2v, P1, P2], restrict=[None, None, top_restrict])
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
 du = BlockTrialFunction(V)                  # Incremental trial function
@@ -224,10 +224,9 @@ indent = Expression("-depth+(l0-1)+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)",
                         l0=l0, depth=depth, R=R, degree=2)
 
 # Variational problem
-WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx \
-        - aug_l(lmbda)*v_u[1]*ds + ppos(aug_l(lmbda))*v_u[1]*ds,
-    (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx),
-    (indent-u[1])*v_l*ds - (1/k_pen)*ppos(aug_l(lmbda))*v_l*ds]
+WF = [inner(P(u, mu), grad(v_u))*dx - inner(T, v_u)*ds - dot(B, v_u)*dx - aug_l(lmbda)*v_u[1]*ds + ppos(aug_l(lmbda))*v_u[1]*ds,
+    (1/n)*((J-1)*v_mu*dx - (J0-1)*v_mu*dx - DT*dot(Flux(u, mu), grad(v_mu))*dx), #- 0.02**2*1E8*dot(grad(mu-mu0),grad(v_mu))*dx,
+    (indent-u[1])*v_l*ds - (1/k_pen)*ppos(aug_l(lmbda))*v_l*ds] #- 0.02**2*100*dot(grad(lmbda-lmbda0),grad(v_l))*dx]
 
 # Compute directional derivative about w in the direction of du (Jacobian)
 Jacobian = block_derivative(WF, w, du)
