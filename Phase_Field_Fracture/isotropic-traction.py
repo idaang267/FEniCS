@@ -103,6 +103,8 @@ k_ell = Constant(1.e-6) # Residual stiffness
 
 # Loading Parameters
 ut    = 1.0             # Reference value for the loading (imposed displacement)
+w1    = 1.0
+E_0   = 1.0
 
 # Numerical parameters of the alternate minimization
 maxiteration = 2000
@@ -118,10 +120,12 @@ hsize = float(L/N)
 ell   = Constant(6.0*hsize)
 
 # Naming parameters for saving output
+case = "B"
 modelname = "traction-bar"
 meshname  = modelname + "-mesh.xdmf"
 simulation_params = "h_%.4f" % (hsize)
-savedir   = "output/" + modelname + "/" + simulation_params + "/"
+savedir   = "output/" + case + "_" + simulation_params + "/"
+filename = "Example" + case
 
 # If directory exists, remove recursively and create new directory
 if MPI.rank(MPI.comm_world) == 0:
@@ -155,8 +159,12 @@ def sigma_0(v):               # Stress following Hooke's Law (Plane stress)
 
 # Constitutive functions of the damage model
 def w(alpha):
+    w1 = 1.0
     # Depending on the model type, alpha or alpha**2
-    return alpha
+    if case == "A":
+        return w1*alpha
+    else:
+        return w1*alpha**2
 
 def a(alpha):
     return (1.0-alpha)**2
@@ -220,6 +228,7 @@ Gamma_u_0 = DirichletBC(V_u.sub(0), u_UL, left_boundary)
 Gamma_u_1 = DirichletBC(V_u.sub(0), u_UR, right_boundary)
 # Slider boundary condition
 Gamma_u_2 = DirichletBC(V_u.sub(1), u_UL, left_pinpoints, method='pointwise')
+#Gamma_u_3 = DirichletBC(V_u.sub(1), u_UL, right_pinpoints, method='pointwise')
 
 # Combine displacement boundary conditions
 bc_u = [Gamma_u_0, Gamma_u_1, Gamma_u_2]
@@ -305,14 +314,11 @@ alpha_ub = interpolate(Expression("1.0", degree=0), V_alpha)  # upper bound, set
 load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
 energies         = np.zeros((len(load_multipliers), 4))
 iterations       = np.zeros((len(load_multipliers), 2))
-# Stores damage, strain, stress vector for the specific criteria
-damage_crit = np.zeros((len(indices),1))
-strain_crit = np.zeros((len(indicesTT),1))
-stress_crit = np.zeros((len(indicesTT),1))
-# Stores maximum of the damage, strain, stress vector for each time-step
-damage_time = np.zeros((len(load_multipliers), 2))
-strain_time = np.zeros((len(load_multipliers), 2))
-stress_time = np.zeros((len(load_multipliers), 2))
+
+# Stores dimensionalized and nondimensionalized date for each time step
+# Order: Strain, damage variable alpha, stress
+dim_data    = np.zeros((len(load_multipliers), 3))
+nondim_data = np.zeros((len(load_multipliers), 3))
 
 # Set the saved data file name
 file_results     = XDMFFile(MPI.comm_world, savedir + "/results.xdmf")
@@ -321,6 +327,14 @@ file_results.parameters["functions_share_mesh"]  = True
 file_results.parameters["flush_output"]          = True
 # Write the parameters to file
 File(savedir+"/parameters.xml") << userpar
+
+# Constants for Examples A/1 and B/2 for Gradient Damage Models
+if case == "A":
+    sigma_e = sqrt(w1*E_0)
+    U_e = (sigma_e/E_0)*L
+else:
+    sigma_m = (3*sqrt(3))/(8*sqrt(2))*sqrt(w1*E_0)
+    U_m = (16/9)*(sigma_m/E_0)*L
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
@@ -370,15 +384,6 @@ for (i_t, t) in enumerate(load_multipliers):
 
     # Post-processing
     # -------------------------------------------------------------------------
-    # Obtain the values that fulfill the criterion set for the mesh location
-    damage_crit = alpha.vector()[indices]
-    strain_crit = strain_val.vector()[indicesTT]
-    sigma_crit = sigma_val.vector()[indicesTT]
-    # Save the maximum values of alpha, strain, and stress, for each displacement (t)
-    damage_time[i_t] = np.array([t, max(damage_crit)])
-    strain_time[i_t] = np.array([t, max(strain_crit)])
-    stress_time[i_t] = np.array([t, max(sigma_crit)])
-
     # Save number of iterations for the time step
     iterations[i_t] = np.array([t, iteration])
 
@@ -403,6 +408,37 @@ for (i_t, t) in enumerate(load_multipliers):
         np.savetxt(savedir + '/energies.txt', energies)
         np.savetxt(savedir + '/iterations.txt', iterations)
 
+    # Examples A/1 and B/2 in Gradient Damage Models
+    U_t = L*t
+
+    # Example A/1 in Gradient Damage Models
+    if case == "A":
+        if U_t == 0:
+            alpha_t = -math.inf
+        else:
+            alpha_t = 1-(U_e/U_t)**2
+
+        alpha_t = max(0, alpha_t)
+
+        if U_t <= U_e:
+            sigma_t = sigma_e*(U_t/U_e)
+        else:
+            sigma_t = sigma_e*(U_e/U_t)**3
+
+        # Save dimensionalized data
+        dim_data[i_t] = np.array([U_t/U_e, alpha_t, sigma_t/sigma_e])
+
+    # Example B/1 in Gradient Damage Models
+    else:
+        alpha_t = U_t**2/(3*U_m**2 + U_t**2)
+        sigma_t = (9*E_0/L)*(U_t*U_m**4)/((3*U_m**2 + U_t**2)**2)
+
+        # Save dimensionalized data
+        dim_data[i_t] = np.array([U_t/U_m, alpha_t, sigma_t/sigma_m])
+
+    # Save non-dimensionalized data
+    nondim_data[i_t] = np.array([U_t, alpha_t, sigma_t])
+
 # Plotting
 # ----------------------------------------------------------------------------
 if MPI.rank(MPI.comm_world) == 0:
@@ -417,15 +453,33 @@ if MPI.rank(MPI.comm_world) == 0:
     plt.close()
 
     plt.figure(2)
-    plt.plot(strain_time[:,1], damage_time[:,1], 'ko-')
-    plt.xlabel('Strain')
-    plt.ylabel('Damage Variable')
-    plt.savefig(savedir + '/StrainDamage.pdf', transparent=True)
+    plt.plot(nondim_data[:, 0], nondim_data[:, 1], 'k*-')
+    plt.xlabel('Strain (U_t)')
+    plt.ylabel('Damage (alpha_t)')
+    plt.title('Damage vs Strain ' + filename)
+    plt.savefig(savedir + '/damage_strain_nondim.pdf', transparent=True)
     plt.close()
 
     plt.figure(3)
-    plt.plot(strain_time[:,1], stress_time[:,1], 'ko-')
-    plt.xlabel('Strain')
-    plt.ylabel('Stress')
-    plt.savefig(savedir + '/StrainStress.pdf', transparent=True)
+    plt.plot(dim_data[:, 0], dim_data[:, 1], 'k*-')
+    plt.xlabel('Strain (U_t/U_e)')
+    plt.ylabel('Damage (alpha_t)')
+    plt.title('Damage vs Strain ' + filename)
+    plt.savefig(savedir + '/damage_strain_dim.pdf', transparent=True)
+    plt.close()
+
+    plt.figure(4)
+    plt.plot(nondim_data[:, 0], nondim_data[:, 2], 'k*-')
+    plt.xlabel('Strain (U_t/U_m)')
+    plt.ylabel('Stress (sigma_t/sigma_m)')
+    plt.title('Stress vs Strain ' + filename)
+    plt.savefig(savedir + '/stress_strain_nondim.pdf', transparent=True)
+    plt.close()
+
+    plt.figure(3)
+    plt.plot(dim_data[:, 0], dim_data[:, 2], 'k*-')
+    plt.xlabel('Strain (U_t)')
+    plt.ylabel('Stress (sigma_t)')
+    plt.title('Stress vs Strain ' + filename)
+    plt.savefig(savedir + '/stress_strain_dim.pdf', transparent=True)
     plt.close()
