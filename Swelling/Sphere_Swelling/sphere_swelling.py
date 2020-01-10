@@ -42,7 +42,7 @@ class InitialConditions(UserExpression):
         values[1] = (l0-1)*x[1]
         values[2] = (l0-1)*x[2]
         # Initial Chemical potential: mu0
-        values[3] = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
+        values[3] = chem_ini #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
     def value_shape(self):
          return (4,)
 
@@ -55,41 +55,63 @@ class OnBoundary(SubDomain):
 def pinPoint(x, on_boundary):
     return near(x[0], 0.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
 
-# Right edge point for fixed displacement bcs
-def pinPointEdge(x, on_boundary):
+# Right boundary point for fixed displacement bcs
+def pinPointRight(x, on_boundary):
     return near(x[0], 1.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
+
+def pinPointLeft(x, on_boundary):
+    return near(x[0], -1.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
+
+# Front boundary point for fixed displacement bcs
+def pinPointFront(x, on_boundary):
+    return near(x[0], 0.0, 0.01) and near(x[1], 1.0, 0.01) and near(x[2], 0.0, 0.01)
 
 # Model parameters
 #------------------------------------------------------------------------------
-# Set the user parameters
+# Set the user parameters, can be parsed from command line
 parameters.parse()
 userpar = Parameters("user")
 userpar.add("chi", 0.2)
 userpar.add("gamma", 0.001)
-userpar.add("l0", 3)
-userpar.add("eq_steps1", 50)
-userpar.add("eq_steps2", 50)
+userpar.add("l0", 3.0)
+userpar.add("mesh_res", 20)
+userpar.add("t_g_steps", 9)
+userpar.add("eq_steps1", 150)
+userpar.add("t_c_steps", 1)
+userpar.add("eq_steps2", 0)
 userpar.parse()
 
-# Other user parameters
-mesh_res = 10                   # Mesh resolution
-B  = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
-T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
+# Parse from command line if given
+mesh_res = userpar["mesh_res"]  # Mesh resolution
 gamma = userpar["gamma"]        # Surface Energy: Gamma term
+Gamma = Expression("gamma", gamma=gamma, degree=0)
 chi = userpar["chi"]            # Flory Parameter
 l0 = userpar["l0"]              # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
 g_steps = 0                     # Surface parameter counter (updated within loop)
-t_g_steps = 10                   # Total surface parameter (gamma) steps
 c_steps = 0                     # Chemical step counter (updated within loop)
-t_c_steps = 10                 # Total chemical steps
+t_g_steps = userpar["t_g_steps"]# Total surface parameter (gamma) steps
+t_c_steps = userpar["t_c_steps"]# Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
 eq_steps1 = userpar["eq_steps1"]
 eq_steps2 = userpar["eq_steps2"]
 # Total number of time steps
 tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
+# Body force per unit volume and Traction force on the boundary
+B  = Constant((0.0, 0.0, 0.0))
+T  = Constant((0.0, 0.0, 0.0))
+# Initial and maximum value of chemical potentail
+chem_ini = -0.0005 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
+chem_max = 0.0
+# Time parameters
+dt = 10**(-1)                   # Starting time step
+# Expression for time step for updating in loop
+DT = Expression("dt", dt=dt, degree=0)
+# Initial time for paraview file
+t = 0.0
+c_exp = 1.1                     # Control the time step increase
 
 # Name of file
 name = "3D"
@@ -98,15 +120,6 @@ sim_param2 = "_gamma_%.2f" % (gamma)
 sim_param3 = "_l0_%.1f" % (l0)
 sim_param4 = "_steps_%.0f" % (tot_steps)
 savedir = name + sim_param1 + sim_param3 + "/"
-
-# Time parameters
-dt = 10**(-2)                   # Starting time step
-# Expression for time step for updating in loop
-DT = Expression("dt", dt=dt, degree=0)
-# Initial time for paraview file
-t = 0.0
-c_exp = 1.1                     # Control the time step increase
-Gamma = Expression("gamma", gamma=gamma, degree=0)
 
 # Define mesh
 #------------------------------------------------------------------------------
@@ -162,19 +175,21 @@ u_0 = Expression(("0.0","0.0","0.0"), degree=0)
 u_dir = Expression(("0.0"), degree=0)
 
 # Chemical potential BC ramped from initial to maximum value
-chem_ini = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
-chem_max = 0.0
 chem_p =  Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
                    chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
 # The Dirichlet BCs are specified in respective subspaces
 bc_0 = DirichletBC(V.sub(0), u_0, pinPoint, method='pointwise')
-bc_edge_pin1 = DirichletBC(V.sub(0).sub(0), u_dir, pinPointEdge, method='pointwise')
-bc_edge_pin2 = DirichletBC(V.sub(0).sub(2), u_dir, pinPointEdge, method='pointwise')
+bc_pin1 = DirichletBC(V.sub(0).sub(1), u_dir, pinPointRight, method='pointwise')
+bc_pin2 = DirichletBC(V.sub(0).sub(2), u_dir, pinPointRight, method='pointwise')
+bc_pin3 = DirichletBC(V.sub(0).sub(1), u_dir, pinPointLeft, method='pointwise')
+bc_pin4 = DirichletBC(V.sub(0).sub(2), u_dir, pinPointLeft, method='pointwise')
+bc_pin5= DirichletBC(V.sub(0).sub(0), u_dir, pinPointFront, method='pointwise')
+bc_pin6= DirichletBC(V.sub(0).sub(1), u_dir, pinPointFront, method='pointwise')
 bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
 
 # Combined boundary conditions
-bc = [bc_0, bc_edge_pin1, bc_edge_pin2, bc_chem]
+bc = [bc_0, bc_pin1, bc_pin2, bc_pin3, bc_pin4, bc_pin5, bc_pin6, bc_chem]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -264,12 +279,10 @@ while (steps < tot_steps):
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
 
-    c_ini = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
-    c_max = 0.0
-    chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
+    chem_val = c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini
 
     # Save data to plot
-    data_steps[steps] = np.array([steps, chem_val, gamma])
+    data_steps[steps] = np.array([t, chem_val, gamma])
 
     # Update total steps and time parameters
     steps += 1                     # Update total steps
@@ -295,6 +308,7 @@ while (steps < tot_steps):
     file_results.write(mu,t)
     file_results.write(PTensor,t)
 
+if MPI.rank(MPI.comm_world) == 0:
     # Figures
     #---------------------------------------------------------------------------
     plt.figure(1)
