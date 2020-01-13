@@ -51,20 +51,16 @@ class OnBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary
 
+tol = 1E-3
 # Center point for fixed displacement bc
 def pinPoint(x, on_boundary):
-    return near(x[0], 0.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
-
-# Right boundary point for fixed displacement bcs
+    return near(x[0], 0.0, tol) and near(x[1], 0.0, tol) and near(x[2], 0.0, tol)
+# Right boundary point for fixed displacement bcs (x-axis)
 def pinPointRight(x, on_boundary):
-    return near(x[0], 1.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
-
-def pinPointLeft(x, on_boundary):
-    return near(x[0], -1.0, 0.01) and near(x[1], 0.0, 0.01) and near(x[2], 0.0, 0.01)
-
-# Front boundary point for fixed displacement bcs
+    return near(x[0], 1.0, tol) and near(x[1], 0.0, tol) and near(x[2], 0.0, tol)
+# Front boundary point for fixed displacement bcs (z-axis)
 def pinPointFront(x, on_boundary):
-    return near(x[0], 0.0, 0.01) and near(x[1], 1.0, 0.01) and near(x[2], 0.0, 0.01)
+    return near(x[0], 0.0, tol) and near(x[1], 1.0, tol) and near(x[2], 0.0, tol)
 
 # Model parameters
 #------------------------------------------------------------------------------
@@ -76,7 +72,7 @@ userpar.add("gamma", 0.001)
 userpar.add("l0", 3.0)
 userpar.add("mesh_res", 20)
 userpar.add("t_g_steps", 9)
-userpar.add("eq_steps1", 150)
+userpar.add("eq_steps1", 20)
 userpar.add("t_c_steps", 1)
 userpar.add("eq_steps2", 0)
 userpar.parse()
@@ -100,8 +96,8 @@ eq_steps2 = userpar["eq_steps2"]
 # Total number of time steps
 tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
 # Body force per unit volume and Traction force on the boundary
-B  = Constant((0.0, 0.0, 0.0))
-T  = Constant((0.0, 0.0, 0.0))
+B = Constant((0.0, 0.0, 0.0))
+T = Constant((0.0, 0.0, 0.0))
 # Initial and maximum value of chemical potentail
 chem_ini = -0.0005 #ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3) + gamma/l0
 chem_max = 0.0
@@ -109,9 +105,8 @@ chem_max = 0.0
 dt = 10**(-1)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
-# Initial time for paraview file
-t = 0.0
-c_exp = 1.1                     # Control the time step increase
+t = 0.0                         # Initial time (updated in loop)
+c_exp = 1.5                     # Control the time step increase
 
 # Name of file
 name = "3D"
@@ -182,14 +177,12 @@ chem_p =  Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
 bc_0 = DirichletBC(V.sub(0), u_0, pinPoint, method='pointwise')
 bc_pin1 = DirichletBC(V.sub(0).sub(1), u_dir, pinPointRight, method='pointwise')
 bc_pin2 = DirichletBC(V.sub(0).sub(2), u_dir, pinPointRight, method='pointwise')
-bc_pin3 = DirichletBC(V.sub(0).sub(1), u_dir, pinPointLeft, method='pointwise')
-bc_pin4 = DirichletBC(V.sub(0).sub(2), u_dir, pinPointLeft, method='pointwise')
-bc_pin5= DirichletBC(V.sub(0).sub(0), u_dir, pinPointFront, method='pointwise')
-bc_pin6= DirichletBC(V.sub(0).sub(1), u_dir, pinPointFront, method='pointwise')
+bc_pin3 = DirichletBC(V.sub(0).sub(0), u_dir, pinPointFront, method='pointwise')
+bc_pin4 = DirichletBC(V.sub(0).sub(1), u_dir, pinPointFront, method='pointwise')
 bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
 
 # Combined boundary conditions
-bc = [bc_0, bc_pin1, bc_pin2, bc_pin3, bc_pin4, bc_pin5, bc_pin6, bc_chem]
+bc = [bc_0, bc_pin1, bc_pin2, bc_pin3, bc_pin4, bc_chem]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -258,7 +251,7 @@ file_results = XDMFFile(savedir + "/" + name + sim_param1 + sim_param3 + sim_par
 while (steps < tot_steps):
     # Print outs to track code progress
     print("Steps: " + str(steps))
-    #print("Time: " + str(t))
+    print("Time: " + str(t))
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
