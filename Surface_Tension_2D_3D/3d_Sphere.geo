@@ -1,9 +1,7 @@
 // Benchmark existing on GMSH tutorials
 
-//Delete All;
-
 RSphere = 1.;
-lcSphere = 0.09;
+lcSphere = 0.2;
 
 Point(1) = {0,0,0,lcSphere};
 Point(2) = {RSphere,0,0,lcSphere};
@@ -42,7 +40,6 @@ Line Loop(25) = {-7,4,9};
 Surface(26) = {25};
 Line Loop(27) = {-4,12,-6};
 Surface(28) = {27};
-
 
 Surface Loop(29) = {28,26,16,14,20,24,22,18};
 Volume(1111) = {29};
