@@ -80,13 +80,13 @@ class InitialConditions(UserExpression):
 parameters.parse()
 userpar = Parameters("user")
 userpar.add("chi", 0.2)
-userpar.add("l0", 1.5)
-userpar.add("lm_surf", 0.01)
-userpar.add("mu_surf", 0.01)
-userpar.add("t_st_steps", 9)
-userpar.add("eq_steps1", 30)
-userpar.add("t_c_steps", 5)
-userpar.add("eq_steps2", 60)
+userpar.add("l0", 2.5)
+userpar.add("lm_surf", 0.25)
+userpar.add("mu_surf", 0.25)
+userpar.add("t_st_steps", 3)
+userpar.add("eq_steps1", 40)
+userpar.add("t_c_steps", 4)
+userpar.add("eq_steps2", 50)
 userpar.parse()
 
 # Parse from command line if given
@@ -118,7 +118,7 @@ dt = 10**(-5)                   # Starting time step
 # Expression for time step for updating in loop
 DT = Expression("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time (updated in loop)
-c_exp = 1.5                     # Control the time step increase
+c_exp = 1.6                     # Control the time step increase
 
 # Name of file
 name = "alt"
@@ -133,7 +133,7 @@ File(savedir+"/parameters.xml") << userpar
 # Define mesh
 #------------------------------------------------------------------------------
 # Create spherical domain with radius of 1.0
-mesh = Mesh("3DSpherePoints.xml")
+mesh = Mesh("3DSpherePoints_0.15.xml")
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
@@ -176,11 +176,12 @@ P1elem = P1.ufl_element()
 # Define mixed function space specifying underying finite element
 V = FunctionSpace(mesh, P2elem * P1elem)
 
+
 # For postprocessing, where we want values along a certain section of the mesh
 # ----------------------------------------------------------------------------
 # Returns number of nodal points for specific function space
 dim = V.dim()
-# Obtain number of space dimensions
+# Obtain number of spatial dimensions
 ndim = mesh.geometry().dim()
 # Obtain the location of every coordinate in x y and z
 coords = V.tabulate_dof_coordinates().reshape(dim, ndim)
@@ -192,6 +193,7 @@ POI = np.where(xcoords == 1.0)[0]
 POI_mu = np.where(np.logical_and(ycoords >= 0.0, ycoords < 0.05))[0]
 # Obtain coordinates based on condition met
 cor = coords[POI_mu]
+
 
 # Define functions in mixed function space V
 #------------------------------------------------------------------------------
@@ -309,8 +311,8 @@ while (steps < tot_steps):
 
     # Update the surface stress
     if st_steps < t_st_steps:
-        mu_surf += 0.01
-        lm_surf += 0.01
+        mu_surf += 0.25
+        lm_surf += 0.25
         st_steps += 1
 
     # Update the chemical potential
@@ -347,6 +349,7 @@ while (steps < tot_steps):
     file_results.write(PTensor,t)
     file_results.write(CScalar,t)
 
+
     u_POI = u.vector()[POI]
     mu_POI = mu.vector()[POI_mu]
 
@@ -375,11 +378,13 @@ while (steps < tot_steps):
         f.write(str(mu_dict[t])+ "\n")
         f.close()
 
+
     # Update total steps and time parameters
     steps += 1                    # Update total steps
     dt = dt*c_exp;                # Update time step with exponent value
     DT.dt = dt                    # Update time step for weak forms
     t += dt                       # Update total time for paraview file
+
 
 # Figures
 #---------------------------------------------------------------------------
@@ -391,7 +396,7 @@ if MPI.rank(MPI.comm_world) == 0:
     plt.xlabel("Time")
     axs[0].set_title('Mu (surface) Ramping')
     axs[1].set_title('Lambda (surface) Ramping')
-    plt.savefig(savedir + 'Ramping_st_time' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
+    plt.savefig(savedir + 'Ramping_st_time' + sim_param1 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
     plt.close()
 
     fig, axs = plt.subplots(2, sharex = True)
@@ -401,7 +406,7 @@ if MPI.rank(MPI.comm_world) == 0:
     plt.xlabel("Steps")
     axs[0].set_title('Mu (surface) Ramping')
     axs[1].set_title('Lambda (surface) Ramping')
-    plt.savefig(savedir + 'Ramping_st_steps' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
+    plt.savefig(savedir + 'Ramping_st_steps' + sim_param1 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
     plt.close()
 
     plt.figure(1)
@@ -409,18 +414,17 @@ if MPI.rank(MPI.comm_world) == 0:
     fig.suptitle("Ramping Sequence")
     axs[0].plot(data_steps[:, 0], data_steps[:, 4], 'k*-')
     axs[1].plot(data_steps[:, 1], data_steps[:, 4], 'k*-')
-    axs[0].xlabel("Time")
-    axs[1].xlabel("Steps")
     plt.ylabel("Chemical Potential")
-    plt.savefig(savedir + 'Ramping_chemical' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf', transparent=True)
+    plt.savefig(savedir + 'Ramping_chemical' + sim_param1 + sim_param3 + sim_param4 + '.pdf', transparent=True)
     plt.close()
 
     plt.figure(2)
     plt.plot(data_steps[:, 1], data_steps[:, 0], 'k-')
     plt.xlabel("Steps")
     plt.ylabel("Time")
-    plt.savefig(savedir + 'TimeProgression' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf', transparent=True)
+    plt.savefig(savedir + 'TimeProgression' + sim_param1 + sim_param3 + sim_param4 + '.pdf', transparent=True)
     plt.close()
+
 
 end_time = time.time()
 if MPI.rank(MPI.comm_world) == 0:
