@@ -12,13 +12,14 @@
 
 # =============================================================================
 # Import all packages from dolfin and mshr
-from dolfin import *
+from dolfin import *            # Includes MPI
 from mshr import *
 
 # Import specific packages
 from ufl import replace
 import math
 import os
+import statistics as stat
 import shutil
 import sympy
 import numpy as np
@@ -62,8 +63,9 @@ parameters["form_compiler"]["optimize"] = True
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["representation"] = "uflacs"
 
-# Parameters of the linear solver for displacement (u) problem
+# Parameters for the linear/nonlinear solver for the displacement (u) problem
 # -----------------------------------------------------------------------------
+# Linear solver parameters
 solver_u_parameters = {"linear_solver": "mumps",
                        "symmetric": True,
                        "preconditioner": "hypre_amg",
@@ -71,6 +73,18 @@ solver_u_parameters = {"linear_solver": "mumps",
                                          "monitor_convergence": False,
                                          "relative_tolerance": 1e-10,
                                          "absolute_tolerance": 1e-10}}
+
+# Nonlinear solver parameters: Using PETSc SNES solver
+snes_solver_parameters = {"nonlinear_solver": "snes",
+                          "symmetric": True,
+                          "snes_solver": {"maximum_iterations": 50,
+                                          "report": True,
+                                          "line_search": "bt",
+                                          "linear_solver": "mumps",
+                                          "method": "newtonls",
+                                          "absolute_tolerance": 1e-9,
+                                          "relative_tolerance": 1e-9,
+                                          "error_on_nonconvergence": False}}
 
 # Parameters of the PETSc/Tao solver used for the damage (alpha) problem
 tao_solver_parameters = {"maximum_iterations": 200,
@@ -82,38 +96,88 @@ tao_solver_parameters = {"maximum_iterations": 200,
                          "gradient_relative_tol": 1e-8,
                          "error_on_nonconvergence": False}
 
+# Define boundary sets for boundary conditions
+# ----------------------------------------------------------------------------
+class left_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], 0.0, 0.1*hsize)
+
+class right_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], L, 0.1*hsize)
+
+class top_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], 0.5*H, 0.1*hsize)
+
+class bot_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], -0.5*H, 0.1*hsize)
+
+# Note when using "pointwise", the boolean argument on_boundary in SubDomain
+# will always be false
+class left_pinpoints(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0, 0.1 * hsize) and near(x[1], 0.0, 0.1*hsize)
+
+class right_pinpoints(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], L, 0.1 * hsize) and near(x[1], 0.0, 0.1*hsize)
+
+class bot_pinpoints(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], L/2, 0.1*hsize) and near(x[1], -0.5*H, 0.1*hsize)
+
+class notch(SubDomain):
+    def inside(self, x, on_boundary):
+        return between(x[0], (0.9, 1.1)) and near(x[1], 0.0, 0.1*hsize)
+
+# Convert all boundary classes for visualization
+left_boundary = left_boundary()
+right_boundary = right_boundary()
+top_boundary = top_boundary()
+bot_boundary = bot_boundary()
+left_pinpoints = left_pinpoints()
+right_pinpoints = right_pinpoints()
+bot_pinpoints = bot_pinpoints()
+notch = notch()
+
 # Set the user parameters
 # ------------------------------------------------------------------------------
-# Can specify parameters using python3 _.py --meshsize 300
+# Can specify parameters (Ex. python3 _.py --meshsize 300)
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("meshsize",200)
-userpar.add("load_min",0.)
-userpar.add("load_max",4.0)
-userpar.add("load_steps",201)
+userpar.add("meshsize", 250)
+userpar.add("load_min", 0.)
+userpar.add("load_max", 1.0)
+userpar.add("load_steps", 101)
 userpar.parse()
 
 # Parameters for ANISOTROPIC surface energy and materials
 # ------------------------------------------------------------------------------
-# Material constants
-E     = Constant(1.0)   # Young's Modulus
-nu    = Constant(0.3)   # Poisson's Ratio
-Gc    = Constant(1.0)   # Griffith's criterion: energy release rate
-k_ell = Constant(1.e-6) # Residual stiffness
-
 # Loading Parameters
-ut    = 1.0             # Reference value for the loading (imposed displacement)
-w1    = 1.0
-E_0   = 1.0
+ut   = 0.01             # Reference value for the loading (imposed displacement)
+w1   = 1.0
+E_0  = 1.0
+
+# Material constants
+E     = Constant(14.5)                           # Young's Modulus
+nu    = Constant(0.45)                           # Poisson's Ratio
+mu    = Constant(E/(2*(1 + nu)))
+lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu)))
+b  = Constant(2*nu/(1-2*nu))
+
+Gc    = Constant(2.4)   # Griffith's criterion: energy release rate
+k_ell = Constant(1.e-6) # Residual stiffness
 
 # Numerical parameters of the alternate minimization
 maxiteration = 2000
 AM_tolerance = 1e-4
 
 # Geometry paramaters
-L = 1.0
-H = 0.1
-N = userpar["meshsize"]
+L = 2.0                         # Length scale along x axis
+H = 0.4                         # Length scale along y axis
+N = userpar["meshsize"]         # total number of elements
 # Used as a tolerance value to find boundaries
 hsize = float(L/N)
 # damage parameter: internal length scale used for tuning Gc
@@ -133,55 +197,40 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Last parameter of RectangleMesh is the direction of diagonals: alternating diagonals
-mesh = RectangleMesh(Point(0., -0.5*H), Point(L, 0.5*H), int(N), int(float(H/hsize)), "right/left")
+mesh = Mesh("tension_test.xml")
+#mesh = RectangleMesh(Point(0., -0.5*H), Point(L, 0.5*H), int(N), int(float(H/hsize)), "right/left")
 # Save mesh as XDMF file for visualization in Paraview
 geo_mesh = XDMFFile(MPI.comm_world, savedir+meshname)
 geo_mesh.write(mesh)
+
+lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
+
+# Show edges of interest
+lines.set_all(0)
+left_boundary.mark(lines, 1)
+right_boundary.mark(lines, 1)
+top_boundary.mark(lines, 1)
+bot_boundary.mark(lines, 1)
+file_results = XDMFFile(savedir + "/" + "lines.xdmf")
+file_results.write(lines)
+
+# Show points of interest
+points.set_all(0)
+notch.mark(points, 1)
+bot_pinpoints.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
 
 # First call to mesh only creates entities of dimension zero (vertices) and
 # entities of the maximal dimension (cells). Other entities must be explicitly
 # created by calling init()
 mesh.init()
-# Obtain number of space dimensions (1D, 2D, 3D)
+# Obtain number of space dimensions (1D, 2D, or 3D)
 ndim = mesh.geometry().dim()
 # Print dimensions of mesh
 if MPI.rank(MPI.comm_world) == 0:
     print ("the dimension of mesh: {0:2d}".format(ndim))
-
-# Strain, Stress, and Constitutive functions of the damage model
-# ----------------------------------------------------------------------------
-def eps(v):                   # Strain
-    return sym(grad(v))
-def sigma_0(v):               # Stress following Hooke's Law (Plane stress)
-    mu = E/(2.0*(1.0+nu))
-    lmbda = E*nu/(1.0-nu**2)
-    return 2.0*mu*(eps(v))+lmbda*tr(eps(v))*Identity(ndim)
-
-# Constitutive functions of the damage model
-def w(alpha):
-    w1 = 1.0
-    # Depending on the model type, alpha or alpha**2
-    if case == "A":
-        return w1*alpha
-    else:
-        return w1*alpha**2
-
-def a(alpha):
-    return (1.0-alpha)**2
-
-# Define boundary sets for boundary conditions
-# ----------------------------------------------------------------------------
-def left_boundary(x, on_boundary):
-    return on_boundary and near(x[0], 0.0, 0.1 * hsize)
-def right_boundary(x, on_boundary):
-    return on_boundary and near(x[0], L, 0.1 * hsize)
-
-# Note when using "pointwise", the boolean argument on_boundary in SubDomain
-# will always be false
-def left_pinpoints(x, on_boundary):     # center left point
-    return near(x[0], 0.0, 0.1 * hsize) and near(x[1], 0.0, 0.1 * hsize)
-def right_pinpoints(x, on_boundary):    # center right point
-    return near(x[0], L, 0.1 * hsize) and near(x[1], 0.0, 0.1 * hsize)
 
 # Variational formulation
 # ----------------------------------------------------------------------------
@@ -199,47 +248,78 @@ alpha  = Function(V_alpha, name="Damage")
 dalpha = TrialFunction(V_alpha)
 beta   = TestFunction(V_alpha)
 
+'''
 # For postprocessing, where we want values along a certain section of the mesh
 # ----------------------------------------------------------------------------
 # Returns number of nodal points for specific function space
 dim = V_alpha.dim()
-dimTT = TT.dim()
 # Degrees of Freedom (dof)
 dof = V_alpha.tabulate_dof_coordinates().reshape(dim, ndim)
-dofTT = TT.tabulate_dof_coordinates().reshape(dimTT, ndim)
 # Cound find coordinates spanning x by dof[:, 0] and z (if 3D) by dof[:, 2]
 # Coordinates spanning y
 y = dof[:, 1]
-yTT = dofTT[:, 1]
 # Extract dof indices where some condition is met: here the centerline
 indices = np.where(y == 0.0)[0]
-indicesTT = np.where(yTT == 0.0)[0]
+'''
+
+# Kinematics
+I = Identity(ndim)          # Identity tensor
+F = I + grad(u)             # Deformation gradient
+C = F.T*F                   # Right Cauchy-Green tensor
+# Invariants of deformation tensors
+Ic = tr(C)                  # First invariant
+J = det(F)                  # Third invariant
 
 # Dirichlet (displacement, damage) boundary conditions (BCs)
 # --------------------------------------------------------------------
+
 # Impose the displacements field given by asymptotic expansion of crack tip
+u_0 = Expression(("0.0", "0.0"), degree=0)
 u_UL = Expression("0.0", degree=0)
 # Sliding/Pulling displacement BC: Initialized to 0 and updated in the loop
 u_UR = Expression("t", t=0.0, degree=0)
 
 # Boundary conditions - u (displacement)
-# Roller BCs: No displacement in the x-direction of the left and right boundary
-Gamma_u_0 = DirichletBC(V_u.sub(0), u_UL, left_boundary)
-Gamma_u_1 = DirichletBC(V_u.sub(0), u_UR, right_boundary)
-# Slider boundary condition
-Gamma_u_2 = DirichletBC(V_u.sub(1), u_UL, left_pinpoints, method='pointwise')
-#Gamma_u_3 = DirichletBC(V_u.sub(1), u_UL, right_pinpoints, method='pointwise')
+# Roller BCs: No displacement in the y-direction of the bottom boundary
+Gamma_u_bot = DirichletBC(V_u.sub(1), u_UL, bot_boundary)
+# Pinned boundary condition on bottom point
+Gamma_u_bot_p = DirichletBC(V_u.sub(0), u_UL, bot_pinpoints, method='pointwise')
+# Ramped displacement boundary condition on top boundary
+Gamma_u_top = DirichletBC(V_u.sub(1), u_UR, top_boundary)
 
 # Combine displacement boundary conditions
-bc_u = [Gamma_u_0, Gamma_u_1, Gamma_u_2]
+bc_u = [Gamma_u_bot, Gamma_u_bot_p, Gamma_u_top]
 
 # Boundary conditions - alpha (zero damage)
-# Apply to space V_alpha. No damage on the left and right boundary
-Gamma_alpha_0 = DirichletBC(V_alpha, 0.0, left_boundary)
-Gamma_alpha_1 = DirichletBC(V_alpha, 0.0, right_boundary)
-
+# Apply to space V_alpha. No damage on the bottom and top boundaries
+Gamma_a_bot = DirichletBC(V_alpha, 0.0, bot_boundary)
+Gamma_a_top = DirichletBC(V_alpha, 0.0, top_boundary)
+Gamma_a_notch_p = DirichletBC(V_alpha, 0.5, notch)
 # Combine damage boundary conditions
-bc_alpha = [Gamma_alpha_0, Gamma_alpha_1]
+bc_alpha = [Gamma_a_top, Gamma_a_bot]
+
+# Strain, Stress, and Constitutive functions of the damage model
+# ----------------------------------------------------------------------------
+# Strain
+def eps(v):
+    return sym(grad(v))
+
+# Reference stress
+def sigma_0(v):
+    return mu*(F - (J**(-b))*inv(F.T))
+#    return 2.0*mu*(eps(v))+lmbda*tr(eps(v))*Identity(ndim)
+
+# Constitutive functions of the damage model
+def w(alpha):
+    w1 = 1.0
+    # Depending on the model type, alpha or alpha**2
+    if case == "A":
+        return w1*alpha
+    else:
+        return w1*alpha**2
+
+def a(alpha):
+    return (1.0-alpha)**2
 
 # Define the energy functional of damage problem
 # --------------------------------------------------------------------
@@ -254,20 +334,20 @@ elastic_energy    = 0.5*inner(sigma(u, alpha), eps(u))*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
-# Keep for reference because this is familiar to HE demo. We already know that
-# this is a linear problem so we don't need to use a nonlinear solver.
-'''
 # Weak form of elasticity problem
 E_u  = derivative(elastic_potential, u, v)
-# Variational problem for the displacement
-problem_u = NonlinearVariationalSolver(problem_u)
-# Set up the solvers
-solver_u = NonlinearVariationalSolver(problem_u)
-solver_u.parameters.update(solver_u_parameters)
-'''
+# Writing tangent problems in term of test and trial functions for matrix assembly
+E_du = derivative(E_u, u, du)
 
-# Weak form of elasticity problem
-E_u  = derivative(elastic_potential, u, v)
+# Choose between linear or nonlinear solver (snes) depending on problem
+
+# Variational problem for the displacement
+problem_u = NonlinearVariationalProblem(E_u, u, bc_u, J=E_du)
+# Set up the solvers
+solver_u  = NonlinearVariationalSolver(problem_u)
+solver_u.parameters.update(snes_solver_parameters)
+
+'''
 # Writing tangent problems in term of test & trial functions for matrix assembly
 E_du = replace(E_u, {u: du}) # Replace u by du in E_u equation
 # Variational problem for the displacement
@@ -275,6 +355,8 @@ problem_u = LinearVariationalProblem(lhs(E_du), rhs(E_du), u, bc_u)
 # Set up the solvers
 solver_u  = LinearVariationalSolver(problem_u)
 solver_u.parameters.update(solver_u_parameters)
+'''
+
 # Output to see solver parameters
 # info(solver_u.parameters, True)
 
@@ -319,6 +401,8 @@ iterations       = np.zeros((len(load_multipliers), 2))
 # Order: Strain, damage variable alpha, stress
 dim_data    = np.zeros((len(load_multipliers), 3))
 nondim_data = np.zeros((len(load_multipliers), 3))
+# Stores alpha vector along the centerline
+alpha_max = np.zeros((len(load_multipliers), 2))
 
 # Set the saved data file name
 file_results     = XDMFFile(MPI.comm_world, savedir + "/results.xdmf")
@@ -340,11 +424,12 @@ else:
 # ----------------------------------------------------------------------------
 for (i_t, t) in enumerate(load_multipliers):
     # Update time for displacement boundary condition
-    u_UR.t = t * ut
+    u_UR.t = t
 
     # Print updated time
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
+        print("Test: " + str(t))
 
     # Alternate Mininimization Scheme
     # -------------------------------------------------------------------------
@@ -381,7 +466,11 @@ for (i_t, t) in enumerate(load_multipliers):
     u.rename("Displacement", "u")
     strain_val.rename("Strain", "strain_val")
     sigma_val.rename("Stress", "sigma_val")
-
+    '''
+    alpha_cen = alpha.vector()[indices]
+    #alpha_max[i_t] = np.array([t, stat.mean(alpha_cen)])
+    alpha_max[i_t] = np.array([t, max(alpha_cen)])
+    '''
     # Post-processing
     # -------------------------------------------------------------------------
     # Save number of iterations for the time step
@@ -470,7 +559,7 @@ if MPI.rank(MPI.comm_world) == 0:
 
     plt.figure(4)
     plt.plot(nondim_data[:, 0], nondim_data[:, 2], 'k*-')
-    plt.xlabel('Strain (U_t/U_m)')
+    plt.xlabel('Strain (U_t)')
     plt.ylabel('Stress (sigma_t/sigma_m)')
     plt.title('Stress vs Strain ' + filename)
     plt.savefig(savedir + '/stress_strain_nondim.pdf', transparent=True)
@@ -478,8 +567,16 @@ if MPI.rank(MPI.comm_world) == 0:
 
     plt.figure(3)
     plt.plot(dim_data[:, 0], dim_data[:, 2], 'k*-')
-    plt.xlabel('Strain (U_t)')
+    plt.xlabel('Strain (U_t/U_m)')
     plt.ylabel('Stress (sigma_t)')
     plt.title('Stress vs Strain ' + filename)
     plt.savefig(savedir + '/stress_strain_dim.pdf', transparent=True)
     plt.close()
+
+    # plt.figure(4)
+    # plt.plot(dim_data[:, 0], alpha_max[:, 1], 'k-')
+    # plt.xlabel('Strain (U_t/U_e)')
+    # plt.ylabel('Damage (alpha)')
+    # plt.title('Damage Profile ' + filename)
+    # plt.savefig(savedir + '/damage_profile.pdf', transparent=True)
+    # plt.close()
