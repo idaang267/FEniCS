@@ -14,21 +14,45 @@ import matplotlib.pyplot as plt
 from ufl import cofac, rank
 
 # Optimization options for the form compiler
-parameters["form_compiler"]["cpp_optimize"] = True
-parameters["form_compiler"]["representation"] = "uflacs"
-
+parameters["form_compiler"]["optimize"] = True
+parameters["form_compiler"]["cpp_optimize"] = True
+
+# Solver parameters: Using PETSc SNES solver
+snes_solver_parameters = {"nonlinear_solver": "snes",
+                          "symmetric": True,
+                          "snes_solver": {"maximum_iterations": 50,
+                                          "report": True,
+                                          "line_search": "bt",
+                                          "linear_solver": "mumps",
+                                          "method": "newtonls",
+                                          "absolute_tolerance": 1e-9,
+                                          "relative_tolerance": 1e-9,
+                                          "error_on_nonconvergence": False}}
+
+# Set the user parameters, can be parsed from command line
+parameters.parse()
+userpar = Parameters("user")
+userpar.add("gamma", 0.05)
+userpar.add("nu", 0.3)
+userpar.add("tot_steps", 19)
+userpar.parse()
+
 # Global stepping and displacement stepping parameters
-steps = 1            # Displacement step counter (updated within loop)
-tot_steps = 21       # Total displacement steps
+steps = 1                           # Displacement step counter (updated within loop)
+tot_steps = userpar["tot_steps"]    # Total displacement steps
 
 # Time parameters
 dt = 1                       # Starting time step
 # Expression for time step for updating in loop
 theta = Expression("dt", dt=dt, degree=0)
 t = 0.0                         # Initial time (updated in loop)
-c_exp = 1.1                     # Control the time step increase
+c_exp = 1.05                     # Control the time step increase
 # Initialize tolerance
 tol = 1E-14
+# Surface Energy: Gamma term
+gamma = userpar["gamma"]
+Gamma = Expression("gamma", gamma=gamma, degree=0)
+
 # Elasticity Parameters
 E_1 = Constant(100.0)
 E_2 = Constant(1.0)
@@ -37,14 +61,10 @@ E = Expression('x[1] >= 0.09 + tol ? E_1 : E_2', degree=0,
                tol=tol, E_1=E_1, E_2=E_2)
 
 # Solve for mu and lambda
-nu = 0.3
+nu = userpar["nu"]                  # Poisson Ratio
+lmbda = E*nu/((1 + nu)*(1 - 2*nu))  # Bulk Modulus
 mu = E/(2*(1 + nu))                 # Shear Modulus
-lmbda = E*nu/((1 + nu)*(1 - 2*nu))  #
-alpha = nu/(1-2*nu)
-
-# Surface Energy: Gamma term
-gamma = 0.05
-Gamma = Expression("gamma", gamma=gamma, degree=0)
+alpha = nu/(1-2*nu)                 # Ratio of lmbda/2*mu
 
 # Define Dirichlet boundary expressions
 c = Constant((0.0))
@@ -52,7 +72,11 @@ c = Constant((0.0))
 # Define body force (B) and traction (T) terms
 B  = Constant((0.0, 0.0))       # Body force per unit volume
 T  = Constant((0.0, 0.0))       # Traction force on the boundary
-
+
+name = "BlatzKo"
+sim_param1 = "_g_%.2f" % (gamma)
+sim_param2 = "_nu_%.2f" % (nu)
+
 # Create mesh and define function space
 mesh = Mesh("hyperelasticity2D_gmsh.xml")
 
@@ -133,14 +157,11 @@ NansonOp = (cofac(F))                            # Element of area transformatio
 deformed_N = dot(NansonOp,N)                     # Surface element vector
 Jsurf = sqrt(dot(deformed_N,deformed_N))         # Norm of the surface element vector
 
-# Piola stress tensor
+# First Piola-Kirchoff stress tensor
 def P(u):
-#    return (2*mu*Jg/nu)*(Fe - 0.5*Je**(-alpha)*inv(Fe.T))*inv(Fg.T)
-    return (mu*Jg/nu)*(mu*Fe + (lmbda*ln(Je) - mu)*inv(Fe.T))*inv(Fg.T)
-
-# Stored strain energy density
-#psi = mu/2*(Ie - 3 + 1/alpha*(Je**(-alpha) - 1))
-psi = mu/2*(Ie - 3 - 2*ln(Je)) + lmbda/2*(ln(Je))**2
+    return mu*Fe - mu/2*Je**(-alpha)*inv(Fe.T)
+#    return mu*Jg*(Fe - 0.5*Je**(-alpha)*inv(Fe.T))*inv(Fg.T)
+#    return mu*Fe + (lmbda*ln(Je) - mu)*inv(Fe.T)
 
 # Total potential energy
 F1 = inner(P(u), grad(v))*dx - dot(B, v)*dx - dot(T, v)*ds
@@ -153,9 +174,13 @@ WF = F1 + F2
 
 # Compute Jacobian of F
 Jacobian = derivative(WF, u, du)
-
+
+problem = NonlinearVariationalProblem(WF, u, bcs, J=Jacobian)
+solver_problem = NonlinearVariationalSolver(problem)
+solver_problem.parameters.update(snes_solver_parameters)
+
 # Save results to an .xdmf file
-file_results = XDMFFile("neo-hookean.xdmf")
+file_results = XDMFFile(name + sim_param1 + sim_param2 + ".xdmf")
 
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
@@ -168,8 +193,8 @@ while (steps < tot_steps):
     theta.dt = dt               # Update steps in expression class
 
     # Solve variational problem
-    solve(WF == 0, u, bcs, J=Jacobian) # L(u;v) == 0  a(u;du,v) = detF
-
+    solver_problem.solve()
+
     # Project nominal stress
     PTensor = project(P(u), TT)
 
