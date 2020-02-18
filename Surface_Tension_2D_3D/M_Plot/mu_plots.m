@@ -1,12 +1,13 @@
 clear all
 
-directory = ["alt_chi_0.2_l0_2.00/"];
+directory = ["alt_chi_0.4_lm_1.0_mu_1.0_l0_2.50/"];
 
 for i = 1:length(directory)
     dist = importfile(directory(i) + "data_plot.txt",1,inf);
     dataplot = importfile2(directory(i) + "dict.txt",1,inf);
     dataMat = table2array(dataplot); 
-    time = dataMat(:,1);
+    time = dataMat(:,1)';
+    d = dist.e2';
     
     [x, y] = size(dataMat); 
     chemPotCoord = [];
@@ -25,12 +26,3 @@ for i = 1:length(directory)
         end        
     end 
 end
-
-%%
-n = 10^-3;
-gamma = 1.0;
-chi = 0.4;
-l0 = 3.0;
-J0 = l0^3;
-mu0 = n*(1/l0-1/J0) + 1/J0 + log(1 - 1/J0) + chi/(J0^2)+ n*gamma*2/l0
-
