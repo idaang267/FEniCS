@@ -5,7 +5,7 @@ Mesh.Algorithm = 2;
 Mesh.Algorithm3D = 1;
 
 RSphere = 1.;
-lcSphere = 0.15;
+lcSphere = 0.1;
 
 // Define all points of the circle
 Point(1) = {0,         0,       0, lcSphere};
@@ -106,11 +106,25 @@ Line(l7) = {p6, p7};
 Curve{l7} In Volume {1111};
 
 p8 = newp;
-Point(p8) = {0.9, 0.0, 0.0, lcSphere};
+Point(p8) = {0.85, 0.0, 0.0, lcSphere};
 Point{p8} In Volume {1111};
 l8 = newl;
 Line(l8) = {p7, p8};
 Curve{l8} In Volume {1111};
+
+p9 = newp;
+Point(p9) = {0.9, 0.0, 0.0, lcSphere};
+Point{p9} In Volume {1111};
+l9 = newl;
+Line(l9) = {p8, p9};
+Curve{l9} In Volume {1111};
+
+p10 = newp;
+Point(p10) = {0.95, 0.0, 0.0, lcSphere};
+Point{p10} In Volume {1111};
+l10 = newl;
+Line(l10) = {p9, p10};
+Curve{l10} In Volume {1111};
 
 //pLoc = 0.0;
 //subD = RSphere/lcSphere;
