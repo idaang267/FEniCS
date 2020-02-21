@@ -1,5 +1,4 @@
-#------------------------------------------------------------------------------
-# Swelling of cylinder (modeled in 2D)
+# Swelling of 2D
 #------------------------------------------------------------------------------
 # Based on the formulation in 2015 paper "Effect of solvent diffusion on
 # crack-tip fields and driving force for fracture of hydrogels" which simplifies
@@ -34,6 +33,25 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
 
 # Defining Classes
 #------------------------------------------------------------------------------
+# Full boundary for chemical potential
+class OnBoundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary
+
+# Center point for fixed displacement bc
+class pinPoint(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0, tol) and near(x[1], 0.0, tol)
+
+# Right boundary point for fixed displacement bcs (x-axis)
+class pinPointRight(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 1.0, tol) and near(x[1], 0.0, tol)
+
+class pinPointTop(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0, tol) and near(x[1], 1.0, tol)
+
 # Initial condition (IC) class for displacement and chemical potential
 class InitialConditions(UserExpression):
     def eval(self, values, x):
@@ -41,85 +59,99 @@ class InitialConditions(UserExpression):
         values[0] = (l0-1)*x[0]
         values[1] = (l0-1)*x[1]
         # Initial Chemical potential: mu0
-        values[2] = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
+        values[2] = chem_ini #(ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
     def value_shape(self):
          return (3,)
 
-# Full boundary for chemical potential
-class OnBoundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary
-
-# Center point for fixed displacement
-def pinPoint(x, on_boundary):
-    return near(x[0], 0.0, 0.01) and near(x[1], 0.0, 0.01)
+OnBoundary = OnBoundary()
+pinPoint = pinPoint()
+pinPointRight = pinPointRight()
+pinPointTop = pinPointTop()
 
 # Model parameters
 #------------------------------------------------------------------------------
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("chi", 0.6)
-userpar.add("gamma", 0.01)
-userpar.add("l0", 1.4)
-userpar.add("eq_steps1", 0)
-userpar.add("eq_steps2", 50)
+userpar.add("chi", 0.2)
+userpar.add("gamma", 1.0)
+userpar.add("l0", 3.2)
+userpar.add("t_g_steps", 9)
+userpar.add("eq_steps1", 130)
+userpar.add("t_c_steps", 1)
+userpar.add("eq_steps2", 0)
 userpar.parse()
 
-# Other user parameters
-mesh_res = 30                   # Mesh resolution
-B  = Constant((0.0, 0.0))       # Body force per unit volume
-T  = Constant((0.0, 0.0))       # Traction force on the boundary
+# Parse from command line if given
+tol = 1E-10
 gamma = userpar["gamma"]        # Surface Energy: Gamma term
+Gamma = Expression("gamma", gamma=gamma, degree=0)
 chi = userpar["chi"]            # Flory Parameter
 l0 = userpar["l0"]              # Initial Stretch (lambda_o)
 n = 10**(-3)                    # Normalization Parameter (N Omega)
 # Global stepping, chemical stepping, and surface stepping parameters
 steps = 0                       # Steps (updated within loop)
 g_steps = 0                     # Surface parameter counter (updated within loop)
-t_g_steps = 0                   # Total surface parameter (gamma) steps
 c_steps = 0                     # Chemical step counter (updated within loop)
-t_c_steps = 50                  # Total chemical steps
+t_g_steps = userpar["t_g_steps"]# Total surface parameter (gamma) steps
+t_c_steps = userpar["t_c_steps"]# Total chemical steps
 # Number of steps to reach equilibrium for stress or chemical ramping case
 eq_steps1 = userpar["eq_steps1"]
 eq_steps2 = userpar["eq_steps2"]
 # Total number of time steps
 tot_steps = t_g_steps + eq_steps1 + t_c_steps + eq_steps2
+# Body force per unit volume and Traction force on the boundary
+B  = Constant((0.0, 0.0))       # Body force per unit volume
+T  = Constant((0.0, 0.0))       # Traction force on the boundary
+# Initial and maximum value of chemical potentail
+chem_ini = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+chem_max = ln((l0**3-1)/l0**3) + 1/l0**3 + chi/l0**6 + n*(1/l0-1/l0**3)
+# Time parameters
+dt = 10**(-3)                   # Starting time step
+# Expression for time step for updating in loop
+DT = Expression("dt", dt=dt, degree=0)
+# Initial time for paraview file
+t = 0.0                         # Initial time (updated in loop)
+c_exp = 1.1                     # Control the time step increase
 
 # Name of file
 name = "2D"
 sim_param1 = "_chi_%.1f" % (chi)
-sim_param2 = "_g_%.1f" % (gamma)
-sim_param3 = "_l0_%.1f" % (l0)
+sim_param2 = "_g_%.2f" % (gamma)
+sim_param3 = "_l0_%.2f" % (l0)
 sim_param4 = "_steps_%.0f" % (tot_steps)
-savedir = name + sim_param1 + sim_param4 + "/"
+savedir = name + sim_param1 + sim_param3 + "/"
 
 # If directory exists, remove recursively and create new directory
 if MPI.rank(MPI.comm_world) == 0:
     if os.path.isdir(savedir):
         shutil.rmtree(savedir)
 
-# Time parameters
-dt = 10**(-1)                   # Starting time step
-# Expression for time step for updating in loop
-DT = Expression("dt", dt=dt, degree=0)
-# Initial time for paraview file
-t = 0.0
-c_exp = 1.1                     # Control the time step increase
-Gamma = Expression("gamma", gamma=gamma, degree=0)
-
 # Define mesh
 #------------------------------------------------------------------------------
-# Create spherical domain with radius of 1.0
-domain = Circle(Point(0.0, 0.0), 1.0)
-# Discretize mesh by mesh_res
-mesh = generate_mesh(domain, mesh_res)
+# Create domain with radius of 1.0
+mesh = Mesh("2D_0.1.xml")
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
 
 # Create boundaries
 boundaries = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+
+points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
+
+# Show points of interest
+subdomains.set_all(0)
+OnBoundary.mark(subdomains,1)
+file_results = XDMFFile(savedir + "/" + "subdomains.xdmf")
+file_results.write(subdomains)
+
+points.set_all(0)
+pinPoint.mark(points, 1)
+pinPointRight.mark(points, 1)
+pinPointTop.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
 
 # Measures/redefinition for dx and ds according to subdomains and boundaries
 dx = Measure("dx")(subdomain_data=subdomains)
@@ -152,6 +184,26 @@ w0 = Function(V)                            # Previous solution for u and mu
 (u, mu) = split(w)                          # Split current
 (u0, mu0) = split(w0)                       # Split previous
 
+# Boundary Conditions (BC)
+#------------------------------------------------------------------------------
+# Mark Boundary Subdomains for surface
+# Note: ParaView default view, x is right, y is up, and z-direction is out-of-plane
+# Displacement BC: pinned center to prevent translation
+u_0 = Expression(("0.0","0.0"), degree=0)
+u_dir = Expression(("0.0"), degree=0)
+
+# Chemical potential BC ramped from initial to maximum
+chem_p = Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
+                    chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
+
+# The Dirichlet BCs are specified in respective subspaces
+bc_0 = DirichletBC(V.sub(0), u_0, pinPoint, method='pointwise')
+bc_pin_RY = DirichletBC(V.sub(0).sub(1), u_dir, pinPointRight, method='pointwise')
+bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary)
+
+# Combined boundary conditions
+bc = [bc_0, bc_pin_RY, bc_chem]
+
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
 # Initial conditions are created by using the class defined and then
@@ -181,26 +233,6 @@ Jsurf = sqrt(dot(deformed_N,deformed_N)) # Norm of the surface element vector in
 Isurf = I - outer(N,N)                   # Surface identity
 Fsurf = dot(F, Isurf)                    # Surface deformation gradient
 
-# Boundary Conditions (BC)
-#------------------------------------------------------------------------------
-# Mark Boundary Subdomains for surface
-# Note: ParaView default view, x is right, y is up, and z-direction is out-of-plane
-
-# Chemical potential BC ramped from initial to maximum
-chem_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-chem_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-chem_p = Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
-                    chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
-# Displacement BC: pinned center to prevent translation
-u_0 = Expression(("0.0","0.0"), degree=0)
-
-# The Dirichlet BCs are specified in respective subspaces
-bc_0 = DirichletBC(V.sub(0), u_0, pinPoint, method='pointwise')
-bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
-
-# Combined boundary conditions
-bc = [bc_0, bc_chem]
-
 # Definitions
 #------------------------------------------------------------------------------
 # Normalized nominal stress tensor: P = dU/dF
@@ -229,15 +261,16 @@ solver_problem = NonlinearVariationalSolver(problem)
 solver_problem.parameters.update(snes_solver_parameters)
 
 # Initialize data array
-data_steps = np.zeros((tot_steps, 3))
+data_steps = np.zeros((tot_steps, 4))
 
 # Save results to an .xdmf file since we have multiple fields (time-dependence)
-file_results = XDMFFile(savedir + "/" + name + sim_param1 + sim_param2 + sim_param3 + sim_param4 + ".xdmf")
+file_results = XDMFFile(savedir + "/" + name + sim_param1 + sim_param3 + sim_param4 + ".xdmf")
 
 # Solve for each value using the previous solution as a starting point
 while (steps < tot_steps):
     # Print outs to track code progress
     print("Steps: " + str(steps))
+    print("Time: " + str(t))
 
     # Update fields containing u and mu and solve using the setup parameters
     w0.vector()[:] = w.vector()
@@ -246,7 +279,7 @@ while (steps < tot_steps):
     # Update the surface stress
     if g_steps < t_g_steps:
         g_steps += 1
-        gamma += 0.01
+        gamma += 0.1
     gamma += 0
     Gamma.gamma = gamma
 
@@ -254,22 +287,17 @@ while (steps < tot_steps):
     crit1 = t_g_steps + eq_steps1
     crit2 = t_g_steps + eq_steps1 + t_c_steps
     if (steps > crit1 and steps <= crit2) and c_steps < t_c_steps:
+        # Reset time step to original time step
+        if c_steps == 0:
+            dt = 10**(-3)
         c_steps += 1
     c_steps += 0
     chem_p.c_steps = c_steps        # Update steps in expression class
 
-    c_ini = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-    c_max = (ln((l0**3-1)/l0**3) + 1/l0**3 + chi/(l0**6) + n*(1/l0-1/l0**3))
-    chem_val = c_steps*(c_max-c_ini)/t_c_steps + c_ini
+    chem_val = c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini
 
     # Save data to plot
-    data_steps[steps] = np.array([steps, chem_val, gamma])
-
-    # Update total steps and time parameters
-    steps += 1                     # Update total steps
-    dt = dt*c_exp;                # Update time step with exponent value
-    DT.dt = dt                    # Update time step for weak forms
-    t += dt                       # Update total time for paraview file
+    data_steps[steps] = np.array([t, steps, gamma, chem_val])
 
     # Writing the results to file
     (u, mu) = w.split()
@@ -287,16 +315,36 @@ while (steps < tot_steps):
     file_results.write(mu,t)
     file_results.write(PTensor,t)
 
-    plt.figure(1)
-    plt.plot(data_steps[:, 0], data_steps[:, 1], 'k-')
+    # Update total steps and time parameters
+    steps += 1                     # Update total steps
+    dt = dt*c_exp;                # Update time step with exponent value
+    DT.dt = dt                    # Update time step for weak forms
+    t += dt                       # Update total time for paraview file
+
+if MPI.rank(MPI.comm_world) == 0:
+    fig, axs = plt.subplots(2, sharex = True)
+    fig.suptitle("Ramping Sequence")
+    axs[0].plot(data_steps[:, 0], data_steps[:, 2], 'k*-')
+    axs[1].plot(data_steps[:, 0], data_steps[:, 3], 'k*-')
     plt.xlabel("Time")
-    plt.ylabel("Chemical Potential")
-    plt.savefig(savedir + 'ChemPotential.pdf', transparent=True)
+    axs[0].set_title('Gamma Ramping')
+    axs[1].set_title('Chemical Potential Ramping')
+    plt.savefig(savedir + 'Ramping_Time' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
     plt.close()
 
-    plt.figure(2)
-    plt.plot(data_steps[:, 0], data_steps[:, 2], 'k-')
-    plt.xlabel("Time")
-    plt.ylabel("Gamma")
-    plt.savefig(savedir + 'gamma.pdf', transparent=True)
+    fig, axs = plt.subplots(2, sharex = True)
+    fig.suptitle("Ramping Sequence")
+    axs[0].plot(data_steps[:, 1], data_steps[:, 2], 'k*-')
+    axs[1].plot(data_steps[:, 1], data_steps[:, 3], 'k*-')
+    plt.xlabel("Steps")
+    axs[0].set_title('Gamma Ramping')
+    axs[1].set_title('Chemical Potential Ramping')
+    plt.savefig(savedir + 'Ramping_Steps' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf' , transparent=True)
+    plt.close()
+
+    plt.figure(1)
+    plt.plot(data_steps[:, 1], data_steps[:, 0], 'k-')
+    plt.xlabel("Steps")
+    plt.ylabel("Time")
+    plt.savefig(savedir + 'TimeProgression' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf', transparent=True)
     plt.close()
