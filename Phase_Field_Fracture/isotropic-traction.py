@@ -149,7 +149,7 @@ parameters.parse()
 userpar = Parameters("user")
 userpar.add("meshsize", 250)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 1.0)
+userpar.add("load_max", 2.12)
 userpar.add("load_steps", 101)
 userpar.parse()
 
@@ -197,8 +197,10 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Last parameter of RectangleMesh is the direction of diagonals: alternating diagonals
-mesh = Mesh("tension_test.xml")
-#mesh = RectangleMesh(Point(0., -0.5*H), Point(L, 0.5*H), int(N), int(float(H/hsize)), "right/left")
+#mesh = Mesh("tension_test.xml")
+mesh = RectangleMesh(Point(0., -0.5*H), Point(L, 0.5*H), int(N), int(float(H/hsize)), "right/left")
+
+'''
 # Save mesh as XDMF file for visualization in Paraview
 geo_mesh = XDMFFile(MPI.comm_world, savedir+meshname)
 geo_mesh.write(mesh)
@@ -221,6 +223,7 @@ notch.mark(points, 1)
 bot_pinpoints.mark(points, 1)
 file_results = XDMFFile(savedir + "/" + "points.xdmf")
 file_results.write(points)
+'''
 
 # First call to mesh only creates entities of dimension zero (vertices) and
 # entities of the maximal dimension (cells). Other entities must be explicitly
@@ -294,7 +297,6 @@ bc_u = [Gamma_u_bot, Gamma_u_bot_p, Gamma_u_top]
 # Apply to space V_alpha. No damage on the bottom and top boundaries
 Gamma_a_bot = DirichletBC(V_alpha, 0.0, bot_boundary)
 Gamma_a_top = DirichletBC(V_alpha, 0.0, top_boundary)
-Gamma_a_notch_p = DirichletBC(V_alpha, 0.5, notch)
 # Combine damage boundary conditions
 bc_alpha = [Gamma_a_top, Gamma_a_bot]
 
@@ -388,8 +390,10 @@ solver_alpha  = PETScTAOSolver()
 # Update parameters
 solver_alpha.parameters.update(tao_solver_parameters)
 # Set an upper and lower bound for damage variable between [0, 1]
-alpha_lb = interpolate(Expression("0.0", degree=0), V_alpha)  # lower bound, set to 0
-alpha_ub = interpolate(Expression("1.0", degree=0), V_alpha)  # upper bound, set to 1
+#alpha_lb = interpolate(Expression("0.0", degree=0), V_alpha)  # lower bound, set to 0
+alpha_lb = interpolate(Expression("x[0]>=0.8 & x[0]<=1.2 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, degree=0), V_alpha)
+alpha_ub = interpolate(Expression("1.0", degree=0), V_alpha)  # upper bound, set to 1,
 
 # Loading and initialization of vectors to store data
 # ----------------------------------------------------------------------------
