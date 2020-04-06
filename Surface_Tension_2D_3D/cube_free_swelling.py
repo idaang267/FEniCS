@@ -42,26 +42,24 @@ class OnBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary
 
-# Bottom and top
-class bot(SubDomain):
+# Center point for fixed displacement bc
+class pinPoint(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[1], 0.0) and on_boundary
-class top(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], 1.0) and on_boundary
+        return near(x[0], 0.0, tol) and near(x[1], 0.0, tol) and near(x[2], 0.0, tol)
 
-# Lateral surfaces
-class symmetry_x(SubDomain):    # left and right surfaces
+# Right boundary point for fixed displacement bcs (x-axis)
+class pinPointRight(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.0) or near(x[0], 1.0) and on_boundary
-class symmetry_z(SubDomain):    # front and back surfaces
-    def inside(self, x, on_boundary):
-        return near(x[2], 0.0) or near(x[2], 1.0) and on_boundary
+        return near(x[0], 0.5, tol) and near(x[1], 0.0, tol) and near(x[2], 0.0, tol)
 
-bot = bot()
-top = top()
-sym_x = symmetry_x()
-sym_z = symmetry_z()
+# Top boundary point for fixed displacement bcs (z-axis)
+class pinPointTop(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0, tol) and near(x[1], 0.5, tol) and near(x[2], 0.0, tol)
+
+pinPoint = pinPoint()
+pinPointRight = pinPointRight()
+pinPointTop = pinPointTop()
 
 # Initial condition (IC) class for displacement and chemical potential
 class InitialConditions(UserExpression):
@@ -81,7 +79,7 @@ class InitialConditions(UserExpression):
 parameters.parse()
 userpar = Parameters("user")
 userpar.add("chi", 0.2)
-userpar.add("gamma", 0.00)
+userpar.add("gamma", 0.0)
 userpar.add("g_inc", 0.05)
 userpar.add("l0", 2.0)
 userpar.add("t_g_steps", 20)
@@ -124,7 +122,7 @@ t = 0.0                         # Initial time (updated in loop)
 c_exp = userpar["c_exp"]        # Control the time step increase
 
 # Name of file
-name = "cube_bound"
+name = "cube_free"
 sim_param1 = "_chi_%.1f" % (chi)
 sim_param2 = "_g_%.2f" % (g_inc)
 sim_param3 = "_l0_%.2f" % (l0)
@@ -142,7 +140,7 @@ inPlaneRes = 15                  # Along top surface (without refinement)
 outPlaneRes = 15                 # Resolution along cube height
 
 # Create unit cube mesh
-mesh = BoxMesh(Point(0, 0, 0), Point(1.0, 1.0, 1.0), inPlaneRes, outPlaneRes, inPlaneRes)
+mesh = BoxMesh(Point(-0.5, -0.5, -0.5), Point(0.5, 0.5, 0.5), inPlaneRes, outPlaneRes, inPlaneRes)
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
@@ -192,7 +190,7 @@ xcoords = coords[:,0]
 ycoords = coords[:,1]
 zcoords = coords[:,2]
 # Extract point of interest (POI) indices where some condition is met
-POI = np.where(zcoords == 0.5)[0]
+POI = np.where(zcoords == 0.0)[0]
 # Obtain coordinates based on condition met
 cor = coords[POI]
 # For chemical potential, we are printing out
@@ -213,27 +211,27 @@ w0 = Function(V)                            # Previous solution for u and mu
 
 # Boundary Conditions (BC)
 #------------------------------------------------------------------------------
-# Bottom of the cube is attached to substrate and has fixed displacement from
-# the reference relative to the current configuration
-u_bot = Expression(("(l0-1)*x[0]", "0.0*x[1]", "(l0-1)*x[2]"), l0=l0, degree=1)
-
-# Roller boundary conditions (define normal directions) on lateral surfaces
-u_lr = Expression(("(l0-1)*x[0]"), l0=l0, degree=1)
-u_bf = Expression(("(l0-1)*x[2]"), l0=l0, degree=1)
+# Displacement BC: pinned center to prevent translation
+u_0 = Expression(("0.0","0.0","0.0"), degree=0)
+u_dir = Expression(("0.0"), degree=0)
 
 # Chemical potential BC ramped from initial to maximum value
 chem_p =  Expression(("c_steps*(chem_max-chem_ini)/t_c_steps + chem_ini"), \
                    chem_ini=chem_ini, chem_max=chem_max, c_steps=c_steps, t_c_steps=t_c_steps, degree=1)
 
 # The Dirichlet BCs are specified in respective subspaces
-bc_u = DirichletBC(V.sub(0), u_bot, bot)    # u in first subspace V.sub(0)
+bc_0 = DirichletBC(V.sub(0), u_0, pinPoint, method='pointwise')
+# Fixed right point and front point to prevent rotations
+bc_pin_RY = DirichletBC(V.sub(0).sub(1), u_dir, pinPointRight, method='pointwise')
+bc_pin_RZ = DirichletBC(V.sub(0).sub(2), u_dir, pinPointRight, method='pointwise')
+bc_pin_FX = DirichletBC(V.sub(0).sub(0), u_dir, pinPointTop, method='pointwise')
+bc_pin_FZ = DirichletBC(V.sub(0).sub(2), u_dir, pinPointTop, method='pointwise')
+
 # Chemical Boundary conditions
-bc_c_t = DirichletBC(V.sub(1), chem_p, top)
-bc_c_rl = DirichletBC(V.sub(1), chem_p, sym_x)
-bc_c_fb = DirichletBC(V.sub(1), chem_p, sym_z)
+bc_chem = DirichletBC(V.sub(1), chem_p, OnBoundary())
 
 # Combined boundary conditions
-bc = [bc_u, bc_c_t, bc_c_rl, bc_c_fb]
+bc = [bc_0, bc_pin_RY, bc_pin_RZ, bc_pin_FX, bc_pin_FZ, bc_chem]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -312,7 +310,7 @@ while (steps < tot_steps):
     # Update the surface stress
     if g_steps < t_g_steps:
         g_steps += 1
-        gamma += 0.1
+        gamma += g_inc
     gamma += 0
     Gamma.gamma = gamma
 
@@ -359,8 +357,8 @@ while (steps < tot_steps):
     u_dict = {}
     #
     for a, b in zip(cor, u_POI):
-        if a[1] == 1.0:
-            if a[0] >= 0.5:
+        if a[1] == 0.5:
+            if a[0] >= 0.0:
                 #print(a, b)
                 # Append coordinate in x-direction [0]
                 ax =  a[0]
@@ -387,7 +385,7 @@ while (steps < tot_steps):
     DT.dt = dt                    # Update time step for weak forms
     t += dt                       # Update total time for paraview file
 
-'''
+
 # Figures
 #---------------------------------------------------------------------------
 if MPI.rank(MPI.comm_world) == 0:
@@ -417,7 +415,7 @@ if MPI.rank(MPI.comm_world) == 0:
     plt.ylabel("Time")
     plt.savefig(savedir + 'TimeProgression' + sim_param1 + sim_param2 + sim_param3 + sim_param4 + '.pdf', transparent=True)
     plt.close()
-'''
+
 
 end_time = time.time()
 if MPI.rank(MPI.comm_world) == 0:
