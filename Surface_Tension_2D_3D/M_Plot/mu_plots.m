@@ -1,12 +1,12 @@
 clear all
 
-directory = ["alt_chi_0.4_lm_1.0_mu_1.0_l0_2.50/"];
+directory = ["exp_chi_0.2_g_1.00_l0_2.00_exp_1.6/"];
 
 for i = 1:length(directory)
-    dist = importfile(directory(i) + "data_plot.txt",1,inf);
     dataplot = importfile2(directory(i) + "dict.txt",1,inf);
     dataMat = table2array(dataplot); 
     time = dataMat(:,1)';
+    dist = importfile(directory(i) + "data_plot.txt",1,inf);
     d = dist.e2';
     
     [x, y] = size(dataMat); 
