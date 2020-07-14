@@ -1,16 +1,14 @@
 clear all 
 close all
 
-% Figure 3 replication 
+
 
 % Theta (rad) 
-th = linspace(-pi, pi, 101);
+th = linspace(-pi, pi, 200);
 
-% Choose x= b0/a^(2-2n) for Figure 4 
-
-x = [0.5, 1, 5, 10];
-
-n = [1, 1];
+% Unknown amplitudes
+a = [1, 1, 1]
+c = [0.5, 1, 5, 10];
 
 for ii = 1:length(x)
     % Kappa 
@@ -27,16 +25,19 @@ for ii = 1:length(x)
     
     figure(1)
     plot(y1, y2, 'LineWidth', 2.5)
-    hold on     
-
+    hold on
 end 
 
 %% Plotting
 
 ax = gca;
-ax.FontSize = 15; 
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
 xlim([-0.2 0])
 ylim([0 0.4])
-leg = legend(["x = 1.7", "n = 2", "n = 3"], 'Location', 'Best');
+leg = legend(["0.5", "1", "5", "10"], 'Location', 'Best');
+title(leg, "$b_0/a^{2-2n}$", 'Interpreter', 'Latex');
+ax.FontSize = 20; 
+
+saveas(gcf, 'Fig4A.eps', 'epsc')
+% saveas(gcf, "Fig4.fig")

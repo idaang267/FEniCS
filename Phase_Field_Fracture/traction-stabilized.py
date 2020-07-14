@@ -43,7 +43,7 @@ info(parameters,True)
 # Parameters of the solvers for displacement and damage (alpha-problem)
 # -----------------------------------------------------------------------------
 # Parameters of the nonlinear SNES solver used for the displacement u-problem
-solver_up_parameters   = {"nonlinear_solver": "snes",
+solver_up_parameters  = {"nonlinear_solver": "snes",
                          "symmetric": True,
                          "snes_solver": {"linear_solver": "mumps",
                                          "method" : "newtontr",
@@ -99,13 +99,13 @@ class DamageProblem(OptimisationProblem):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 5.0e4)       # Shear modulus - normalized by n*k_b*T ?
+userpar.add("mu", 30)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
-userpar.add("Gc", 2.4e3)       # Fracture toughness
+userpar.add("Gc", 2.4E3)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsize", 100)
+userpar.add("meshsize", 60)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.40)
+userpar.add("load_max", 1.0)
 userpar.add("load_steps", 101)
 # Parse command-line options
 userpar.parse()
@@ -113,14 +113,19 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H, W = 1.0, 0.1, 0.04        # Length, height and width
-N       = userpar["meshsize"]
-hsize   = float(L/N)            # Geometry based definition for regularization
+L, H, W = 15, 2.0, 0.01        # Length (x), height (y), and width (x-direction)
+N     = userpar["meshsize"]
+hsize = float(L/N)            # Geometry based definition for regularization
+
+# Shear modulus, Poisson's ratio and Bulk modulus (also known as K)
+mu    = userpar["mu"]
+nu    = userpar["nu"]
+lmbda = mu*(2.0*(1.0+nu))*nu/((1.0+nu)*(1.0-2.0*nu))
 
 # Naming parameters for saving output
 modelname = "stabilized-FEM"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "L_%.1f_H_%.1f_W_%.2f_h_%.4f" % (L, H, W, hsize)
+simulation_params = "mu_%.1f_L_%.1f_H_%.1f_W_%.2f_h_%.4f" % (mu, L, H, W, hsize)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -129,20 +134,15 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation
-mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, int(N*H/L), int(N*W/L))
+mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, int(N/2), int(N*H/L))
 geo_mesh  = XDMFFile(MPI.comm_world, savedir + meshname)
 geo_mesh.write(mesh)
-
-# Shear modulus, Poisson's ratio and Bulk modulus (also known as K)
-mu    = userpar["mu"]
-nu    = userpar["nu"]
-lmbda = mu*(2.0*(1.0+nu))*nu/((1.0+nu)*(1.0-2.0*nu))
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 # Damage regularization parameter - internal length scale used for tuning Gc
-ell   = Constant(5.0*hsize)
+ell   = Constant(2.0*hsize)     # 5.0
 # Characteristic element length - used for stabilization
 h = CellDiameter(mesh)
 
@@ -173,11 +173,52 @@ if MPI.rank(MPI.comm_world) == 0:
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
-def left_boundary(x, on_boundary):
-    return on_boundary and near(x[0], 0.0, 0.1 * hsize)
+class left_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], 0.0, 0.1 * hsize)
 
-def right_boundary(x, on_boundary):
-    return on_boundary and near(x[0], L, 0.1 * hsize)
+class right_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], L, 0.1 * hsize)
+
+class bot_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], 0, 0.1 * hsize)
+
+class top_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], H, 0.1 * hsize)
+
+class mid_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[1], int(H/2), 0.1 * hsize) and between(x[0], (5, L))
+
+class crack_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[1], 1, 0.1 * hsize) and between(x[0], (0, 5))
+
+# Convert all boundary classes for visualization
+left_boundary = left_boundary()
+right_boundary = right_boundary()
+top_boundary = top_boundary()
+bot_boundary = bot_boundary()
+mid_boundary = mid_boundary()
+crack_boundary = crack_boundary()
+
+lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
+points = MeshFunction("size_t", mesh, mesh.topology().dim() - 3)
+
+# show lines of interest
+lines.set_all(0)
+mid_boundary.mark(lines, 1)
+file_results = XDMFFile(savedir + "/" + "lines.xdmf")
+file_results.write(lines)
+
+# Show points of interest
+points.set_all(0)
+mid_boundary.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
 
 # Constitutive functions of the damage model
 # ----------------------------------------------------------------------------
@@ -214,19 +255,21 @@ beta   = TestFunction(V_alpha)
 
 # Dirichlet boundary condition
 # --------------------------------------------------------------------
-u0 = Expression(["0.0","0.0","0.0"], degree=0)
+u0 = Expression(["0.0","0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
+u2 = Expression("-t", t= 0.0, degree=0)
 # bc - u (imposed displacement)
-# Left boundary is constrained in x y and z
-bc_u0 = DirichletBC(V_u.sub(0), u0, left_boundary)
+# Bound center
+bc_u0 = DirichletBC(V_u.sub(0), u0, mid_boundary)
 # Right boundary is subjected to a displacement in the x direction
-bc_u1 = DirichletBC(V_u.sub(0).sub(0), u1, right_boundary)
-bc_u = [bc_u0, bc_u1]
+bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+bc_u = [bc_u0, bc_u1, bc_u2]
 
 # bc - alpha (zero damage)
 # No damage to the boundaries - damage does not initiate from constrained edges
-bc_alpha0 = DirichletBC(V_alpha, 0.0, left_boundary)
-bc_alpha1 = DirichletBC(V_alpha, 0.0, right_boundary)
+bc_alpha0 = DirichletBC(V_alpha, 0.0, bot_boundary)
+bc_alpha1 = DirichletBC(V_alpha, 0.0, top_boundary)
 bc_alpha = [bc_alpha0, bc_alpha1]
 
 # Kinematics
@@ -283,8 +326,11 @@ damage_functional = elastic_potential + dissipated_energy
 E_alpha = derivative(damage_functional, alpha, beta)
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
+
 # Set the lower and upper bound of the damage variable (0-1)
-alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
+# alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
+alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 1.0, 0.1 * hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
 # Set up the solvers
@@ -293,14 +339,14 @@ solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters, True) # uncomment to see available parameters
 
 # Loading and initialization of vectors to store data of interest
-load_multipliers  = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
-energies          = np.zeros((len(load_multipliers), 5))
-iterations        = np.zeros((len(load_multipliers), 2))
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+energies         = np.zeros((len(load_multipliers), 5))
+iterations       = np.zeros((len(load_multipliers), 2))
 
 # Split into displacement and pressure
-(u, p)     = w_p.split()
+(u, p)   = w_p.split()
 # Data file name
-file_tot   = XDMFFile(MPI.comm_world, savedir + "/results.xdmf")
+file_tot = XDMFFile(MPI.comm_world, savedir + "/results.xdmf")
 # Saves the file in case of interruption
 file_tot.parameters["rewrite_function_mesh"] = False
 file_tot.parameters["functions_share_mesh"]  = True
@@ -313,6 +359,7 @@ File(savedir+"/parameters.xml") << userpar
 for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t * ut
+    u2.t = t * ut
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
 
@@ -331,7 +378,7 @@ for (i_t, t) in enumerate(load_multipliers):
         alpha_error = alpha.vector() - alpha_0.vector()
         err_alpha = alpha_error.norm('linf')    # Row-wise norm
         # Printouts to monitor the results and number of iterations
-        volume_ratio = assemble(J/(L*H*W)*dx)
+        volume_ratio = assemble(J/(L*H)*dx)
         if MPI.rank(MPI.comm_world) == 0:
             print ("AM Iteration: {0:3d},  alpha_error: {1:>14.8f}".format(iteration, err_alpha))
             print("\nVolume Ratio: [{}]".format(volume_ratio))
@@ -375,20 +422,20 @@ for (i_t, t) in enumerate(load_multipliers):
         np.savetxt(savedir + '/stabilized-iterations.txt', iterations)
 # ----------------------------------------------------------------------------
 
-# Plot energy and stresses
-if MPI.rank(MPI.comm_world) == 0:
-    p1, = plt.plot(energies[slice(None), 0], energies[slice(None), 1])
-    p2, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
-    p3, = plt.plot(energies[slice(None), 0], energies[slice(None), 3])
-    plt.legend([p1, p2, p3], ["Elastic", "Dissipated", "Total"], loc="best", frameon=False)
-    plt.xlabel('Displacement')
-    plt.ylabel('Energies')
-    plt.title('stabilized FEM')
-    plt.savefig(savedir + '/stabilized-energies.pdf', transparent=True)
-    plt.close()
-    p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 4])
-    plt.xlabel('Displacement')
-    plt.ylabel('Volume ratio')
-    plt.title('stabilized FEM')
-    plt.savefig(savedir + '/stabilized-volume-ratio.pdf', transparent=True)
-    plt.close()
+# # Plot energy and stresses
+# if MPI.rank(MPI.comm_world) == 0:
+#     p1, = plt.plot(energies[slice(None), 0], energies[slice(None), 1])
+#     p2, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
+#     p3, = plt.plot(energies[slice(None), 0], energies[slice(None), 3])
+#     plt.legend([p1, p2, p3], ["Elastic", "Dissipated", "Total"], loc="best", frameon=False)
+#     plt.xlabel('Displacement')
+#     plt.ylabel('Energies')
+#     plt.title('stabilized FEM')
+#     plt.savefig(savedir + '/stabilized-energies.pdf', transparent=True)
+#     plt.close()
+#     p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 4])
+#     plt.xlabel('Displacement')
+#     plt.ylabel('Volume ratio')
+#     plt.title('stabilized FEM')
+#     plt.savefig(savedir + '/stabilized-volume-ratio.pdf', transparent=True)
+#     plt.close()
