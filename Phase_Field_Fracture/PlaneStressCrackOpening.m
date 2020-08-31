@@ -44,11 +44,10 @@ xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
 xlim([-0.4 0])
 ylim([0 0.4])
-title(leg, "$c$", 'Interpreter', 'Latex');
 ax.FontSize = 20; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 
-
 saveas(gcf, 'PlaneStressCrackOpening.eps', 'epsc')
 % saveas(gcf, "Fig4.fig")
+% title(leg, "$c$", 'Interpreter', 'Latex');
