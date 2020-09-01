@@ -263,6 +263,7 @@ Ic = tr(C) + (F33+1)**2
 # --------------------------------------------------------------------
 # Zero body force
 body_force        = Constant((0., 0.))
+# Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
                     - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
@@ -295,19 +296,17 @@ E_alpha       = derivative(damage_functional, alpha, beta)
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
+# Lower and upper bound, set to 0 and 1 respectively
+# alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
+alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 0.75, 0.1 * hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, degree=0), V_alpha)
+alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
+
 # Set up the solvers
 solver_alpha  = PETScTAOSolver()
 solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
-#alpha_lb = interpolate(Expression("x[0]<=0.5*L & near(x[1], 0.0, tol) ? 1.0 : 0.0", \
-#                                  degree=0, L= L, tol=1.2*cra_w), V_alpha)  # initial (known) alpha
-# alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)  # lower bound, set to 0
-
-# Lower and upper bound, set to 0 and 1 respectively
-alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 0.75, 0.1 * hsize) ? 1.0 : 0.0", \
-                       hsize = hsize, degree=0), V_alpha)
-alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 # loading and initialization of vectors to store time datas
 load_multipliers  = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
 energies          = np.zeros((len(load_multipliers), 5))
@@ -328,7 +327,9 @@ File(savedir+"/parameters.xml") << userpar
 # Solving at each timestep
 # ----------------------------------------------------------------------------
 for (i_t, t) in enumerate(load_multipliers):
-    u1.t = t * ut
+    u1.t = t*ut
+    u2.t = t*ut
+
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
     # Alternate Mininimization
