@@ -89,6 +89,17 @@ class DamageProblem(OptimisationProblem):
         for bc in self.bc_alpha:
             bc.apply(A)
 
+# Initial condition (IC) class for displacement and chemical potential
+class InitialConditions(UserExpression):
+    def eval(self, values, x):
+        # Displacement u0 = (values[0], values[1])
+        values[0] = 0.0
+        values[1] = 0.0
+        values[2] = 0.0             # Pressure
+        values[3] = 1.0              # F_{33}
+    def value_shape(self):
+         return (4,)
+
 # set the user parameters
 parameters.parse()
 userpar = Parameters("user")
@@ -96,10 +107,10 @@ userpar.add("mu",1)       # n*k*T Shear modulus
 userpar.add("Gc",2.4e6)       # fracture toughness
 userpar.add("nu",0.49995)     # bulk modulus for slightly compressibility
 userpar.add("k_ell",5.e-5)    # residual stiffness
-userpar.add("meshsize",375)
+userpar.add("meshsize",333)
 userpar.add("load_min",0.)
 userpar.add("load_max",1.0)
-userpar.add("load_steps",501)
+userpar.add("load_steps",201)
 # Parse command-line options
 userpar.parse()
 
@@ -129,7 +140,7 @@ if MPI.rank(MPI.comm_world) == 0:
 
 # Mesh generation
 # mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, int(N*H/L), int(N*W/L))
-mesh = Mesh("2DShearTest3Ref.xml")
+mesh = Mesh("2DShearTestRef.xml")
 geo_mesh  = XDMFFile(MPI.comm_world, savedir+meshname)
 geo_mesh.write(mesh)
 
@@ -138,9 +149,6 @@ Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 # Damage regularization parameter - internal length scale used for tuning Gc
 ell = Constant(5.0*hsize)
-
-# Loading Parameters
-ut = 1.0 # reference value for the loading (imposed displacement)
 
 # Numerical parameters of the alternate minimization
 maxiteration = 2000
@@ -216,23 +224,24 @@ V_u     = FunctionSpace(mesh, TH)
 V_alpha = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define the function, test and trial fields
-w_p     = Function(V_u)
-u_p     = TrialFunction(V_u)
-v_q     = TestFunction(V_u)
+w_p = Function(V_u)
+u_p = TrialFunction(V_u)
+v_q = TestFunction(V_u)
 (u, p, F33) = split(w_p)     # Displacement, pressure, (u, p, F_{33})
 (v, q, v_F33) = split(v_q)   # Test functions for u, p and F33
 
 # Define the function, test and trial fields for damage problem
-alpha   = Function(V_alpha)
-dalpha  = TrialFunction(V_alpha)
-beta    = TestFunction(V_alpha)
+alpha  = Function(V_alpha)
+dalpha = TrialFunction(V_alpha)
+beta   = TestFunction(V_alpha)
 
 # --------------------------------------------------------------------
 # Dirichlet boundary condition
 # --------------------------------------------------------------------
 u00 = Constant((0.0))
-u1 = Expression("+t", t=0.0, degree=0)
-u2 = Expression("-t", t=0.0, degree=0)
+t = 0.0
+u1 = Expression("+t", t=t, degree=0)
+u2 = Expression("-t", t=t, degree=0)
 # bc - u (imposed displacement)
 bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
 # Top/bottom boundaries have displacement in the y direction
@@ -247,6 +256,13 @@ bc_alpha1 = DirichletBC(V_alpha, 0.0, top_boundary)
 # Combine
 bc_alpha = [bc_alpha0, bc_alpha1]
 
+# Initial Conditions (IC)
+#------------------------------------------------------------------------------
+# Initial conditions are created by using the class defined and then
+# interpolating into a finite element space
+init = InitialConditions(degree=1)          # Expression requires degree def.
+w_p.interpolate(init)                       # Interpolate current solution
+
 # Define the energy functional of damage problem
 # --------------------------------------------------------------------
 # Kinematics
@@ -256,8 +272,8 @@ F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
-J = det(F)*(F33+1)
-Ic = tr(C) + (F33+1)**2
+J = det(F)*F33
+Ic = tr(C) + F33**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
@@ -271,7 +287,7 @@ elastic_potential = elastic_energy - external_work
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
-      + ((F33+1)**2 - 1 + p*J*(1-alpha)/mu)*v_F33*dx
+      + (F33**2 - 1 + p*J*(1-alpha)/mu)*v_F33*dx
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -308,9 +324,9 @@ solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
 # loading and initialization of vectors to store time datas
-load_multipliers  = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
-energies          = np.zeros((len(load_multipliers), 5))
-iterations        = np.zeros((len(load_multipliers), 2))
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+energies         = np.zeros((len(load_multipliers), 5))
+iterations       = np.zeros((len(load_multipliers), 2))
 
 # set the saved data file name
 (u, p, F33) = w_p.split()
@@ -327,8 +343,8 @@ File(savedir+"/parameters.xml") << userpar
 # Solving at each timestep
 # ----------------------------------------------------------------------------
 for (i_t, t) in enumerate(load_multipliers):
-    u1.t = t*ut
-    u2.t = t*ut
+    u1.t = t
+    u2.t = t
 
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))

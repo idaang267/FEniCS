@@ -16,6 +16,7 @@
 from __future__ import division
 from dolfin import *
 from mshr import *
+from multiphenics import *
 from scipy import optimize
 
 import argparse
@@ -27,6 +28,7 @@ import sys
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from ufl import rank
 
 # ----------------------------------------------------------------------------
 # Parameters for DOLFIN and SOLVER
@@ -68,7 +70,6 @@ tao_solver_parameters = {"maximum_iterations": 100,
                          "gradient_relative_tol": 1e-8,
                          "error_on_nonconvergence": True}
 
-# --------------------------------------------------------------------
 # Implement the box constraints for damage field
 # --------------------------------------------------------------------
 # Variational problem for the damage problem
@@ -104,7 +105,7 @@ userpar.add("mu", 1)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsize", 2144)
+userpar.add("meshsize", 333)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
 userpar.add("load_steps", 501)
@@ -140,7 +141,7 @@ if MPI.rank(MPI.comm_world) == 0:
 
 # Mesh generation
 #mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, N, int(N*H/(2*L)))
-mesh = Mesh("2DShearTest3Ref.xml")
+mesh = Mesh("2DShearTestRef.xml")
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 geo_mesh.write(mesh)
 
@@ -217,6 +218,19 @@ center_point.mark(points, 1)
 file_results = XDMFFile(savedir + "/" + "points.xdmf")
 file_results.write(points)
 
+# Initial condition (IC) class for displacement and chemical potential
+class InitialConditions(UserExpression):
+    def eval(self, values, x):
+        # Displacement u0 = (values[0], values[1])
+        values[0] = 0.0
+        values[1] = 0.0
+        # Pressure
+        values[2] = 0.0
+        # Initial Chemical potential: mu0
+        values[3] = 1.0
+    def value_shape(self):
+         return (4,)
+
 # Constitutive functions of the damage model
 # ----------------------------------------------------------------------------
 def w(alpha):
@@ -231,11 +245,19 @@ def b(alpha):
 # Variational formulation
 # ----------------------------------------------------------------------------
 # Create function space for elasticity + damage
-P2  = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-# Stabilized mixed FEM for incompressible elasticity
-TH  = MixedElement([P2,P1,P1])
-# Define function spaces for displacement, pressure, and F_{33} in V_u
+# P2  = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+# P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+
+# # Stabilized mixed FEM for incompressible elasticity
+# TH  = MixedElement([P2,P1,P1])
+# # Define function spaces for displacement, pressure, and F_{33} in V_u
+# V_u = FunctionSpace(mesh, TH)
+
+P2 = VectorFunctionSpace(mesh, "Lagrange", 1)
+P1 = FunctionSpace(mesh, "Lagrange", 1)
+P2elem = P2.ufl_element()
+P1elem = P1.ufl_element()
+TH  = MixedElement([P2elem,P1elem,P1elem])
 V_u = FunctionSpace(mesh, TH)
 # Define function space for damage in V_alpha
 V_alpha = FunctionSpace(mesh, "Lagrange", 1)
@@ -258,7 +280,6 @@ u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
 # bc - u (imposed displacement)
-# Bound center
 bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
 
 # Top/bottom boundaries have displacement in the y direction
@@ -273,6 +294,13 @@ bc_alpha0 = DirichletBC(V_alpha, 0.0, bot_boundary)
 bc_alpha1 = DirichletBC(V_alpha, 0.0, top_boundary)
 bc_alpha = [bc_alpha0, bc_alpha1]
 
+# Initial Conditions (IC)
+#------------------------------------------------------------------------------
+# Initial conditions are created by using the class defined and then
+# interpolating into a finite element space
+init = InitialConditions(degree=1)          # Expression requires degree def.
+w_p.interpolate(init)                         # Interpolate current solution
+
 # Kinematics
 d = len(u)
 I = Identity(d)             # Identity tensor
@@ -280,8 +308,8 @@ F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
-J = det(F)*(F33+1)
-Ic = tr(C) + (F33+1)**2
+J = det(F)*(F33)
+Ic = tr(C) + (F33)**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
@@ -301,7 +329,7 @@ elastic_potential = elastic_energy - external_work
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
       - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
-      + ((F33+1)**2 - 1 + p*J*(1-alpha)/mu)*v_F33*dx
+      + ((F33)**2 - 1 + p*J*(1-alpha)/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -372,10 +400,10 @@ for (i_t, t) in enumerate(load_multipliers):
     iteration = 1           # Initialization of iteration loop
     err_alpha = 1.0         # Initialization for condition for iteration
 
-    # Solve elastic problem
-    solver_up.solve()
     # Conditions for iteration
     while err_alpha > AM_tolerance and iteration < maxiteration:
+        # Solve elastic problem
+        solver_up.solve()
         # Solve damage problem with box constraint
         solver_alpha.solve(DamageProblem(), alpha.vector(), alpha_lb.vector(), alpha_ub.vector())
         # Update the alpha condition for iteration by calculating the alpha error norm
@@ -397,6 +425,7 @@ for (i_t, t) in enumerate(load_multipliers):
     alpha.rename("Damage", "alpha")
     u.rename("Displacement", "u")
     p.rename("Pressure", "p")
+    F33.rename("F33", "F33")
 
     # Write solution to file
     file_tot.write(alpha, t)
@@ -413,20 +442,20 @@ for (i_t, t) in enumerate(load_multipliers):
     elastic_energy_value = assemble(elastic_energy)
     surface_energy_value = assemble(dissipated_energy)
 
-    # energies[i_t] = np.array([t, elastic_energy_value, surface_energy_value, \
-    #                           elastic_energy_value+surface_energy_value, volume_ratio])
-    #
-    # if MPI.rank(MPI.comm_world) == 0:
-    #     print("\nEnd of timestep {0:3d} with load multiplier {1:4f}".format(i_t, t))
-    #     print("\nElastic and Surface Energies: [{0:6f},{1:6f}]".format(elastic_energy_value, surface_energy_value))
-    #     print("\nElastic and Surface Energies: [{},{}]".format(elastic_energy_value, surface_energy_value))
-    #     print("\nVolume Ratio: [{}]".format(volume_ratio))
-    #     print("-----------------------------------------")
-    #     # Save some global quantities as a function of the time
-    #     np.savetxt(savedir + '/stabilized-energies.txt', energies)
-    #     np.savetxt(savedir + '/stabilized-iterations.txt', iterations)
-# ----------------------------------------------------------------------------
+    energies[i_t] = np.array([t, elastic_energy_value, surface_energy_value, \
+                              elastic_energy_value+surface_energy_value, volume_ratio])
 
+    if MPI.rank(MPI.comm_world) == 0:
+        print("\nEnd of timestep {0:3d} with load multiplier {1:4f}".format(i_t, t))
+        print("\nElastic and Surface Energies: [{0:6f},{1:6f}]".format(elastic_energy_value, surface_energy_value))
+        print("\nElastic and Surface Energies: [{},{}]".format(elastic_energy_value, surface_energy_value))
+        print("\nVolume Ratio: [{}]".format(volume_ratio))
+        print("-----------------------------------------")
+        # Save some global quantities as a function of the time
+        np.savetxt(savedir + '/stabilized-energies.txt', energies)
+        np.savetxt(savedir + '/stabilized-iterations.txt', iterations)
+
+# ----------------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))
 
 
