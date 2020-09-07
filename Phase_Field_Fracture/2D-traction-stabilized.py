@@ -98,6 +98,17 @@ class DamageProblem(OptimisationProblem):
         for bc in self.bc_alpha:
             bc.apply(A)
 
+# Initial condition (IC) class
+class InitialConditions(UserExpression):
+    def eval(self, values, x):
+        # Displacement u0 = (values[0], values[1])
+        values[0] = 0.0
+        values[1] = 0.0
+        values[2] = 0.0        # Pressure
+        values[3] = 1.0        # F_33
+    def value_shape(self):
+         return (4,)
+
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
@@ -105,10 +116,10 @@ userpar.add("mu", 1)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsize", 333)
+userpar.add("meshsize", 500)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
-userpar.add("load_steps", 501)
+userpar.add("load_steps", 201)
 # Parse command-line options
 userpar.parse()
 
@@ -117,21 +128,19 @@ userpar.parse()
 # Geometry parameters
 L, H = 15, 1.5        # Length (x) and height (y-direction)
 N     = userpar["meshsize"]
+Ny = int(N*H/L)
 hsize = float(L/N)    # Geometry based definition for regularization
 
-# Shear modulus and Poisson's ratio
-mu    = userpar["mu"]
-nu    = userpar["nu"]
-# Lame Parameter
-# lmbda = mu*(2.0*(1.0+nu))*nu/((1.0+nu)*(1.0-2.0*nu))
-lmbda = 2.0*mu*nu/(1.0-2.0*nu)
-# Bulk Modulus
-kappa = 2*(1+nu)*mu/(3*(1-2*nu))
+# Material model parameters
+mu    = userpar["mu"]           # Shear modulus
+nu    = userpar["nu"]           # Poisson's Ratio
+lmbda = 2.0*mu*nu/(1.0-2.0*nu)  # Lame Parameter
+kappa = 2*(1+nu)*mu/(3*(1-2*nu))# Bulk Modulus
 
 # Naming parameters for saving output
 modelname = "2D-stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "mu_%.0f_L_%.0f_H_%.1f_N_%.0f" % (mu, L, H, N)
+simulation_params = "L_%.0f_H_%.1f_N_%.0f" % (L, H, N)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -139,9 +148,10 @@ if MPI.rank(MPI.comm_world) == 0:
     if os.path.isdir(savedir):
         shutil.rmtree(savedir)
 
-# Mesh generation
-#mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, N, int(N*H/(2*L)))
-mesh = Mesh("2DShearTestRef.xml")
+# Mesh generation of structured mesh
+mesh = RectangleMesh(Point(0, 0), Point(L, H), N, N)
+# Mesh generation of structured and refined mesh
+# mesh = Mesh("2DShearTestRef.xml")
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 geo_mesh.write(mesh)
 
@@ -217,19 +227,6 @@ points.set_all(0)
 center_point.mark(points, 1)
 file_results = XDMFFile(savedir + "/" + "points.xdmf")
 file_results.write(points)
-
-# Initial condition (IC) class for displacement and chemical potential
-class InitialConditions(UserExpression):
-    def eval(self, values, x):
-        # Displacement u0 = (values[0], values[1])
-        values[0] = 0.0
-        values[1] = 0.0
-        # Pressure
-        values[2] = 0.0
-        # Initial Chemical potential: mu0
-        values[3] = 1.0
-    def value_shape(self):
-         return (4,)
 
 # Constitutive functions of the damage model
 # ----------------------------------------------------------------------------
