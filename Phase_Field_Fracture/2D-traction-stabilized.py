@@ -16,7 +16,6 @@
 from __future__ import division
 from dolfin import *
 from mshr import *
-from multiphenics import *
 from scipy import optimize
 
 import argparse
@@ -52,7 +51,7 @@ solver_up_parameters  = {"nonlinear_solver": "snes",
                                          "method" : "newtontr",
                                          "line_search": "cp",
                                          "preconditioner" : "hypre_amg",
-                                         "maximum_iterations": 200,
+                                         "maximum_iterations": 100,
                                          "absolute_tolerance": 1e-10,
                                          "relative_tolerance": 1e-10,
                                          "solution_tolerance": 1e-10,
@@ -116,10 +115,12 @@ userpar.add("mu", 1)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsize", 500)
+userpar.add("meshsizeX", 1000)
+userpar.add("meshsizeY", 500)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
 userpar.add("load_steps", 201)
+userpar.add("ell_multi", 20)
 # Parse command-line options
 userpar.parse()
 
@@ -127,9 +128,11 @@ userpar.parse()
 # ----------------------------------------------------------------------------
 # Geometry parameters
 L, H = 15, 1.5        # Length (x) and height (y-direction)
-N     = userpar["meshsize"]
-Ny = int(N*H/L)
-hsize = float(L/N)    # Geometry based definition for regularization
+Nx   = userpar["meshsizeX"]
+Ny   = userpar["meshsizeY"]
+# Ny = int(N*H/L)
+hsize = float(H/Ny)    # Geometry based definition for regularization
+S = userpar["load_steps"]
 
 # Material model parameters
 mu    = userpar["mu"]           # Shear modulus
@@ -137,10 +140,15 @@ nu    = userpar["nu"]           # Poisson's Ratio
 lmbda = 2.0*mu*nu/(1.0-2.0*nu)  # Lame Parameter
 kappa = 2*(1+nu)*mu/(3*(1-2*nu))# Bulk Modulus
 
+# Fracture toughness and residual stiffness
+Gc    = userpar["Gc"]
+k_ell = userpar["k_ell"]
+ell_multi = userpar["ell_multi"]
+
 # Naming parameters for saving output
 modelname = "2D-stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "L_%.0f_H_%.1f_N_%.0f" % (L, H, N)
+simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -149,17 +157,22 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured mesh
-mesh = RectangleMesh(Point(0, 0), Point(L, H), N, N)
+mesh = RectangleMesh(Point(0, 0), Point(L, H), Nx, Ny)
 # Mesh generation of structured and refined mesh
 # mesh = Mesh("2DShearTestRef.xml")
-geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
-geo_mesh.write(mesh)
+# Mesh rpintout
+# geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
+# geo_mesh.write(mesh)
 
-# Fracture toughness and residual stiffness
-Gc    = userpar["Gc"]
-k_ell = userpar["k_ell"]
+# Obtain number of space dimensions
+mesh.init()
+ndim = mesh.geometry().dim()
+# Structure used for one printout of the statement
+if MPI.rank(MPI.comm_world) == 0:
+    print ("Mesh Dimension: {0:2d}".format(ndim))
+
 # Damage regularization parameter - internal length scale used for tuning Gc
-ell = Constant(5*hsize)
+ell = Constant(ell_multi*hsize)
 # Characteristic element length - used for stabilization
 h = CellDiameter(mesh)
 
@@ -169,13 +182,6 @@ ut = 1.0
 # Numerical parameters of the alternate minimization scheme
 maxiteration = 2000         # Sets a limit on number of iterations
 AM_tolerance = 1e-4
-
-# Obtain number of space dimensions
-mesh.init()
-ndim = mesh.geometry().dim()
-# Structure used for one printout of the statement
-if MPI.rank(MPI.comm_world) == 0:
-    print ("Mesh Dimension: {0:2d}".format(ndim))
 
 #-----------------------------------------------------------------------------
 # ell = 5*hsize
@@ -202,15 +208,10 @@ class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and near(x[1], H, 0.1 * hsize)
 
-class center_point(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[0], 5 , 0.1*hsize) and near(x[1], H/2, 0.1*hsize)
-
 # Convert all boundary classes for visualization
 right_boundary = right_boundary()
 bot_boundary = bot_boundary()
 top_boundary = top_boundary()
-center_point = center_point()
 
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
@@ -223,10 +224,9 @@ file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
 # Show points of interest
-points.set_all(0)
-center_point.mark(points, 1)
-file_results = XDMFFile(savedir + "/" + "points.xdmf")
-file_results.write(points)
+# points.set_all(0)
+# file_results = XDMFFile(savedir + "/" + "points.xdmf")
+# file_results.write(points)
 
 # Constitutive functions of the damage model
 # ----------------------------------------------------------------------------
@@ -455,21 +455,20 @@ for (i_t, t) in enumerate(load_multipliers):
 # ----------------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))
 
-
-# # Plot energy and stresses
-# if MPI.rank(MPI.comm_world) == 0:
-#     p1, = plt.plot(energies[slice(None), 0], energies[slice(None), 1])
-#     p2, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
-#     p3, = plt.plot(energies[slice(None), 0], energies[slice(None), 3])
-#     plt.legend([p1, p2, p3], ["Elastic", "Dissipated", "Total"], loc="best", frameon=False)
-#     plt.xlabel('Displacement')
-#     plt.ylabel('Energies')
-#     plt.title('stabilized FEM')
-#     plt.savefig(savedir + '/stabilized-energies.pdf', transparent=True)
-#     plt.close()
-#     p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 4])
-#     plt.xlabel('Displacement')
-#     plt.ylabel('Volume ratio')
-#     plt.title('stabilized FEM')
-#     plt.savefig(savedir + '/stabilized-volume-ratio.pdf', transparent=True)
-#     plt.close()
+# Plot energy and stresses
+if MPI.rank(MPI.comm_world) == 0:
+    p1, = plt.plot(energies[slice(None), 0], energies[slice(None), 1])
+    p2, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
+    p3, = plt.plot(energies[slice(None), 0], energies[slice(None), 3])
+    plt.legend([p1, p2, p3], ["Elastic", "Dissipated", "Total"], loc="best", frameon=False)
+    plt.xlabel('Displacement')
+    plt.ylabel('Energies')
+    plt.title('stabilized FEM')
+    plt.savefig(savedir + '/stabilized-energies.pdf', transparent=True)
+    plt.close()
+    p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 4])
+    plt.xlabel('Displacement')
+    plt.ylabel('Volume ratio')
+    plt.title('stabilized FEM')
+    plt.savefig(savedir + '/stabilized-volume-ratio.pdf', transparent=True)
+    plt.close()
