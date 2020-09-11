@@ -22,22 +22,18 @@ for ii = 1:length(c)
 end 
 
 %% Plotting
+y1_74 = S1.VarName10;
+y2_74 = S1.VarName11;
 
 figure(1)
 hold on 
 plot(y1(1,:), y2(1,:), 'LineWidth', 2.5)
 plot(y1(2,:), y2(2,:), 'LineWidth', 2.5)
 
-y1_74 = CombinedS4.y1_norm;
-y2_74 = CombinedS4.y2_norm;
-y1_73 = CombinedS4.y1_norm1;
-y2_73 = CombinedS4.y2_norm1;
-y1_72 = CombinedS4.y1_norm2;
-y2_72 = CombinedS4.y2_norm2;
 h1 = plot(y1_74, y2_74, 'LineWidth', 2.5);
-h2 = plot(y1_73, y2_73, 'LineWidth', 2.5);
-h3 = plot(y1_72, y2_72, 'LineWidth', 2.5);
-leg = legend([h1, h2, h3],["0.74", "0.73", "0.72"], 'Location', 'Best');
+% h2 = plot(y1_73, y2_73, 'LineWidth', 2.5);
+% h3 = plot(y1_72, y2_72, 'LineWidth', 2.5);
+% leg = legend([h1, h2, h3],["0.74", "0.73", "0.72"], 'Location', 'Best');
 
 ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
