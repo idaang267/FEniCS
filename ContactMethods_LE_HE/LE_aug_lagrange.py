@@ -1,4 +1,4 @@
-# Increasing complexity
+# 3D Linear elastic problem with augmented lagrangian approach to contact
 
 # Import all modules
 from dolfin import *

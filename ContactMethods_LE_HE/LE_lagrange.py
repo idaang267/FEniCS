@@ -1,4 +1,4 @@
-# Increasing complexity
+# 3D Linear elastic problem with lagrange approach to contact
 
 # Import all modules
 from dolfin import *

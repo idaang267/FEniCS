@@ -88,10 +88,10 @@ p = Function(V0, name="Contact pressure")
 # Boundary Conditions
 # -----------------------------------------------------------------------------
 # Fixed surface
-u_bot = Expression(("(0.0)*x[0]", "0.0*x[1]", "(0.0)*x[2]"), degree=1)
+u_bot = Expression(("0.0*x[0]", "0.0*x[1]", "0.0*x[2]"), degree=1)
 # Roller boundary conditions (define normal directions) on lateral surfaces
-u_lr = Expression(("(0.0)*x[0]"), degree=1)
-u_bf = Expression(("(0.0)*x[2]"), degree=1)
+u_lr = Expression(("0.0*x[0]"), degree=1)
+u_bf = Expression(("0.0*x[2]"), degree=1)
 
 # Specify fixed bottom surface
 bc_bot = DirichletBC(V, u_bot, bot)
