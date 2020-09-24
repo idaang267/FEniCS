@@ -54,7 +54,7 @@ sym_z = symmetry_z()
 # Create Mesh and define subdomains for restrictions and boundary conditions
 # -----------------------------------------------------------------------------
 domain = Box(Point(0., 0., 0.), Point(1.0, 1.0, 1.0))
-mesh = generate_mesh(domain, 25)
+mesh = generate_mesh(domain, 20)
 
 # Create subdomains
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim(), mesh.domains())
@@ -118,15 +118,18 @@ def ppos(x):
     return (x+abs(x))/2.
 # Define the augmented lagrangian
 def aug_l(x):
-    return l + k_pen*(u[1] - indent)
+    return l + k_pen*(indent-u[1])
 
 # Expression for indenter
 indent = Expression(("-depth+(pow((x[0]-0.5),2)+pow((x[2]-0.5),2))/(2*R)"), \
                     depth=depth, R=R, degree=0)
 
 # Weak form
-F = [inner(sigma(u), eps(v_u))*dx + v_u[1]*ppos(aug_l(l))*ds,
-    v_l*(u[1]-indent)*ds - (1/k_pen)*l*v_l*ds]
+# F = [inner(sigma(u), eps(v_u))*dx + v_u[1]*ppos(aug_l(l))*ds,
+#     v_l*(u[1]-indent)*ds - (1/k_pen)*l*v_l*ds]
+
+F = [inner(sigma(u), eps(v_u))*dx - aug_l(l)*v_u[1]*ds + ppos(aug_l(l))*v_u[1]*ds,
+    (indent-u[1])*v_l*ds - (1/k_pen)*ppos(aug_l(l))*v_l*ds]
 
 # Jacobian
 J = block_derivative(F, ul, du)

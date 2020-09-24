@@ -1,11 +1,10 @@
-\documentclass[12pt,3p]{article}
+\documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
- \usepackage[margin=0.5in]{geometry}
- \usepackage{amsmath}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath}
 \usepackage{mathtools}
 \usepackage{enumitem}
-\usepackage{physics}
 \usepackage[round,numbers]{natbib}
 \usepackage[colorlinks = false]{hyperref}
 
@@ -28,11 +27,11 @@
 These codes were created to troubleshoot the more advanced code incorporating mass transport, large deformations, and contact. For the contact methods, I recall that Lagrange methods were not sufficient so I do not have much documentation on them. I follow Wriggers closely. 
 
 \section{Formulation}
-Equation for strain in terms of displacement
+Equation for strain under assumptions of linear elasticity 
 \begin{align}\label{Strain}
 \begin{split}
-\epsilon_{ij} &= \frac{1}{2} (\pdv{u_i}{x_j} + \pdv{u_j}{x_i}) \\
- \epsilon &= \frac{1}{2} (\nabla u + \nabla u^T)
+\epsilon_{ij} &= \frac{1}{2} (\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i}) \\
+\epsilon &= \frac{1}{2} (\nabla u + \nabla u^T)
 \end{split}
 \end{align}
 General expression of the linear elastic isotropic constitutive relationship 
@@ -46,36 +45,35 @@ This can be inverted to be strain in terms of stress:
 where the Lamé coefficients are given by: 
 \begin{align}\label{lame}
 \begin{split}
-\lambda &= \frac{E \nu}{(1+ \nu) (1 - 2 \nu)} \\
-\mu &= \frac{E}{2 (1+ \nu)}
+\lambda = \frac{E \nu}{(1+ \nu) (1 - 2 \nu)} \quad \mu = \frac{E}{2 (1+ \nu)}
 \end{split}
 \end{align}
 
-Starting from the equilibrium equation: 
+Starting from the mechanical equilibrium equation: 
 \begin{align*}
 \begin{split}
-- Div \sigma = f \quad \rightarrow - \div \sigma &= f \quad \text{Convert to indicial notation} \\
-	- \pdv{}{x_k} \mathbf{e_k} \cdot \sigma_{ij} (\mathbf{e_i} \otimes \mathbf{e_j}) &= f_k \mathbf{e_k} \\
-	- \pdv{\sigma_{ij}}{x_k} \delta_{ki} \mathbf{e_j} &= f_k \mathbf{e_k} \\
-	- \pdv{\sigma_{ij}}{x_i} \mathbf{e_j} &= f_k \mathbf{e_k} \quad \text{Multiply be a test function} \\
-	- \pdv{\sigma_{ij}}{x_i} \mathbf{e_j} \cdot v_p \mathbf{e_p} &= f_k \mathbf{e_k} \cdot v_p \mathbf{e_p} \\
-	- \pdv{\sigma_{ij}}{x_i} v_p \delta_{jp} &= f_k v_p \delta_{kp} \\
-			 - \pdv{\sigma_{ij}}{x_i} v_j &= f_k v_k \quad \text{Integrate over domain} \\
-			 - \int_{\Omega} \pdv{\sigma_{ij}}{x_i} v_j dx &= \int_{\Omega} f_k v_k dx \\
+ - \nabla \cdot \sigma &= f \quad \text{Convert to indicial notation} \\
+	- \frac{\partial}{\partial x_k} \mathbf{e_k} \cdot \sigma_{ij} (\mathbf{e_i} \otimes \mathbf{e_j}) &= f_k \mathbf{e_k} \\
+	- \frac{\partial \sigma_{ij}}{\partial x_k} \delta_{ki} \mathbf{e_j} &= f_k \mathbf{e_k} \\
+	- \frac{\partial \sigma_{ij}}{\partial x_i} \mathbf{e_j} &= f_k \mathbf{e_k} \quad \text{Multiply by a test function} \\
+	- \frac{\partial \sigma_{ij}}{\partial x_i} \mathbf{e_j} \cdot v_p \mathbf{e_p} &= f_k \mathbf{e_k} \cdot v_p \mathbf{e_p} \\
+	- \frac{\partial \sigma_{ij}}{\partial x_i} v_p \delta_{jp} &= f_k v_p \delta_{kp} \\
+	- \frac{\partial \sigma_{ij}}{\partial x_i} v_j &= f_k v_k \quad \text{Integrate over domain} \\
+	- \int_{\Omega} \frac{\partial \sigma_{ij}}{\partial x_i} v_j dx &= \int_{\Omega} f_k v_k dx \\
 \end{split}
 \end{align*}
 Integration by parts on the LHS 
 \begin{align*}
 (fg)' = f'g + fg' \rightarrow f'g &= (fg)' - fg' \\
-\pdv{\sigma_{ij}}{x_i} v_j &= (\sigma_{ij} v_j)_{,i} - \sigma_{ij} \pdv{v_j}{x_i} 
+\frac{\partial \sigma_{ij}}{\partial x_i} v_j &= (\sigma_{ij} v_j)_{,i} - \sigma_{ij} \frac{\partial v_j}{\partial x_i} 
 \end{align*}
 Substitute the result from integration by parts: 
 \begin{align*}
 \begin{split}
-- \int_{\Omega} (\sigma_{ij} v_j)_{,i} dx + \int_{\Omega} \sigma_{ij} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Use the divergence theorem} \\ 
-- \int_{\partial \Omega} \sigma_{ij} v_j n_i ds + \int_{\Omega} \sigma_{ij} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Recognize the traction term} \\
-- \int_{\partial \Omega} t_i v_j ds + \int_{\Omega} \sigma_{ij} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Rearrange} \\
- \int_{\Omega} \sigma_{ij} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx + \int_{\partial \Omega} t_i v_j ds
+- \int_{\Omega} (\sigma_{ij} v_j)_{,i} dx + \int_{\Omega} \sigma_{ij} \frac{\partial v_j}{\partial x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Use the divergence theorem} \\ 
+- \int_{\partial \Omega} \sigma_{ij} v_j n_i ds + \int_{\Omega} \sigma_{ij} \frac{\partial v_j}{\partial x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Recognize the traction term} \\
+- \int_{\partial \Omega} t_i v_j ds + \int_{\Omega} \sigma_{ij} \frac{\partial v_j}{\partial x_i} dx &= \int_{\Omega} f_k v_k dx \quad \text{Rearrange} \\
+ \int_{\Omega} \sigma_{ij} \frac{\partial v_j}{\partial x_i} dx &= \int_{\Omega} f_k v_k dx + \int_{\partial \Omega} t_i v_j ds
 \end{split}
 \end{align*}
 The principle of virtual work states that:
@@ -84,7 +82,7 @@ The principle of virtual work states that:
 \end{equation}
 Applying this principle to, where f is  the body force, b: 
 \begin{align*}
- \int_{\Omega} \sigma_{ij} \pdv{v_j}{x_i} dx &= \int_{\Omega} f_k v_k dx + \int_{\partial \Omega} t_i v_j ds \\
+ \int_{\Omega} \sigma_{ij} \frac{\partial v_j}{\partial x_i} dx &= \int_{\Omega} f_k v_k dx + \int_{\partial \Omega} t_i v_j ds \\
  \int_{\Omega} \sigma_{ij} \epsilon_{ij} dV &= \int_{\Omega} f_k v_k dx + \int_{\partial \Omega} t_i v_j ds \quad \text{no traction applied} \\
   \int_{\Omega} \sigma_{ij} \epsilon_{ij} dV &= \int_{\Omega} f_k v_k dx
 \end{align*}
@@ -98,7 +96,7 @@ The rigid indenter with a spherical surface can be approximated by a parobolic e
 \begin{align}\label{Indenter}
 \begin{split}
 h(x,z) &= - h_o + \frac{1}{2 R}(x^2 + z^2) \quad \text{about origin} \\
-h(x, z) &= - h_o + \frac{1}{2 R}\big[ (x - 0.5)^2 + (z-0.5)^2 \big] \quad \text{about point } (0.5, 0.5)
+h(x, z) &= - h_o + \frac{1}{2 R}\big[ (x - 0.5)^2 + (z-0.5)^2 \big] \quad \text{about center point } (0.5, 0.5)
 \end{split}
 \end{align}
 The definition of the MacKauley bracket:
@@ -125,6 +123,12 @@ Take the variation of Eq. \ref{631}, this holds for pure stick. This is the addi
 \begin{align*}
 C_c^P &= \int_{\Gamma_c} \big(\epsilon_N g_{N} \delta g_{N} \big) dA 
 \end{align*}
+
+\subsubsection{Incorporating into weak form}
+\begin{align}
+\int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega - \int_{\Omega} \mathbf{ f \cdot v } d \Omega + k_{pen} \int_{\partial \Omega} <u_1 - h(x,z)>  ds &= 0 \quad \text{No body force} \\
+\int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega + k_{pen} \int_{\partial \Omega} <u_1 - h(x,z)>  v_1 ds &= 0
+\end{align}
 
 \subsection{Augmented Lagrange Methods}
 The main idea of this method is combining the penalty method with Lagrange multiplier methods. 
@@ -165,8 +169,8 @@ C_{N}^{AM} &=
 \end{align}
 where $ \hat{\lambda}_N \leq 0$ indicates that the gap is closed and $\hat{\lambda}_N > 0$ means the gap is open. 
 
-\section{Linear Elasticity Formulation}
-
-\section{Hyperelasticity Formulation}
-
+\subsubsection{Incorporating into weak form}
+%\begin{align}
+%\int_{\Omega} \mathbf{ \sigma(u) : \epsilon(v) } d \Omega - \int_{\Omega} \mathbf{ f \cdot v } d \Omega + \int_{\partial \Omega} < \hat{\lambda} > v_1 ds + \int_{\partial \Omega} (u_1 - h(x,z)) v_l ds - \frac{1}{k_{pen}} \int_{\partial \Omega} \lambda v_l ds &= 0
+%\end{align}
 \end{document}

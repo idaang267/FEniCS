@@ -22,8 +22,8 @@ for ii = 1:length(c)
 end 
 
 %% Plotting
-y1_74 = S1.VarName10;
-y2_74 = S1.VarName11;
+y1_74 = S1.y1_norm;
+y2_74 = S1.y2_norm;
 
 figure(1)
 hold on 
@@ -46,4 +46,5 @@ set(gca, 'YScale', 'log')
 
 saveas(gcf, 'PlaneStressCrackOpening.eps', 'epsc')
 % saveas(gcf, "Fig4.fig")
+
 % title(leg, "$c$", 'Interpreter', 'Latex');
