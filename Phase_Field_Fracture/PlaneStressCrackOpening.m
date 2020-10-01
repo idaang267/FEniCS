@@ -4,7 +4,7 @@ close all
 % Theta (rad) 
 th = linspace(-pi, pi, 200);
 % h0 is the height 
-h0 = 1.0;
+h0 = 1.5;
 % Amount of displacement 
 Delta = 1.0; 
 % stretch in direction of displacement 
