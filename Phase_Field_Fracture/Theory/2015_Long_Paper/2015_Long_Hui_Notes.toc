@@ -1,0 +1,14 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Definitions}{2}{section.1}
+\contentsline {section}{\numberline {2}Geometry, Notations, and Basic Equations}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}Governing Equations: Kinematics and Equilibrium}{2}{subsection.2.1}
+\contentsline {section}{\numberline {3}Crack tip fields under large deformations}{2}{section.3}
+\contentsline {subsection}{\numberline {3.1}Method of asymptotic analysis}{2}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Plane strain crack in homogeneous materials}{2}{subsection.3.2}
+\contentsline {subsubsection}{\numberline {3.2.1}Crack tip deformation field (Mode I)}{3}{subsubsection.3.2.1}
+\contentsline {subsubsection}{\numberline {3.2.2}Special case: n = 1 for neo-Hookean or MR solid}{5}{subsubsection.3.2.2}
+\contentsline {subsection}{\numberline {3.3}Plane stress crack in homogenous materials}{5}{subsection.3.3}
+\contentsline {subsubsection}{\numberline {3.3.1}Crack tip deformation field for GNH solids}{5}{subsubsection.3.3.1}
+\contentsline {subsubsection}{\numberline {3.3.2}Special case: n = 1 for neo-Hookean solid}{6}{subsubsection.3.3.2}
+\contentsline {section}{\numberline {4}Energetics: J-integral and energy release rate}{7}{section.4}
+\contentsline {subsection}{\numberline {4.1}Interpretation of J-integral in experiments}{7}{subsection.4.1}
