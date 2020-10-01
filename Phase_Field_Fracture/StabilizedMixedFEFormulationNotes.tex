@@ -1,0 +1,388 @@
+\documentclass[12pt,3p]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+ \usepackage[margin=0.75in]{geometry}
+ \usepackage{amsmath}
+ \usepackage{bm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+\usepackage{xcolor}
+
+
+\numberwithin{equation}{section}
+\begin{document}
+
+\title{Stabilized Mixed Finite Element Formulation}
+\author{Personal Notes by Ida Ang}
+\maketitle
+
+%===============================
+%===============================
+%===============================
+\section*{Definitions}
+$\mathbf{F}$: Deformation gradient \\
+$\mathbf{I}$: second-order unit tensor \\
+$\bm{u}$: Displacement \\
+$J$: determinant of the deformation gradient \\
+$\mathbf{C}$: Right Cauchy-Green Strain Tensor \\
+$\mathcal{W}(\mathbf{F})$: strain energy function \\
+$\mathbf{P}$: first Piola-Kirchhoff stress tensor \\
+$\mathbf{S}$: second PK stress tensor \\ \\
+$\alpha$: cracks are represented by a scalar phase-field variable \\
+$p$: Lagrange multiplier, hydrostatic pressure field \\
+$\kappa$: bulk modulus 
+\begin{equation}
+\kappa = \frac{E}{3 (1 - 2 \nu)}
+\end{equation}
+$\mu$: shear modulus 
+\begin{equation}
+\mu = \frac{E}{2 (1 + \nu)}
+\end{equation}
+$\lambda$: Lamé modulus 
+\begin{equation}
+\lambda = \frac{\nu E}{(1+ \nu) (1 - 2 \nu)}
+\end{equation}
+$\mathcal{E}_\ell$: potential energy functional 
+$w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume \\
+$c_w$ is a normalization constant 
+
+%===============================
+%===============================
+%===============================
+\section{Hyperelastic Phase-Field Fracture Models}
+Deformation Gradient 
+\begin{equation}\label{EqDefGrad}
+\mathbf{F}=\mathbf{I}+\nabla\otimes\bm{u}
+\end{equation}
+where $J=\det \mathbf{F}$ and $\mathbf{C}=\mathbf{F}^T\mathbf{F}$.
+
+The strain energy function $\mathcal{W}(\mathbf{F})$ is defined per unit reference volume such that the first PK and second PK
+\begin{subequations}\label{EqPK}
+\begin{align}
+\mathbf{P} &= \pdv{\mathcal{W}(\mathbf{F})}{\mathbf{F}} \\
+\mathbf{S} &= 2 \pdv{ \mathcal{W}(\mathbf{F})}{ \mathbf{C}}
+\end{align}
+\end{subequations}
+where $\mathbf{P}=\mathbf{F}\mathbf{S}$. 
+
+%===============================
+%===============================
+\subsection{Phase-Field Fracture Model}
+Non-modified strain energy function is the compressible Neo-Hookean:
+\begin{align}\label{StrainEnergyNH}
+\mathcal{W}(\mathbf{F}) = \frac{\mu}{2} (I_1 - 3 - 2 \ln J)
+\end{align}
+For incompressible hyperelastic materials, the strain energy function  is defined as
+\begin{equation}\label{EqEnergyIncompressible}
+\widetilde{\mathcal{W}}(\mathbf{F}) = \mathcal{W}(\mathbf{F}) + p\left(J-1\right),
+\end{equation}
+We instead consider a damage dependent relaxation of the incompressibility constraint and the phase-field couples to the strain energy through the modified function 
+\begin{equation}\label{EqEnergyRelaxed}
+\widetilde{\mathcal{W}}(\mathbf{F},\alpha) = a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2}\kappa\left(J-1\right)^2
+\end{equation}
+where the decreasing stiffness modulation function and $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume
+\begin{equation}\label{EqStiffMod}
+a (\alpha) = (1 - \alpha)^2 \quad w(\alpha) = \alpha
+\end{equation}
+In the code we have the following definition
+\begin{align*}
+b (\alpha) = (1 - \alpha)^3 = \sqrt{a^3(\alpha)}
+\end{align*}
+To circumvent numerical difficulties, we resort to the classical mixed formulation and introduce the pressure-like field 
+\begin{equation}\label{eq_pressure}
+p = -\sqrt{a^3(\alpha)}\kappa\left(J-1\right),
+\end{equation}
+as an independent variable along with the displacement field. \\ \\
+Lastly, the normalization constant is defined as: 
+\begin{align}\label{NormConst} % normalization constant.
+c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
+\end{align}
+The first Piola-Kirchhoff stress tensor is given: 
+\begin{align}\label{eq_firstPK}
+\begin{split}
+\mathbf{P} &= \pdv{\tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\mathbf{F}} \\
+		 &= \pdv{}{\mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
+		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \pdv{(J-1)^2}{\mathbf{F}}  \\
+\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \pdv{J}{\mathbf{F}} = J \mathbf{F}^{-T} \\
+\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+Note that we DO NOT consider this form of the modified functional; therefore, we do not consider this PK stress. 
+
+%===============================
+\subsubsection{According to the rough draft}
+Therefore our modified function:
+\begin{align*}
+\widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \kappa (J-1)^2 \\
+	&= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \frac{-p}{\sqrt{a^{3}(\alpha)}} (J-1) \\
+	&= a(\alpha)\mathcal{W}(\mathbf{F}) - \sqrt{a^3(\alpha)} \frac{p}{2} (J-1) \\
+ \widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1)
+\end{align*}
+In the rough draft of the paper we have Eq. 5: energy functional of a possibly fractured elastic body with isotropic surface energy
+\begin{align*}
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &=\int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
+\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1) \bigg] d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega \\
+\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} a(\alpha)\mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) \frac{p}{2} (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\end{align*}
+\textcolor{red}{Note that we are missing one term.} 
+
+%===============================
+\subsubsection{According to the code}
+In the code we have the following for the energy functional of the energy problem 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} 
+\end{align*}
+Energy functional, where we ignore the surface term 
+\begin{align*}
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &= \int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
+	&= \int_{\Omega} a(\alpha) \mathcal{W} (\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) p (J-1) d \Omega - \int_{\Omega} \frac{p^2}{2 \lambda} d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
+\end{align*}
+
+%===============================
+\subsubsection{According to a derivation from Bin2020 Paper}
+Versus Eq. 21 where we drop $\lambda_b$ which is not a consideration in this formulation
+\begin{align}
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) =\int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}, \alpha) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
+\end{align}
+Starting from Eq. 25 in the 2020 Li and Bouklas paper where $\kappa$ is the bulk modulus 
+\begin{align}
+\begin{split}
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \Lambda, \alpha\right) &= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} \Lambda(p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \quad \Lambda = -p/\kappa \\
+		&= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} - \frac{p}{\kappa} (p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \\
+		&= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega -\int_{\Omega} \frac{p^2}{\kappa} d \Omega - \int_{\Omega} \frac{p}{\kappa} \sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \\
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1)) d \Omega
+\end{split}
+\end{align}
+Substitute in $\mathcal{E}_{\ell} (\boldsymbol{u}, \alpha )$ and substitute Eq. \ref{StrainEnergyNH}
+\begin{align*}
+\begin{split}
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega 
+\end{split}
+\end{align*}
+
+%===============================
+%===============================
+\subsection{Changes for 2D Code Version}
+Following the code, we have the following energy functional of the energy problem
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
+\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda}
+\end{align*}
+Where we know $k_\ell$ is a modeling parameter, so we can list the energy functional as: 
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} 
+\end{equation}
+Derive the 1st PK stress
+\begin{align*}
+\mathbf{P} &= \pdv{\widetilde{W} (\mathbf{F})}{\mathbf{F}} \\
+		&= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p \pdv{\det \mathbf{F}}{\mathbf{F}} \\
+\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p J \mathbf{F}^{-1} 
+\end{align*}
+Taking the third component to be zero, in the plane stress case
+\begin{align*}
+\mathbf{P}_{33} = a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
+(1- \alpha)^2 \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha)^3 p J \mathbf{F}^{-1}_{33} &= 0 \\
+\mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
+\mu \mathbf{F}_{33} - \mu \mathbf{F}^{-1}_{33} - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\ 
+\mu \mathbf{F}_{33} &= \mu \mathbf{F}^{-1}_{33} + (1- \alpha) p J \mathbf{F}^{-1}_{33} \\
+\mu \mathbf{F}_{33} &= \big[ \mu + (1- \alpha) p J \big] \mathbf{F}^{-1}_{33} \\ 
+\mathbf{F}_{33}^2 &= \frac{\mu + (1- \alpha) p J }{\mu} \\
+\mathbf{C}_{33} &= 1 + \frac{(1 - \alpha) p J}{\mu} 
+\end{align*}
+Treating $F_{33}$ as an independent unknown, we can state the governing equation 
+\begin{align*}
+\mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
+\mathbf{F}_{33} - \mathbf{F}^{-1}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} &= 0 \\
+\mathbf{F}_{33} \mathbf{F}_{33} - \mathbf{F}^{-1}_{33} \mathbf{F}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} \mathbf{F}_{33} &= 0 \\
+\mathbf{F}_{33}^2 - 1 - \frac{(1- \alpha) p J}{\mu} &= 0
+\end{align*}
+This can be multiplied by its associated test function to obtain the weak form 
+
+%===============================
+%===============================
+%===============================
+\section{Following Borden: Derivations of Analytical Phase Field}
+Note the full potential energy functional, which can also be called the lagrangian
+\begin{align*}
+\mathcal{E}_{\ell} (\boldsymbol{u}, p, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\end{align*}
+We can use the Euler-Lagrange equations to arrive at the equations of motion by taking the derivative with respect to displacement, pressure, and the scalar damage field. Starting with displacement:
+\begin{align*}
+\pdv{\mathcal{E}_{\ell}}{\boldsymbol{u}} &= \int_{\Omega} a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} d \Omega 
+\end{align*}
+\begin{align*}
+\pdv{\mathcal{E}_{\ell}}{p} &= - \int_{\Omega} \frac{p}{\kappa} d \Omega - \int_{\Omega} \sqrt{a^3(\alpha)} (J-1) d \Omega
+\end{align*}
+\begin{align*}
+\pdv{\mathcal{E}_{\ell}}{\alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
+\end{align*}
+Therefore we have three equations: 
+\begin{align*}
+a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
+a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
+a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
+a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
+\end{align*}
+\begin{align*}
+-\frac{p}{\kappa} - \sqrt{a^3(\alpha)} (J-1) &= 0
+\end{align*}
+\begin{align*}
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1- \alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 \\
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p \, a (\alpha) (J-1) + \frac{G_{c}}{c_{w} \ell } \bigg[ 1+ 2 \ell^2 \nabla^2 \alpha \bigg] &= 0 
+\end{align*}
+Obtain for the final equation
+\begin{align*}
+\frac{G_c}{c_2 \ell} - 2 \mathcal{W} (\mathbf{F}) + 3p (J-1) +& \\
+2 \alpha \mathcal{W} (\mathbf{F})  - 6 p \alpha (J-1) +& \\
+3p (J-1) \alpha^2 + \frac{G_c}{c_w} 2 \ell \nabla^2 \alpha &= 0
+\end{align*}
+%===============================
+%===============================
+%===============================
+\section{Stabilized Finite Element Method}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+From this point, the notes haven't been revised in a long time \\
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+
+%===============================
+%===============================
+\subsection{Gateaux Derivative}
+The Gateaux derivative with respect to $(\bm{u},\alpha)$ in direction $(\bm{v}, \beta)$ under the irreversibility condition $\dot{\alpha}\ge0$.
+\begin{equation}
+d\mathcal{E}_\ell \left(\bm{u}, \alpha; \bm{v}, \beta\right) \ge 0.
+\end{equation}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+Calculation of the Gateaux derivative
+\begin{align*}
+\begin{split}
+d\mathcal{E}_\ell (\bm{u}, \bm{v}) (\alpha, \beta) &= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
+	&= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} + \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, \alpha + \delta \beta) \big\rvert_{\delta = 0}
+\end{split}
+\end{align*}
+Starting with the first term: 
+\begin{align*}
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
+	&= \frac{d}{d \delta} \bigg[ \int_\Omega  \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)\,  d\Omega - \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot (\bm{u} + \delta \bm{v}) \, dA \bigg] \bigg\rvert_{\delta = 0}\\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \frac{d(\bm{u} + \delta \bm{v})}{d \delta} \, dA \bigg] \bigg\rvert_{\delta = 0} \quad \text{chain rule} \\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)}{d (\mathbf{I} + \nabla (\bm{u} + \delta \bm{v})} \frac{d (\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}))}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \frac{d(\bm{u} + \delta \bm{v})}{d \delta} \, dA \bigg] \bigg\rvert_{\delta = 0}\\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v}, \alpha)}{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})} \frac{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \bigg] \bigg\rvert_{\delta = 0}\\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v}, \alpha)}{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u}, \alpha)}{d (\mathbf{I} + \nabla \bm{u})} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \\
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \mathbf{F}} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA 
+\end{align*}
+Second term: 
+\begin{align*}
+& \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
+	&= \frac{d}{d \delta} \bigg[ \int_\Omega  \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)\,  d\Omega +\frac{\mathcal{G}_c}{c_w}\int_\Omega \left(\frac{w(\alpha + \delta \beta)}{\ell} + \ell \Vert \nabla (\alpha + \delta \beta)  \Vert^2\right) dV \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \bigg[ \int_\Omega  \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)}{d \delta} \,  d\Omega + \frac{\mathcal{G}_c}{c_w} \frac{d}{d \delta} \int_\Omega \left(\frac{w(\alpha + \delta \beta)}{\ell} + \ell \Vert \nabla (\alpha + \delta \beta)  \Vert^2\right) dV \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)}{d (\alpha + \delta \beta)} \frac{d (\alpha + \delta \beta)}{d \delta} \, d\Omega + \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha + \delta \beta)}{d \delta} \, dV+ \frac{\mathcal{G}_c}{c_w} \ell \int_{\Omega} \frac{\Vert \nabla (\alpha + \delta \beta)  \Vert^2}{d \delta} \, dV \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)}{d (\alpha + \delta \beta)} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha + \delta \beta)}{d (\alpha + \delta \beta)} \frac{d (\alpha + \delta \beta)}{d \delta} \, dV + \frac{\mathcal{G}_c}{c_w} \ell \int_{\Omega} 2 \nabla (\alpha + \delta \beta) \frac{\nabla (\alpha + \delta \beta)}{d \delta} \, dV \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \bigg[ \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha + \delta \beta)}{d (\alpha + \delta \beta)} \beta \, dV + \frac{\mathcal{G}_c}{c_w} \ell \int_{\Omega} 2 \nabla (\alpha + \delta \beta) \nabla \beta \, dV \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega +  \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha)}{d \alpha} \beta \, dV + 2 \ell \frac{\mathcal{G}_c}{c_w} \int_{\Omega} \nabla \alpha \cdot \nabla \beta \, dV \\
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg[ \frac{d w(\alpha)}{d \alpha} \beta + 2 \ell^2 (\nabla \alpha \cdot \nabla \beta) \bigg] \, dV 
+\end{align*}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+First, consider Eq. \ref{eq_pressure}
+\begin{align*}
+p &= -\sqrt{a^3(\alpha)} \kappa (J - 1) \\
+\frac{p}{\kappa} &= -\sqrt{a^3(\alpha)} (J - 1) \\
+0 &= - \sqrt{a^3(\alpha)} (J - 1) - \frac{p}{\kappa} 
+\end{align*}
+Multiplying this by test function $q$ and integrating over volume, we obtain an equation that can be combined with the equations from the Gateaux Derivative. 
+\begin{subequations}\label{WeakForm}
+\begin{align}
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \mathbf{F}} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA &= 0 \\
+\int_\Omega \bigg( - \sqrt{a^3(\alpha)} (J - 1) - \frac{p}{\kappa} \bigg) q dV &= 0 \\
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg[ \frac{d w(\alpha)}{d \alpha} \beta + 2 \ell^2 (\nabla \alpha \cdot \nabla \beta) \bigg] \, dV &\geq 0 
+\end{align}
+\end{subequations}
+The strong form
+\begin{subequations}\label{StrongForm}
+\begin{align}
+\text{Div} \, \mathbf{P} = 0 \quad &\text{in} \quad \Omega \\
+\mathbf{u} = \widetilde{\mathbf{u}}_0 \quad &\text{in} \quad \partial_{D}\Omega \\
+\left[\mathbf{FS}\right]\bm{n} = {\tilde{\bm{g}}}_0 \quad &\text{on} \quad \partial_{N}\Omega,
+\end{align}
+\end{subequations}
+where from Eq. \ref{eq_firstPK} we can substitute Eq. \ref{eq_pressure}
+\begin{align*}
+\begin{split}
+\mathbf{P} &= a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where} \, p=-\sqrt{a^3(\alpha)}\kappa\left(J-1\right) \\
+\mathbf{P} &= a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} - p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}} 
+\end{split}
+\end{align*}
+and write the mechanical equilibrium equation in Eq. \ref{StrongForm}:
+\begin{equation}\label{Eqm}
+\text{Div} \, \bigg[ a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} - p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}} \bigg] = 0 
+\end{equation}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+Derivation of the KKT condition equations where $\nabla \beta \cdot \nabla \alpha = \nabla (\beta \nabla \alpha) - \beta \Delta \alpha$
+\begin{align*}
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg[ \frac{d w(\alpha)}{d \alpha} \beta + 2 \ell^2 (\nabla \alpha \cdot \nabla \beta) \bigg] \, dV &\geq 0 \\
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \frac{d w(\alpha)}{d \alpha} \beta dV + \frac{\mathcal{G}_c}{c_w \ell} \int_{\Omega} 2 \ell^2 (\nabla \alpha \cdot \nabla \beta)  \, dV &\geq 0 \\
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega +  \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \frac{d w(\alpha)}{d \alpha} \beta dV + \frac{\mathcal{G}_c}{c_w \ell} \int_{\Omega} 2 \ell^2 ( \nabla (\beta \nabla \alpha))  \, dV - \frac{\mathcal{G}_c}{c_w \ell} \int_{\Omega} 2 \ell^2 (\beta \Delta \alpha)  \, dV &\geq 0 \\
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega +  \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \frac{d w(\alpha)}{d \alpha} \beta dV  - \frac{\mathcal{G}_c}{c_w \ell} \int_{\Omega} 2 \ell^2 (\beta \Delta \alpha)  \, dV &\geq 0 \\
+\bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \, d\Omega +  \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) dV \bigg] \beta &\geq 0 \\
+\int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \, d\Omega +  \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) dV &\geq 0 
+\end{align*}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+Grouping terms, we obtain
+\begin{subequations}
+\begin{align}
+\frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) &\geq 0 \quad \text{in} \quad \Omega \\
+\dot{\alpha} \geq 0 \quad \text{in} \quad \Omega \\
+\dot{\alpha} \bigg[ \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) \bigg] &\geq 0 \quad \text{in} \quad \Omega \\
+\end{align}
+\end{subequations}
+Lastly, we have the following, (Neumann?)
+\begin{equation}
+\pdv{\alpha}{\mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \pdv{\alpha}{\mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
+\end{equation}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathbf{F}^{-T}\nabla q$
+\begin{align*}
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bigg[ \bm{v} + \frac{\varpi h^2}{2\mu} \mathbf{F}^{-T}\nabla q \bigg] \, dV &= 0 \\
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV + \int_{\Omega} \text{Div} \mathbf{P} \cdot \bigg[ \frac{\varpi h^2}{2\mu} \mathbf{F}^{-T}\nabla q \bigg] \, dV &= 0 \\
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV + \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \text{Div} \mathbf{P} \cdot \left(\mathbf{F}^{-T}\nabla q\right) \,dV &= 0 \\
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV &\\
++ \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \text{Div} \bigg[ a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} \bigg] \cdot \left(\mathbf{F}^{-T} \nabla q \right) \,dV - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \text{Div} \bigg[ p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}} \bigg] \cdot \left(\mathbf{F}^{-T} \nabla q \right) \,dV &= 0 \\
+"" + "" - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \nabla \big( p \sqrt{a^3(\alpha)} \big) J \mathbf{F}^{-T} \cdot \left(\mathbf{F}^{-T}\nabla q \right) \,dV &= 0 \\
+"" + "" - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \nabla \big( p \sqrt{a^3(\alpha)} \big) J \mathbf{F}^{-1} \mathbf{F}^{-T} \cdot \left( \mathbf{F}^{-1} \mathbf{F}^{-T}\nabla q \right) \,dV &= 0 \\
+"" + "" - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \nabla \big( p \sqrt{a^3(\alpha)} \big) J \cdot \left( \mathbf{C}^{-1} \nabla q \right) \,dV &= 0 \\
+"" + "" - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \bigg[ \nabla \big( p \sqrt{a^3(\alpha)} \big) \cdot \nabla q \bigg] \,dV &= 0 
+\end{align*}
+where $\mathbf{P} = a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} - p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}}$ \\ \\
+We also want to deal with the first term where $(fg)' = f' g + f g'$
+\begin{align*}
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV = \int_{\Omega} (\mathbf{F} \cdot \bm{v})_{,X} \, dV - \int_{\Omega} \mathbf{P} \cdot \pdv{\bm{v}}{X} \, dV \\
+\end{align*}
+\noindent\rule{\linewidth}{0.5pt} % Straight line across 
+
+
+Leaving
+\begin{align}
+\begin{split}
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV 
++ \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} \text{Div} \bigg[ a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} \bigg] \cdot \left(\mathbf{F}^{-T}\nabla q \right) \,dV 
+- \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \bigg[ \nabla \big( p \sqrt{a^3(\alpha)} \big) \cdot \nabla q \bigg] \,dV = 0 
+\end{split}
+\end{align}
+
+%\section{Numerical Examples}
+%
+%\subsection{Benchmark: Uniaxial Tension of a Hyperelastic Bar}
+%
+%\subsection{Revisiting Crack Nucleation in an Elastomer}
+
+
+\begin{equation*}
+\end{equation*}
+
+\begin{equation}
+\end{equation}
+
+\end{document}
