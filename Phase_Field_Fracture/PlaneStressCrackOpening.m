@@ -29,6 +29,20 @@ y2_2 = Compiled.y2_norm1;
 y1_3 = Compiled.y1_norm2;
 y2_3 = Compiled.y2_norm2;
 
+y1_1 = CompiledS1.y1_norm;
+y2_1 = CompiledS1.y2_norm;
+y1_2 = CompiledS1.y1_norm1;
+y2_2 = CompiledS1.y2_norm1;
+y1_3 = CompiledS1.y1_norm2;
+y2_3 = CompiledS1.y2_norm2;
+
+y1_1 = CompiledS2.y1_norm;
+y2_1 = CompiledS2.y2_norm;
+y1_2 = CompiledS2.y1_norm1;
+y2_2 = CompiledS2.y2_norm1;
+y1_3 = CompiledS2.y1_norm2;
+y2_3 = CompiledS2.y2_norm2;
+
 figure(1)
 hold on 
 plot(y1(1,:), y2(1,:), 'LineWidth', 2.5)
@@ -37,18 +51,19 @@ plot(y1(2,:), y2(2,:), 'LineWidth', 2.5)
 h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
 h2 = plot(y1_2, y2_2, 'LineWidth', 2.5);
 h3 = plot(y1_3, y2_3, 'LineWidth', 2.5);
-leg = legend([h1, h2, h3],["0.75+0.5l", "0.75+0.25l", "0.75+0.1l"], 'Location', 'Best');
+leg = legend([h1, h2, h3],["0.75+0.1l -1", "0.75+0.1l - 3", "0.75+0.1l - 6"], 'Location', 'Best');
 
 ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
-xlim([-0.4 0])
-ylim([0 0.4])
+xlim([-0.1 0])
+ylim([0 0.2])
 ax.FontSize = 20; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 
 saveas(gcf, 'PlaneStressCrackOpening.eps', 'epsc')
 % saveas(gcf, "Fig4.fig")
+
 
 % title(leg, "$c$", 'Interpreter', 'Latex');

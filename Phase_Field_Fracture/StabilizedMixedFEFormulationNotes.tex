@@ -6,7 +6,6 @@
  \usepackage{bm}
 \usepackage{mathtools}
 \usepackage{enumitem}
-\usepackage{physics}
 \usepackage[round,numbers]{natbib}
 \usepackage[colorlinks = false]{hyperref}
 \usepackage{xcolor}
@@ -211,21 +210,22 @@ Note the full potential energy functional, which can also be called the lagrangi
 \end{align*}
 We can use the Euler-Lagrange equations to arrive at the equations of motion by taking the derivative with respect to displacement, pressure, and the scalar damage field. Starting with displacement:
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{\boldsymbol{u}} &= \int_{\Omega} a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} d \Omega 
+\frac{\partial \mathcal{E}_{\ell}}{\partial \boldsymbol{u}} &= \int_{\Omega} a (\alpha) \frac{\partial \mathcal{W} (\mathbf{F})}{\partial \mathbf{u}} d \Omega 
 \end{align*}
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{p} &= - \int_{\Omega} \frac{p}{\kappa} d \Omega - \int_{\Omega} \sqrt{a^3(\alpha)} (J-1) d \Omega
+\frac{\partial \mathcal{E}_{\ell}}{\partial p} &= - \int_{\Omega} \frac{p}{\kappa} d \Omega - \int_{\Omega} \sqrt{a^3(\alpha)} (J-1) d \Omega
 \end{align*}
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{\alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
+\frac{\partial \mathcal{E}_{\ell}}{\partial \alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
 \end{align*}
-Therefore we have three equations: 
-\begin{align*}
-a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
-a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
-a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
-a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
-\end{align*}
+Therefore we have three equations: \\
+First should be mechanical eq
+%\begin{align*}
+%a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
+%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
+%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
+%a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
+%\end{align*}
 \begin{align*}
 -\frac{p}{\kappa} - \sqrt{a^3(\alpha)} (J-1) &= 0
 \end{align*}

@@ -6,7 +6,6 @@
  \usepackage{amssymb}
 \usepackage{mathtools}
 \usepackage{enumitem}
-\usepackage{physics}
 % For different colored text 
 \usepackage{xcolor}
 \usepackage[round,numbers]{natbib}
@@ -208,7 +207,7 @@ L_{\varepsilon}(\boldsymbol{u}, \dot{\boldsymbol{u}}, c)=& \int_{\Omega}\left(\f
 We can use the Euler Lagrange Equations to arrive at the equations of motion, which requires us to calculate two partials (see notes below). Start by rewriting Eq. \ref{FullLagrangian}
 \begin{align*}
 L_{\varepsilon}(\boldsymbol{u}, \dot{\boldsymbol{u}}, c) &= 
-\int_{\Omega} \frac{1}{2} \rho \pdv{u_i}{t} \pdv{u_i}{t} \mathrm{d} \boldsymbol{x} 
+\int_{\Omega} \frac{1}{2} \rho \frac{\partial u_i}{\partial t} \frac{\partial u_i}{\partial t} \mathrm{d} \boldsymbol{x} 
 - \int_{\Omega} \left[(1-k) c^{2} + k \right] \psi_{\mathrm{e}}^{+} \left(\nabla^{s} \boldsymbol{u} \right) \mathrm{d} \boldsymbol{x} 
 - \int_{\Omega} \psi_{\mathrm{e}}^{-} \left(\nabla^{s} \boldsymbol{u}\right) \mathrm{d} \mathbf{x} \\
 &-\int_{\Omega} \mathcal{G}_{c} \frac{(c-1)^{2}}{4 \ell_{0}} \mathrm{d} \boldsymbol{x} 
@@ -221,61 +220,61 @@ Next, note that the definition for the Cauchy stress tensor:
 Since we are trying to derive the Equilibrium equation, we note that 
 \begin{align}\label{DerCauchyStress}
 \begin{split}
-\pdv{\sigma_{i j}}{x_j} &= 
-\left[(1-k) c^{2}+k\right] \pdv{}{x_j} \bigg( \frac{\partial \psi_{\mathrm{e}}^{+}}{\partial \varepsilon_{i j}} \bigg) + \pdv{}{x_j} \bigg( \frac{\partial \psi_{\mathrm{e}}^{-}}{\partial \varepsilon_{i j}} \bigg) \\
-\pdv{\sigma_{i j}}{x_j} &= 
-\left[(1-k) c^{2}+k\right] \pdv{\psi_{\mathrm{e}}^{+}}{u_i} + \pdv{\psi_{\mathrm{e}}^{-}}{u_i}
+\frac{\partial \sigma_{i j}}{\partial x_j} &= 
+\left[(1-k) c^{2}+k\right] \frac{\partial}{\partial x_j} \bigg( \frac{\partial \psi_{\mathrm{e}}^{+}}{\partial \varepsilon_{i j}} \bigg) + \frac{\partial}{\partial x_j} \bigg( \frac{\partial \psi_{\mathrm{e}}^{-}}{\partial \varepsilon_{i j}} \bigg) \\
+\frac{\partial \sigma_{i j}}{\partial x_j} &= 
+\left[(1-k) c^{2}+k\right] \frac{\partial \psi_{\mathrm{e}}^{+}}{\partial u_i} + \frac{\partial \psi_{\mathrm{e}}^{-}}{\partial u_i}
 \end{split}
 \end{align}
 The independent fields are the vector field of displacement, $\mathbf{u} (\mathbf{x}, t)$ and the scalar phase-field of damage, $c (\mathbf{x}, t)$. First, we can take the partial derivative with respect to the displacement field:
 \begin{align*}
-\pdv{L_{\varepsilon}}{\mathbf{u}} &= 
-\int_{\Omega} \frac{1}{2} \rho \pdv{}{\mathbf{u}} \bigg( \pdv{u_i}{t} \pdv{u_i}{t} \bigg) \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} \left[(1-k) c^{2} + k \right] \pdv{\psi_{\mathrm{e}}^{+} \left(\nabla^{s} \boldsymbol{u} \right)}{\mathbf{u}} \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} \pdv{\psi_{\mathrm{e}}^{-} \left(\nabla^{s} \boldsymbol{u}\right)}{\mathbf{u}}  \mathrm{d} \boldsymbol{x} \\
-&= \int_{\Omega} \frac{1}{2} \rho \bigg( 2 \pdv[2]{u_i}{t} \bigg)  \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} \bigg( \left[(1-k) c^{2} + k \right] \pdv{\psi_{\mathrm{e}}^{+} }{\mathbf{u}} + \pdv{\psi_{\mathrm{e}}^{-}}{\mathbf{u}} \bigg) \mathrm{d} \boldsymbol{x}  \quad \text{Recognize Eq. \ref{DerCauchyStress}} \\
-&= \int_{\Omega} \rho \pdv[2]{u_i}{t} \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} \pdv{\sigma_{i j}}{x_j} \mathrm{d} \boldsymbol{x} \\
-\pdv{L_{\varepsilon}}{u_i} &= \int_{\Omega} \bigg( \rho \pdv[2]{u_i}{t} - \pdv{\sigma_{i j}}{x_j} \bigg) \mathrm{d} \boldsymbol{x}
+\frac{\partial L_{\varepsilon}}{\partial \mathbf{u}} &= 
+\int_{\Omega} \frac{1}{2} \rho \frac{\partial}{\partial \mathbf{u}} \bigg( \frac{\partial u_i}{\partial t} \frac{\partial u_i}{\parital t} \bigg) \mathrm{d} \boldsymbol{x} 
+- \int_{\Omega} \left[(1-k) c^{2} + k \right] \frac{\partial \psi_{\mathrm{e}}^{+} \left(\nabla^{s} \boldsymbol{u} \right)}{\partial \mathbf{u}} \mathrm{d} \boldsymbol{x} 
+- \int_{\Omega} \frac{\partial \psi_{\mathrm{e}}^{-} \left(\nabla^{s} \boldsymbol{u}\right)}{\partial \mathbf{u}} \mathrm{d} \boldsymbol{x} \\
+&= \int_{\Omega} \frac{1}{2} \rho \bigg( 2 \frac{\partial^2 u_i}{\partial t^2} \bigg)  \mathrm{d} \boldsymbol{x} 
+- \int_{\Omega} \bigg( \left[(1-k) c^{2} + k \right] \frac{\partial \psi_{\mathrm{e}}^{+} }{\partial \mathbf{u}} + \frac{\partial \psi_{\mathrm{e}}^{-}}{\partial \mathbf{u}} \bigg) \mathrm{d} \boldsymbol{x}  \quad \text{Recognize Eq. \ref{DerCauchyStress}} \\
+&= \int_{\Omega} \rho \frac{\partial^2 u_i}{\partial t^2} \mathrm{d} \boldsymbol{x} 
+- \int_{\Omega} \frac{\partial \sigma_{i j}}{\partial x_j} \mathrm{d} \boldsymbol{x} \\
+\frac{\partial L_{\varepsilon}}{\partial u_i} &= \int_{\Omega} \bigg( \rho \frac{\partial^2 u_i}{\partial t^2} - \frac{\partial \sigma_{i j}}{\partial x_j} \bigg) \mathrm{d} \boldsymbol{x}
 \end{align*}
 We can already see the equilibrium equation as the section in parenthesis is equivalent to zero
 \begin{equation}\label{EqmEq}
-\pdv{\sigma_{i j}}{x_j} = \rho \pdv[2]{u_i}{t} 
+\frac{\partial \sigma_{i j}}{\partial x_j} = \rho \frac{\partial^2 u_i}{\partial t^2} 
 \end{equation}
 Secondly, we can take the partial derivative with respect to the damage field. 
 \begin{align*}
-\pdv{L_{\varepsilon}}{c} &= 
-- \pdv{}{c} \int_{\Omega} \left[(1-k) c^{2} + k \right] \psi_{\mathrm{e}}^{+} \mathrm{d} \boldsymbol{x} 
-- \pdv{}{c} \int_{\Omega} \mathcal{G}_{c} \frac{(c-1)^{2}}{4 \ell_{0}} \mathrm{d} \boldsymbol{x} 
-- \pdv{}{c} \int_{\Omega} \mathcal{G}_{c} \ell_{0} \frac{\partial c}{\partial x_{i}} \frac{\partial c}{\partial x_{i}} \mathrm{d} \boldsymbol{x} \\
+\frac{\partial L_{\varepsilon}}{\partial c} &= 
+- \frac{\partial}{\partial c} \int_{\Omega} \left[(1-k) c^{2} + k \right] \psi_{\mathrm{e}}^{+} \mathrm{d} \boldsymbol{x} 
+- \frac{\partial}{\partial c} \int_{\Omega} \mathcal{G}_{c} \frac{(c-1)^{2}}{4 \ell_{0}} \mathrm{d} \boldsymbol{x} 
+- \frac{\partial}{\partial c} \int_{\Omega} \mathcal{G}_{c} \ell_{0} \frac{\partial c}{\partial x_{i}} \frac{\partial c}{\partial x_{i}} \mathrm{d} \boldsymbol{x} \\
 &= 
 -\int_{\Omega} 2 (1 - k) c \psi_{\mathrm{e}}^{+} \mathrm{d} \boldsymbol{x}
 - \int_{\Omega} \mathcal{G}_{c} \frac{2 (c-1)}{4 \ell_{0}} \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} \mathcal{G}_{c} \ell_{0} \pdv{}{c} \bigg( \frac{\partial c}{\partial x_{i}} \frac{\partial c}{\partial x_{i}} \bigg) \mathrm{d} \boldsymbol{x} \\
+- \int_{\Omega} \mathcal{G}_{c} \ell_{0} \frac{\partial}{\partial c} \bigg( \frac{\partial c}{\partial x_{i}} \frac{\partial c}{\partial x_{i}} \bigg) \mathrm{d} \boldsymbol{x} \\
 &= 
 - \int_{\Omega} 2 (1 - k) c \psi_{\mathrm{e}}^{+} \mathrm{d} \boldsymbol{x}
 - \int_{\Omega} \mathcal{G}_{c} \frac{(c-1)}{2 \ell_{0}} \mathrm{d} \boldsymbol{x} 
-- \int_{\Omega} 2 \mathcal{G}_{c} \ell_{0} \pdv[2]{c}{x_i} \mathrm{d} \boldsymbol{x} 
+- \int_{\Omega} 2 \mathcal{G}_{c} \ell_{0} \frac{\partial c}{\partial x_i} \mathrm{d} \boldsymbol{x} 
 \end{align*}
 Now if we group these similarly: 
 \begin{align*}
-0 &= - 2 (1 - k) c \psi_{\mathrm{e}}^{+} -  \mathcal{G}_{c} \frac{(c-1)}{2 \ell_{0}} - 2 \mathcal{G}_{c} \ell_{0} \pdv[2]{c}{x_i} \quad \text{multiply through by } -2 \ell_0 / \mathcal{G}_c \\
-0 &= 4 \frac{\ell_0 (1 - k) c \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + (c-1) + 4 \ell_{0}^2 \pdv[2]{c}{x_i} \\
-1 &= 4 \frac{\ell_0 (1 - k) c \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + c + 4 \ell_{0}^2 \pdv[2]{c}{x_i} \\
-1 &= \bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c + 4 \ell_{0}^2 \pdv[2]{c}{x_i}
+0 &= - 2 (1 - k) c \psi_{\mathrm{e}}^{+} - \mathcal{G}_{c} \frac{(c-1)}{2 \ell_{0}} - 2 \mathcal{G}_{c} \ell_{0} \frac{\partial c}{\partial x_i} \quad \text{multiply through by } -2 \ell_0 / \mathcal{G}_c \\
+0 &= 4 \frac{\ell_0 (1 - k) c \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + (c-1) + 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2} \\
+1 &= 4 \frac{\ell_0 (1 - k) c \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + c + 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2} \\
+1 &= \bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c + 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2}
 \end{align*}
 Therefore, we arrive at the strong form equations of motion: 
 \begin{align}\label{EqMotion}
 \begin{split}
-\pdv{\sigma_{i j}}{x_j} = \rho \pdv[2]{u_i}{t} \quad \text{on }& \Omega \times [0, T]\\
-\bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c + 4 \ell_{0}^2 \pdv[2]{c}{x_i} = 1 \quad \text{on }& \Omega \times [0, T]
+\frac{\partial \sigma_{i j}}{\partial x_j} = \rho \frac{\partial^2 u_i}{\partial t^2} \quad \text{on }& \Omega \times [0, T]\\
+\bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c + 4 \ell_{0}^2 \frac{\partial^2 c}{x_i^2} = 1 \quad \text{on }& \Omega \times [0, T]
 \end{split}
 \end{align}
 which can be solved to find the displacement and phase field. \\ \\
 \textcolor{red}{There is a sign difference between this result and Eq. 18}
 \begin{align*}
-\bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \pdv[2]{c}{x_i} = 1 \quad \text{on }& \Omega \times [0, T]
+\bigg( \frac{4 \ell_0 (1 - k) \psi_{\mathrm{e}}^{+}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2} = 1 \quad \text{on }& \Omega \times [0, T]
 \end{align*}
 We can introduce a strain-history field, $\mathcal{H}$, which satisfies the KKT conditions for loading and unloading.
 \begin{align}
@@ -288,8 +287,8 @@ We can introduce a strain-history field, $\mathcal{H}$, which satisfies the KKT 
 Substitute $\mathcal{H}$ for $\psi_{e}^{+}$ in Eq. \ref{EqMotion}
 \begin{align}\label{EqMotionHistoryField}
 \begin{split}
-\pdv{\sigma_{i j}}{x_j} = \rho \pdv[2]{u_i}{t} \quad \text{on }& \Omega \times [0, T]\\
-\bigg( \frac{4 \ell_0 (1 - k) \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \pdv[2]{c}{x_i} = 1 \quad \text{on }& \Omega \times [0, T]
+\frac{\partial \sigma_{i j}}{\partial x_j} = \rho \frac{\partial^2 u_i}{\partial t^2} \quad \text{on }& \Omega \times [0, T]\\
+\bigg( \frac{4 \ell_0 (1 - k) \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2} = 1 \quad \text{on }& \Omega \times [0, T]
 \end{split}
 \end{align}
 \textcolor{red}{Boundary conditions are listed here in the text }
@@ -301,7 +300,7 @@ S (\mathbf{q}) = \int_{a}^{b} L (t, \mathbf{q}(t), \dot{\mathbf{q}} (t)) dt
 \end{equation*}
 We can write an equation in the form
 \begin{equation*}
-\pdv{L(t, \mathbf{q}(t), \dot{\mathbf{q}} (t))}{\mathbf{q} (t)}  - \frac{d}{dt} \pdv{L(t, \mathbf{q}(t), \dot{\mathbf{q}} (t))}{\dot{\mathbf{q}} (t)} = 0
+\frac{\partial L(t, \mathbf{q}(t), \dot{\mathbf{q}} (t))}{\partial \mathbf{q} (t)}  - \frac{d}{dt} \frac{\partial L(t, \mathbf{q}(t), \dot{\mathbf{q}} (t))}{\partial \dot{\mathbf{q}} (t)} = 0
 \end{equation*}
 
 %====================================================================================
@@ -309,12 +308,12 @@ We can write an equation in the form
 \subsection{Analytical solutions of the 1D quasi-static problem}
 If we consider a 1D problem, ignore all temporal derivatives, and assume k = 0, we obtain from Eq. \ref{EqMotion}. 
 \begin{align*}
-\pdv{\sigma_{i j}}{x_j} &= \rho \pdv[2]{u_i}{t} \\
+\frac{\partial \sigma_{i j}}{\partial x_j} &= \rho \frac{\partial^2 u_i}{\partial t^2} \\
 \frac{d \boldsymbol{\sigma}}{dx} &= 0
 \end{align*}
 The second equation yields: 
 \begin{align*}
-\bigg( \frac{4 \ell_0 (1 - k) \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \pdv[2]{c}{x_i} &= 1 \\
+\bigg( \frac{4 \ell_0 (1 - k) \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \frac{\partial^2 c}{\partial x_i^2} &= 1 \\
 \bigg( \frac{4 \ell_0 (1 - k) \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \frac{d^2 c}{d x^2} &= 1 \\
 \bigg( \frac{4 \ell_0 \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_{0}^2 \frac{d^2 c}{d x^2} &= 1\end{align*}
 Combined, 
