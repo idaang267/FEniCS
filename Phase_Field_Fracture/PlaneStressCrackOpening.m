@@ -22,8 +22,10 @@ for ii = 1:length(c)
 end 
 
 %% Plotting
+% y1_1 = Compiled.y1_norm + .005;
 y1_1 = Compiled.y1_norm;
 y2_1 = Compiled.y2_norm;
+
 y1_2 = Compiled.y1_norm1;
 y2_2 = Compiled.y2_norm1;
 y1_3 = Compiled.y1_norm2;
@@ -57,7 +59,7 @@ ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
 xlim([-0.1 0])
-ylim([0 0.2])
+ylim([0 0.4])
 ax.FontSize = 20; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')

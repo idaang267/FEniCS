@@ -61,8 +61,8 @@ where $J=\det \mathbf{F}$ and $\mathbf{C}=\mathbf{F}^T\mathbf{F}$.
 The strain energy function $\mathcal{W}(\mathbf{F})$ is defined per unit reference volume such that the first PK and second PK
 \begin{subequations}\label{EqPK}
 \begin{align}
-\mathbf{P} &= \pdv{\mathcal{W}(\mathbf{F})}{\mathbf{F}} \\
-\mathbf{S} &= 2 \pdv{ \mathcal{W}(\mathbf{F})}{ \mathbf{C}}
+\mathbf{P} &= \frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} \\
+\mathbf{S} &= 2 \frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{C}}
 \end{align}
 \end{subequations}
 where $\mathbf{P}=\mathbf{F}\mathbf{S}$. 
@@ -102,11 +102,11 @@ c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
 The first Piola-Kirchhoff stress tensor is given: 
 \begin{align}\label{eq_firstPK}
 \begin{split}
-\mathbf{P} &= \pdv{\tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\mathbf{F}} \\
-		 &= \pdv{}{\mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
-		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \pdv{(J-1)^2}{\mathbf{F}}  \\
-\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \pdv{J}{\mathbf{F}} = J \mathbf{F}^{-T} \\
-\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
+\mathbf{P} &= \frac{\partial \tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
+		 &= \frac{\partial}{\partial \mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
+		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
+\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
+\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
 \end{split}
 \end{align}
 Note that we DO NOT consider this form of the modified functional; therefore, we do not consider this PK stress. 
@@ -176,9 +176,9 @@ Where we know $k_\ell$ is a modeling parameter, so we can list the energy functi
 \end{equation}
 Derive the 1st PK stress
 \begin{align*}
-\mathbf{P} &= \pdv{\widetilde{W} (\mathbf{F})}{\mathbf{F}} \\
-		&= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p \pdv{\det \mathbf{F}}{\mathbf{F}} \\
-\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p J \mathbf{F}^{-1} 
+\mathbf{P} &= \frac{\partial \widetilde{W} (\mathbf{F})}{\partial \mathbf{F}} \\
+		    &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p \frac{\partial \det \mathbf{F}}{\partial \mathbf{F}} \\
+\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p J \mathbf{F}^{-1}
 \end{align*}
 Taking the third component to be zero, in the plane stress case
 \begin{align*}
@@ -340,7 +340,7 @@ Grouping terms, we obtain
 \end{subequations}
 Lastly, we have the following, (Neumann?)
 \begin{equation}
-\pdv{\alpha}{\mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \pdv{\alpha}{\mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
+\frac{\partial \alpha}{\partial \mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \frac{\partial \alpha}{\partial \mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
 \end{equation}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathbf{F}^{-T}\nabla q$
@@ -358,7 +358,7 @@ Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathb
 where $\mathbf{P} = a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} - p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}}$ \\ \\
 We also want to deal with the first term where $(fg)' = f' g + f g'$
 \begin{align*}
-\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV = \int_{\Omega} (\mathbf{F} \cdot \bm{v})_{,X} \, dV - \int_{\Omega} \mathbf{P} \cdot \pdv{\bm{v}}{X} \, dV \\
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV = \int_{\Omega} (\mathbf{F} \cdot \bm{v})_{,X} \, dV - \int_{\Omega} \mathbf{P} \cdot \frac{\partial \bm{v}}{\partial X} \, dV \\
 \end{align*}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 
