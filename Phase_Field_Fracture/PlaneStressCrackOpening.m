@@ -38,13 +38,6 @@ y2_2 = CompiledS1.y2_norm1;
 y1_3 = CompiledS1.y1_norm2;
 y2_3 = CompiledS1.y2_norm2;
 
-y1_1 = CompiledS2.y1_norm;
-y2_1 = CompiledS2.y2_norm;
-y1_2 = CompiledS2.y1_norm1;
-y2_2 = CompiledS2.y2_norm1;
-y1_3 = CompiledS2.y1_norm2;
-y2_3 = CompiledS2.y2_norm2;
-
 figure(1)
 hold on 
 plot(y1(1,:), y2(1,:), 'LineWidth', 2.5)
