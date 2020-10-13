@@ -1,13 +1,15 @@
-# -------------------------------------------
-# FEniCS code  Variational Fracture Mechanics
+# FEniCS code Variational Fracture Mechanics
 ################################################################################
-#                                                                              #
-# A Taylor-Hood finite element method for gradient damage models of            #
-# fracture in incompressible hyperelastic materials                            #
-# author: Bin Li                                                               #
-# Email: bl736@cornell.edu                                                     #
-# date: 10/01/2018                                                             #
-#                                                                              #
+#
+# A Taylor-Hood finite element method for gradient damage models of
+# fracture in incompressible hyperelastic materials
+#
+# Modified for plane-stress cases
+#
+# author: Bin Li
+# Email: bl736@cornell.edu
+# date: 10/01/2018
+#
 ################################################################################
 # e.g. python3 traction-neo-Hookean.py --meshsize 100						   #
 ################################################################################
@@ -108,8 +110,8 @@ userpar.add("mu",1)           # n*k*T Shear modulus
 userpar.add("nu",0.49995)     # bulk modulus for slightly compressibility
 userpar.add("Gc",2.4e6)       # fracture toughness
 userpar.add("k_ell",5.e-5)    # residual stiffness
-userpar.add("meshsizeX", 600)
-userpar.add("meshsizeY", 300)
+userpar.add("meshsizeX", 500)
+userpar.add("meshsizeY", 500)
 userpar.add("load_min",0.)
 userpar.add("load_max",1.0)
 userpar.add("load_steps",11)
