@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  1 OCT 2020 14:03
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  12 OCT 2020 17:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -482,10 +482,6 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 29.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-Overfull \hbox (85.42406pt too wide) in paragraph at lines 29--29
- [][] 
- []
-
 (./2012_Borden_Notes.toc)
 \tf@toc=\write4
 \openout4 = `2012_Borden_Notes.toc'.
@@ -512,47 +508,25 @@ Underfull \hbox (badness 10000) in paragraph at lines 198--201
 
  []
 
-! Undefined control sequence.
-<argument> \parital 
-                    t
-l.240 \end{align*}
-                  
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-<argument> \parital 
-                    t
-l.240 \end{align*}
-                  
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
 [4]
 Underfull \hbox (badness 10000) in paragraph at lines 273--276
 
  []
 
-[5] [6]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 381.
- [7]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 381.
+[5] [6] [7]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 392.
+ [8]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 392.
  (./2012_Borden_Notes.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 381.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 381.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 392.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 392.
 Package rerunfilecheck Info: File `2012_Borden_Notes.out' has not changed.
-(rerunfilecheck)             Checksum: 3E0A99A4E8E3C6EB6261B334EB3AFE1D;421.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 381.
+(rerunfilecheck)             Checksum: E5C9C62110006FC54EE9FD6B89C30A8F;514.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 392.
  ) 
 Here is how much of TeX's memory you used:
- 9673 strings out of 494510
- 143214 string characters out of 6176236
+ 9675 strings out of 494510
+ 143263 string characters out of 6176236
  278081 words of memory out of 5000000
  13192 multiletter control sequences out of 15000+600000
  14865 words of font info for 56 fonts, out of 8000000 for 9000
@@ -571,10 +545,10 @@ s/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cms
 y10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb
 ></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
 
-Output written on 2012_Borden_Notes.pdf (7 pages, 160591 bytes).
+Output written on 2012_Borden_Notes.pdf (8 pages, 162304 bytes).
 PDF statistics:
- 180 PDF objects out of 1000 (max. 8388607)
- 149 compressed objects within 2 object streams
- 39 named destinations out of 1000 (max. 500000)
- 49 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 190 PDF objects out of 1000 (max. 8388607)
+ 158 compressed objects within 2 object streams
+ 41 named destinations out of 1000 (max. 500000)
+ 57 words of extra memory for PDF output out of 10000 (max. 10000000)
 

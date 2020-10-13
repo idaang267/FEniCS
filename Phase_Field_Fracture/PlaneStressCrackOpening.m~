@@ -51,8 +51,8 @@ leg = legend([h1, h2, h3],["Discrete", "Stabilized", "Taylor-Hood"], 'Location',
 ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
-xlim([-0.1 0])
-ylim([0 0.4])
+xlim([-0.5 0])
+ylim([0 0.5])
 ax.FontSize = 20; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')

@@ -25,7 +25,6 @@ end
 % y1_1 = Compiled.y1_norm + .005;
 y1_1 = Compiled.y1_norm;
 y2_1 = Compiled.y2_norm;
-
 y1_2 = Compiled.y1_norm1;
 y2_2 = Compiled.y2_norm1;
 y1_3 = Compiled.y1_norm2;
@@ -46,7 +45,8 @@ plot(y1(2,:), y2(2,:), 'LineWidth', 2.5)
 h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
 h2 = plot(y1_2, y2_2, 'LineWidth', 2.5);
 h3 = plot(y1_3, y2_3, 'LineWidth', 2.5);
-leg = legend([h1, h2, h3],["0.75+0.1l -1", "0.75+0.1l - 3", "0.75+0.1l - 6"], 'Location', 'Best');
+% title(leg, "$c$", 'Interpreter', 'Latex');
+leg = legend([h1, h2, h3],["Discrete", "Stabilized", "Taylor-Hood"], 'Location', 'Best');
 
 ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
@@ -58,7 +58,3 @@ set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 
 saveas(gcf, 'PlaneStressCrackOpening.eps', 'epsc')
-% saveas(gcf, "Fig4.fig")
-
-
-% title(leg, "$c$", 'Interpreter', 'Latex');
