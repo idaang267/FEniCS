@@ -369,11 +369,15 @@ Start with Eq. \ref{1DQuasiStaticMotion} where we know that $\mathcal{H} = \frac
 \begin{align*}
 \bigg(\frac{4 \ell_0 \mathcal{H}}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_0^2 \frac{d^2 c }{d x^2} &= 1 \\
 \bigg(\frac{2 \ell_0 E \varepsilon^2}{\mathcal{G}_c} + 1 \bigg) c - 4 \ell_0^2 \frac{d^2 c }{d x^2} &= 1 \quad \text{where } \sigma = c^2 E \varepsilon \rightarrow \frac{\sigma^2}{c^4 E} = E \varepsilon^2 \\
-\bigg(\frac{2 \ell_0 \sigma^2}{c^4 E \mathcal{G}_c} + 1 \bigg) c - 4 \ell_0^2 \frac{d^2 c }{d x^2} -1 &= 0 \quad \text{divide by 2} \\
-\bigg(\frac{\ell_0 \sigma^2}{c^4 E \mathcal{G}_c} + \frac{1}{2} \bigg) c - 2 \ell_0^2 \frac{d^2 c }{d x^2} - \frac{1}{2} &= 0 \quad \text{multiply by } dc/dx \\
-\frac{dc}{dx} \bigg[ \bigg(\frac{\ell_0 \sigma^2}{c^4 E \mathcal{G}_c} + \frac{1}{2} \bigg) c - 2 \ell_0^2 \frac{d^2 c }{d x^2} - \frac{1}{2} \bigg] &= 0 \\
-\frac{d}{dx} \bigg[ \bigg(\frac{\ell_0 \sigma^2}{c^3 E \mathcal{G}_c} + \frac{c}{2} \bigg) c - 2 c \ell_0^2 \frac{d^2 c }{d x^2} - \frac{c}{2} \bigg] &= 0 \\
-\frac{d}{dx} \bigg[ \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}- 2 c \ell_0^2 \frac{d^2 c }{d x^2} - \frac{c}{2} \bigg] &= 0 \\
+\bigg(\frac{2 \ell_0 \sigma^2}{c^4 E \mathcal{G}_c} + 1 \bigg) c - 4 \ell_0^2 \frac{d^2 c }{d x^2} -1 &= 0 \\
+\frac{2 \ell_0 \sigma^2}{c^3 E \mathcal{G}_c} + c - 4 \ell_0^2 \frac{d^2 c }{d x^2} -1 &= 0
+\end{align*}
+Multiply by dc(x)/dx 
+\begin{align*}
+\frac{dc(x)}{dx} \bigg[ \frac{2 \ell_0 \sigma^2}{c^3 E \mathcal{G}_c} + c - 4 \ell_0^2 \frac{d^2 c }{d x^2} -1 \bigg] &= 0 \\
+\frac{d}{dx} \int \bigg[ \frac{2 \ell_0 \sigma^2}{c^3 E \mathcal{G}_c} + c - 4 \ell_0^2 \frac{d^2 c }{d x^2} -1 \bigg] dc &= 0 \\
+\frac{d}{dx} \bigg[ - \frac{2 \ell_0 \sigma^2}{2 c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 4 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 - c + A \bigg] &= 0 \\
+\frac{d}{dx} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 4 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c \bigg] &= 0
 \end{align*}
 
 %\begin{figure}[h]

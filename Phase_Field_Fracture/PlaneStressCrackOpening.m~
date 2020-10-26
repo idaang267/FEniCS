@@ -23,13 +23,25 @@ end
 
 %% Plotting
 % y1_1 = Compiled.y1_norm + .005;
-y1_1 = Compiled.y1_norm;
-y2_1 = Compiled.y2_norm;
+y1_1 = TestS1.y1_norm;
+y2_1 = TestS1.y2_norm;
+y1_2 = TestS1.y1_norm1;
+y2_2 = TestS1.y2_norm1;
+y1_3 = TestS1.y1_norm2;
+y2_3 = TestS1.y2_norm2;
+y1_4 = TestS1.y1_norm3;
+y2_4 = TestS1.y2_norm3;
+y1_5 = TestS1.y1_norm4;
+y2_5 = TestS1.y2_norm4;
 
-y1_2 = Compiled.y1_norm1;
-y2_2 = Compiled.y2_norm1;
-y1_3 = Compiled.y1_norm2;
-y2_3 = Compiled.y2_norm2;
+y1_1 = CompiledS2.y1_norm;
+y2_1 = CompiledS2.y2_norm;
+y1_2 = CompiledS2.y1_norm1;
+y2_2 = CompiledS2.y2_norm1;
+y1_3 = CompiledS2.y1_norm2;
+y2_3 = CompiledS2.y2_norm2;
+y1_4 = CompiledS2.y1_norm3;
+y2_4 = CompiledS2.y2_norm3;
 
 y1_1 = CompiledS1.y1_norm;
 y2_1 = CompiledS1.y2_norm;
@@ -37,6 +49,8 @@ y1_2 = CompiledS1.y1_norm1;
 y2_2 = CompiledS1.y2_norm1;
 y1_3 = CompiledS1.y1_norm2;
 y2_3 = CompiledS1.y2_norm2;
+y1_4 = CompiledS1.y1_norm3;
+y2_4 = CompiledS1.y2_norm3;
 
 figure(1)
 hold on 
@@ -46,19 +60,20 @@ plot(y1(2,:), y2(2,:), 'LineWidth', 2.5)
 h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
 h2 = plot(y1_2, y2_2, 'LineWidth', 2.5);
 h3 = plot(y1_3, y2_3, 'LineWidth', 2.5);
-leg = legend([h1, h2, h3],["Discrete", "Stabilized", "Taylor-Hood"], 'Location', 'Best');
+h4 = plot(y1_4, y2_4, 'LineWidth', 2.5);
+h5 = plot(y1_5, y2_5, 'LineWidth', 2.5);
+
+title(leg, "$No Phase-Field$", 'Interpreter', 'Latex');
+leg = legend([h1, h2, h3],["Lagrangian", "Lagrangian WF", "PLag k=10,000", "PLag 1,000", "PLag 100"], 'Location', 'Best');
+leg = legend([h1, h2, h3, h4],["Discrete Stabilized", "Phase-Field Stabilized", "Displacement", "Taylor-Hood"], 'Location', 'Best');
 
 ax = gca;
 xlabel("$y_1/a^{2n}$", 'Interpreter', 'LaTeX')
 ylabel("$y_2/a^{2n}$", 'Interpreter', 'LaTeX')
-xlim([-0.5 0])
-ylim([0 0.5])
-ax.FontSize = 20; 
+xlim([-0.1 0])
+ylim([0 0.4])
+ax.FontSize = 15; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 
 saveas(gcf, 'PlaneStressCrackOpening.eps', 'epsc')
-% saveas(gcf, "Fig4.fig")
-
-
-% title(leg, "$c$", 'Interpreter', 'Latex');
