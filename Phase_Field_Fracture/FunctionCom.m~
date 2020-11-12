@@ -9,6 +9,10 @@ b = (1-alpha).^3;
 %% Test
 q = 1024;
 m = 6;
+alpha = 0.04;
+mod = ((1-alpha)^2/((1-alpha)^2 + m*alpha*(1+q*alpha)))^2;
+p = -mod*(1.02-1)*10000/2
+
 mod = (a./(a + m*alpha.*(1+q*alpha))).^2;
 m = 6;
 mod2 = (a./(a + m*alpha.*(1+q*alpha))).^2;

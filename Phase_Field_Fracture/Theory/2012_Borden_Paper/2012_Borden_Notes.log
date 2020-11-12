@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  22 OCT 2020 11:17
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  28 OCT 2020 10:25
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -514,19 +514,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 273--276
  []
 
 [5] [6] [7]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 396.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 411.
  [8]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 396.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 411.
  (./2012_Borden_Notes.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 396.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 396.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 411.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 411.
 Package rerunfilecheck Info: File `2012_Borden_Notes.out' has not changed.
 (rerunfilecheck)             Checksum: E5C9C62110006FC54EE9FD6B89C30A8F;514.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 396.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 411.
  ) 
 Here is how much of TeX's memory you used:
- 9675 strings out of 494510
- 143263 string characters out of 6176236
+ 9677 strings out of 494510
+ 143289 string characters out of 6176236
  278081 words of memory out of 5000000
  13192 multiletter control sequences out of 15000+600000
  14865 words of font info for 56 fonts, out of 8000000 for 9000
@@ -545,10 +545,10 @@ s/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cms
 y10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb
 ></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
 
-Output written on 2012_Borden_Notes.pdf (8 pages, 162700 bytes).
+Output written on 2012_Borden_Notes.pdf (8 pages, 165698 bytes).
 PDF statistics:
- 190 PDF objects out of 1000 (max. 8388607)
- 158 compressed objects within 2 object streams
- 41 named destinations out of 1000 (max. 500000)
+ 193 PDF objects out of 1000 (max. 8388607)
+ 161 compressed objects within 2 object streams
+ 43 named destinations out of 1000 (max. 500000)
  57 words of extra memory for PDF output out of 10000 (max. 10000000)
 

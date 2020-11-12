@@ -298,7 +298,7 @@ Substitute second equation into third
 \subsection{Homogeneous Solution}
 Therefore, we can study the homogeneous solution by ignoring spatial derivatives of $\alpha$
 \begin{align*}
-- 2 (1 - \alpha_{hom}) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha_{hom})^5 (J-1)^2 + \frac{G_{c}}{c_{w} \ell} &= 0 
+- 2 (1 - \alpha_{h}) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha_{h})^5 (J-1)^2 + \frac{G_{c}}{c_{w} \ell} &= 0 
 \end{align*}
 We can expand and arrange
 \begin{align*}
@@ -309,6 +309,15 @@ We can expand and arrange
 - 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0
 \end{align*}
 
+\subsection{Non-Homogeneous Solution}
+Now for the Non-homogenous solution, we have the following
+\begin{align*}
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha)^5 (J-1)^2 + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
+\end{align*}
+
+
+% Beginning of multiline comment
+\iffalse
 %===============================
 %===============================
 %===============================
@@ -441,7 +450,7 @@ Leaving
 - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \bigg[ \nabla \big( p \sqrt{a^3(\alpha)} \big) \cdot \nabla q \bigg] \,dV = 0 
 \end{split}
 \end{align}
-
+\fi
 %\section{Numerical Examples}
 %
 %\subsection{Benchmark: Uniaxial Tension of a Hyperelastic Bar}

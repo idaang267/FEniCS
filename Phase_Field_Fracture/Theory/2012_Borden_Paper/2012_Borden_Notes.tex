@@ -379,7 +379,22 @@ Multiply by dc(x)/dx
 \frac{d}{dx} \bigg[ - \frac{2 \ell_0 \sigma^2}{2 c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 4 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 - c + A \bigg] &= 0 \\
 \frac{d}{dx} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 4 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c \bigg] &= 0
 \end{align*}
-
+Have a discrepency, equation 30 is 
+\begin{equation}
+\frac{d}{dx} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 2 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c  \bigg] = 0
+\end{equation}
+Perhaps this is a minor typo or issue on my part. Nevertheless, we can integrate this expression from x to infinity for positive values of x.
+\begin{align*}
+\int_{0}^{\infty} \frac{d}{dx} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 2 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c  \bigg] dx &= 0 \\
+\bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 2 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c  \bigg] \bigg\rvert_{0}^{\infty} &= 0 \\
+- \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2} - 2 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 -  c  - \bigg[ \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] &= 0  \\
+- \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] &= 2 \ell_0^2 \bigg( \frac{dc }{d x} \bigg)^2 \\
+\frac{1}{2 \ell_0^2} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] \bigg] &= \bigg( \frac{dc }{d x} \bigg)^2 
+\end{align*}
+Because we integrate the same expression from minus infinity to x, we can write:
+\begin{equation}
+\frac{dc}{dx} = sgn(x) \sqrt{\frac{1}{2 \ell_0^2} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] \bigg]}
+\end{equation}
 %\begin{figure}[h]
 %    \centering
 %    \begin{subfigure}[b]{0.45\textwidth}
