@@ -6,7 +6,6 @@
  \usepackage{bm}
 \usepackage{mathtools}
 \usepackage{enumitem}
-\usepackage{physics}
 \usepackage[round,numbers]{natbib}
 \usepackage[colorlinks = false]{hyperref}
 \usepackage{xcolor}
@@ -62,8 +61,8 @@ where $J=\det \mathbf{F}$ and $\mathbf{C}=\mathbf{F}^T\mathbf{F}$.
 The strain energy function $\mathcal{W}(\mathbf{F})$ is defined per unit reference volume such that the first PK and second PK
 \begin{subequations}\label{EqPK}
 \begin{align}
-\mathbf{P} &= \pdv{\mathcal{W}(\mathbf{F})}{\mathbf{F}} \\
-\mathbf{S} &= 2 \pdv{ \mathcal{W}(\mathbf{F})}{ \mathbf{C}}
+\mathbf{P} &= \frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} \\
+\mathbf{S} &= 2 \frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{C}}
 \end{align}
 \end{subequations}
 where $\mathbf{P}=\mathbf{F}\mathbf{S}$. 
@@ -103,11 +102,11 @@ c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
 The first Piola-Kirchhoff stress tensor is given: 
 \begin{align}\label{eq_firstPK}
 \begin{split}
-\mathbf{P} &= \pdv{\tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\mathbf{F}} \\
-		 &= \pdv{}{\mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
-		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \pdv{(J-1)^2}{\mathbf{F}}  \\
-\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \pdv{J}{\mathbf{F}} = J \mathbf{F}^{-T} \\
-\mathbf{P} &=a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
+\mathbf{P} &= \frac{\partial \tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
+		 &= \frac{\partial}{\partial \mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
+		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
+\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
+\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
 \end{split}
 \end{align}
 Note that we DO NOT consider this form of the modified functional; therefore, we do not consider this PK stress. 
@@ -162,10 +161,14 @@ Substitute in $\mathcal{E}_{\ell} (\boldsymbol{u}, \alpha )$ and substitute Eq. 
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega 
 \end{split}
 \end{align*}
+After taking the directional derivative of the prior equation, we can introduce the stabilization term 
+\begin{align*}
+- \frac{\varpi h^2}{2\mu} \sqrt{a^3(\alpha)} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV = 0 
+\end{align*}
 
 %===============================
 %===============================
-\subsection{Changes for 2D Code Version}
+\subsection{Changes for 2D Plane-Stress Models}
 Following the code, we have the following energy functional of the energy problem
 \begin{align*}
 \widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
@@ -177,30 +180,81 @@ Where we know $k_\ell$ is a modeling parameter, so we can list the energy functi
 \end{equation}
 Derive the 1st PK stress
 \begin{align*}
-\mathbf{P} &= \pdv{\widetilde{W} (\mathbf{F})}{\mathbf{F}} \\
-		&= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p \pdv{\det \mathbf{F}}{\mathbf{F}} \\
-\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-1}) - b (\alpha) p J \mathbf{F}^{-1} 
+\mathbf{P} &= \frac{\partial \widetilde{W} (\mathbf{F})}{\partial \mathbf{F}} \\
+		    &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p \frac{\partial \det \mathbf{F}}{\partial \mathbf{F}} \\
+\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p J \mathbf{F}^{-T}
 \end{align*}
 Taking the third component to be zero, in the plane stress case
 \begin{align*}
 \mathbf{P}_{33} = a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
 (1- \alpha)^2 \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha)^3 p J \mathbf{F}^{-1}_{33} &= 0 \\
 \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
-\mu \mathbf{F}_{33} - \mu \mathbf{F}^{-1}_{33} - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\ 
-\mu \mathbf{F}_{33} &= \mu \mathbf{F}^{-1}_{33} + (1- \alpha) p J \mathbf{F}^{-1}_{33} \\
-\mu \mathbf{F}_{33} &= \big[ \mu + (1- \alpha) p J \big] \mathbf{F}^{-1}_{33} \\ 
-\mathbf{F}_{33}^2 &= \frac{\mu + (1- \alpha) p J }{\mu} \\
-\mathbf{C}_{33} &= 1 + \frac{(1 - \alpha) p J}{\mu} 
-\end{align*}
-Treating $F_{33}$ as an independent unknown, we can state the governing equation 
-\begin{align*}
-\mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
 \mathbf{F}_{33} - \mathbf{F}^{-1}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} &= 0 \\
 \mathbf{F}_{33} \mathbf{F}_{33} - \mathbf{F}^{-1}_{33} \mathbf{F}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} \mathbf{F}_{33} &= 0 \\
 \mathbf{F}_{33}^2 - 1 - \frac{(1- \alpha) p J}{\mu} &= 0
 \end{align*}
 This can be multiplied by its associated test function to obtain the weak form 
+\begin{align*}
+\int_{\Omega} \bigg( \mathbf{F}_{33}^2 - 1 - \frac{(1-\alpha) p J}{\mu} \bigg) v_{F_{33}} dV &= 0
+\end{align*}
+%===============================
+%===============================
+\subsubsection{Changes for 2D Discrete Crack Model}
+If we are considering a discrete fracture method
+\begin{align*}
+\begin{split}
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega \\
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} p(J-1) d \Omega \\
+\end{split}
+\end{align*}
+with the stabilization term and plane stress in the weak form 
+\begin{align*}
+- \frac{\varpi h^2}{2\mu} \int_{\Omega} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV &= 0 \\
+\int_{\Omega} \bigg( \mathbf{F}_{33}^2 - 1 - \frac{p J}{\mu} \bigg) v_{F_{33}} dV &= 0
+\end{align*}
+where we have assumed for the energy functional 
+\begin{align*}
+\widetilde{\mathcal{W}} (\mathbf{F}, \alpha) = \frac{\mu}{2} (I_c - 3 - 2 \ln J) - p (J-1) - \frac{p^2}{2 \lambda}
+\end{align*}
+Therefore, we can calculate the 1st Piola Kirchoff Stress as:
+\begin{align*}
+\mathbf{P} &= \frac{\mu}{2} (2 \mathbf{F} - \frac{2}{J} J \mathbf{F}^{-T}) - p J \mathbf{F}^{-T} \\
+		&= \mu (\mathbf{F} - \mathbf{F}^{-T}) - p J \mathbf{F}^{-T}
+\end{align*}
+Taking the third component to be zero
+\begin{align*}
+P_{33} &=  \mu (F_{33} - F_{33}^{-1}) - p J F_{33}^{-1} = 0 \\
+		&= F_{33} - F_{33}^{-1} - \frac{p J}{\mu} F_{33}^{-1} = 0 \\
+P_{33} &= F_{33}^2 - 1 - \frac{p J}{\mu} = 0
+\end{align*}
 
+%===============================
+%===============================
+\subsubsection{Changes for 2D displacement formulation}
+Removing pressure terms
+\begin{align*}
+\begin{split}
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega \\
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\end{split}
+\end{align*}
+with plane stress in the weak form (no need for stabilization terms)
+\begin{align*}
+\int_{\Omega} \big( a(\alpha) \mu (F_{33} - F_{33}^{-1}) \big) v_{F_{33}} dV &= 0
+\end{align*}
+We have assumed the modified energy functional
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) 
+\end{equation}
+Therefore, we can calculate the 1st Piola Kirchoff Stress as:
+\begin{align*}
+\mathbf{P} &= a (\alpha) \frac{\mu}{2} (2 \mathbf{F} - \frac{2}{J} J \mathbf{F}^{-T}) \\
+		&= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T})
+\end{align*}
+Taking the third component to be zero
+\begin{align*}
+P_{33} &= a(\alpha) \mu (F_{33} - F_{33}^{-1}) = 0 
+\end{align*}
 %===============================
 %===============================
 %===============================
@@ -211,34 +265,59 @@ Note the full potential energy functional, which can also be called the lagrangi
 \end{align*}
 We can use the Euler-Lagrange equations to arrive at the equations of motion by taking the derivative with respect to displacement, pressure, and the scalar damage field. Starting with displacement:
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{\boldsymbol{u}} &= \int_{\Omega} a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} d \Omega 
+\frac{\partial \mathcal{E}_{\ell}}{\partial \boldsymbol{u}} &= \int_{\Omega} a (\alpha) \frac{\partial \mathcal{W} (\mathbf{F})}{\partial \mathbf{u}} d \Omega 
 \end{align*}
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{p} &= - \int_{\Omega} \frac{p}{\kappa} d \Omega - \int_{\Omega} \sqrt{a^3(\alpha)} (J-1) d \Omega
+\frac{\partial \mathcal{E}_{\ell}}{\partial p} &= - \int_{\Omega} \frac{p}{\kappa} d \Omega - \int_{\Omega} \sqrt{a^3(\alpha)} (J-1) d \Omega
 \end{align*}
 \begin{align*}
-\pdv{\mathcal{E}_{\ell}}{\alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
+\frac{\partial \mathcal{E}_{\ell}}{\partial \alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
 \end{align*}
-Therefore we have three equations: 
+Therefore we have three equations: \\
+First should be mechanical eq, second is a an equation for pressure, 
+%\begin{align*}
+%a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
+%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
+%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
+%a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
+%\end{align*}
 \begin{align*}
-a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
-a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
-a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
-a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
+-\frac{p}{\kappa} - \sqrt{a^3(\alpha)} (J-1) &= 0 \\
+-\frac{p}{\kappa} - (1-\alpha)^3 (J-1) &= 0 \\
+- \kappa (J-1)(1-\alpha)^3 &= p
 \end{align*}
+Lastly,
 \begin{align*}
--\frac{p}{\kappa} - \sqrt{a^3(\alpha)} (J-1) &= 0
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1- \alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
 \end{align*}
+Substitute second equation into third
 \begin{align*}
-- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1- \alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 \\
-- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p \, a (\alpha) (J-1) + \frac{G_{c}}{c_{w} \ell } \bigg[ 1+ 2 \ell^2 \nabla^2 \alpha \bigg] &= 0 
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha)^5 (J-1)^2 + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
 \end{align*}
-Obtain for the final equation
+
+\subsection{Homogeneous Solution}
+Therefore, we can study the homogeneous solution by ignoring spatial derivatives of $\alpha$
 \begin{align*}
-\frac{G_c}{c_2 \ell} - 2 \mathcal{W} (\mathbf{F}) + 3p (J-1) +& \\
-2 \alpha \mathcal{W} (\mathbf{F})  - 6 p \alpha (J-1) +& \\
-3p (J-1) \alpha^2 + \frac{G_c}{c_w} 2 \ell \nabla^2 \alpha &= 0
+- 2 (1 - \alpha_{h}) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha_{h})^5 (J-1)^2 + \frac{G_{c}}{c_{w} \ell} &= 0 
 \end{align*}
+We can expand and arrange
+\begin{align*}
+- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 (1 - 5 \alpha_h + 10 \alpha_h^2 - 10 \alpha_h^3 + 5 \alpha_h^4 - \alpha_h^5) + \frac{G_{c}}{c_{w} \ell} &= 0 \\
+- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) + \frac{G_{c}}{c_{w} \ell} \\
+- 3 \kappa(J-1)^2 + 15 \kappa(J-1)^2 \alpha_h - 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0 \\
+- 2 \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 + \frac{G_{c}}{c_{w} \ell} + \big[ 2 \mathcal{W} (\mathbf{F}) + 15 \kappa(J-1)^2 \big] \alpha_h \\
+- 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0
+\end{align*}
+
+\subsection{Non-Homogeneous Solution}
+Now for the Non-homogenous solution, we have the following
+\begin{align*}
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha)^5 (J-1)^2 + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
+\end{align*}
+
+
+% Beginning of multiline comment
+\iffalse
 %===============================
 %===============================
 %===============================
@@ -340,7 +419,7 @@ Grouping terms, we obtain
 \end{subequations}
 Lastly, we have the following, (Neumann?)
 \begin{equation}
-\pdv{\alpha}{\mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \pdv{\alpha}{\mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
+\frac{\partial \alpha}{\partial \mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \frac{\partial \alpha}{\partial \mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
 \end{equation}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathbf{F}^{-T}\nabla q$
@@ -358,7 +437,7 @@ Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathb
 where $\mathbf{P} = a(\alpha) \frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} - p \sqrt{a^3(\alpha)} \frac{\partial J}{\partial \mathbf{F}}$ \\ \\
 We also want to deal with the first term where $(fg)' = f' g + f g'$
 \begin{align*}
-\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV = \int_{\Omega} (\mathbf{F} \cdot \bm{v})_{,X} \, dV - \int_{\Omega} \mathbf{P} \cdot \pdv{\bm{v}}{X} \, dV \\
+\int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV = \int_{\Omega} (\mathbf{F} \cdot \bm{v})_{,X} \, dV - \int_{\Omega} \mathbf{P} \cdot \frac{\partial \bm{v}}{\partial X} \, dV \\
 \end{align*}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 
@@ -371,7 +450,7 @@ Leaving
 - \frac{\varpi h^2}{2\mu} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \bigg[ \nabla \big( p \sqrt{a^3(\alpha)} \big) \cdot \nabla q \bigg] \,dV = 0 
 \end{split}
 \end{align}
-
+\fi
 %\section{Numerical Examples}
 %
 %\subsection{Benchmark: Uniaxial Tension of a Hyperelastic Bar}

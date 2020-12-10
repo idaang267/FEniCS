@@ -1,13 +1,15 @@
-# -------------------------------------------
 # FEniCS code  Variational Fracture Mechanics
 ################################################################################
-#                                                                              #
-# A stabilized mixed finite element method for gradient damage models of 	   #
-# fracture in incompressible hyperelastic materials                            #
-# Author: Bin Li                                                               #
-# Email: bl736@cornell.edu                                                     #
-# date: 10/01/2018                                                             #
-#                                                                              #
+#
+# A stabilized mixed finite element method for gradient damage models of
+# fracture in incompressible hyperelastic materials
+#
+# Modifed for plane stress cases
+#
+# Author: Bin Li
+# Email: bl736@cornell.edu
+# date: 10/01/2018
+#
 ################################################################################
 # e.g. python3 traction-stabilized.py --meshsize 100						   #
 ################################################################################
@@ -17,6 +19,7 @@ from __future__ import division
 from dolfin import *
 from mshr import *
 from scipy import optimize
+from ufl import rank
 
 import argparse
 import math
@@ -27,9 +30,7 @@ import sys
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from ufl import rank
 
-# ----------------------------------------------------------------------------
 # Parameters for DOLFIN and SOLVER
 # ----------------------------------------------------------------------------
 set_log_level(LogLevel.WARNING)  # 20 Information of general interest
@@ -69,11 +70,8 @@ tao_solver_parameters = {"maximum_iterations": 100,
                          "gradient_relative_tol": 1e-8,
                          "error_on_nonconvergence": True}
 
-# Implement the box constraints for damage field
-# --------------------------------------------------------------------
-# Variational problem for the damage problem
-# (non-linear - use variational inequality solvers in PETSc)
 
+# Variational problem for the damage problem (non-linear - use variational inequality solvers in PETSc)
 # Define the minimisation problem by using OptimisationProblem class
 class DamageProblem(OptimisationProblem):
     def __init__(self):
@@ -111,16 +109,16 @@ class InitialConditions(UserExpression):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 1)          # Shear modulus - normalized by n*k_b*T ?
+userpar.add("mu", 0.1)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 1000)
-userpar.add("meshsizeY", 500)
+userpar.add("meshsizeX", 800)
+userpar.add("meshsizeY", 400)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
-userpar.add("load_steps", 201)
-userpar.add("ell_multi", 20)
+userpar.add("load_steps", 11)
+userpar.add("ell_multi", 10)
 # Parse command-line options
 userpar.parse()
 
@@ -148,7 +146,7 @@ ell_multi = userpar["ell_multi"]
 # Naming parameters for saving output
 modelname = "2D-stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
+simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f_k_%.1f" % (Nx, Ny, S, ell_multi, kappa)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -241,20 +239,16 @@ def b(alpha):
 
 # Variational formulation
 # ----------------------------------------------------------------------------
+# Tensor space for projection of stress
+TT = TensorFunctionSpace(mesh,'DG',0)
 # Create function space for elasticity + damage
-# P2  = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-# P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-
-# # Stabilized mixed FEM for incompressible elasticity
-# TH  = MixedElement([P2,P1,P1])
-# # Define function spaces for displacement, pressure, and F_{33} in V_u
-# V_u = FunctionSpace(mesh, TH)
-
 P2 = VectorFunctionSpace(mesh, "Lagrange", 1)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
 P2elem = P2.ufl_element()
 P1elem = P1.ufl_element()
+# Stabilized mixed FEM for incompressible elasticity
 TH  = MixedElement([P2elem,P1elem,P1elem])
+# Define function spaces for displacement, pressure, and F_{33} in V_u
 V_u = FunctionSpace(mesh, TH)
 # Define function space for damage in V_alpha
 V_alpha = FunctionSpace(mesh, "Lagrange", 1)
@@ -296,7 +290,7 @@ bc_alpha = [bc_alpha0, bc_alpha1]
 # Initial conditions are created by using the class defined and then
 # interpolating into a finite element space
 init = InitialConditions(degree=1)          # Expression requires degree def.
-w_p.interpolate(init)                         # Interpolate current solution
+w_p.interpolate(init)                       # Interpolate current solution
 
 # Kinematics
 d = len(u)
@@ -310,6 +304,10 @@ Ic = tr(C) + (F33)**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
+# Nominal stress tensor
+def P(u, alpha):
+    return a(alpha)*mu*(F - inv(F)) - b(alpha)*p*J*inv(F)
+
 # Zero body force
 body_force = Constant((0., 0.))
 # Non-dimension non-negative stability parameter
@@ -326,7 +324,7 @@ elastic_potential = elastic_energy - external_work
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
       - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
-      + ((F33)**2 - 1 + p*J*(1-alpha)/mu)*v_F33*dx
+      + (F33**2 - 1 - p*J*(1-alpha)/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -388,6 +386,7 @@ for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
+    # Structure used for one printout of the statement
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
 
@@ -418,17 +417,25 @@ for (i_t, t) in enumerate(load_multipliers):
     # Updating the lower bound to account for the irreversibility of damage
     alpha_lb.vector()[:] = alpha.vector()
 
+    # Project nominal stress to tensor function space
+    PTensor = project(P(u, alpha), TT)
+    JScalar = project(J, P1)
+
     # Rename for paraview
     alpha.rename("Damage", "alpha")
     u.rename("Displacement", "u")
     p.rename("Pressure", "p")
     F33.rename("F33", "F33")
+    PTensor.rename("Nominal Stress", "P")
+    JScalar.rename("J", "J")
 
     # Write solution to file
     file_tot.write(alpha, t)
     file_tot.write(u, t)
     file_tot.write(p, t)
     file_tot.write(F33, t)
+    file_tot.write(PTensor,t)
+    file_tot.write(JScalar,t)
 
     # Post-processing
     # --------------------------------------------------------------------------
