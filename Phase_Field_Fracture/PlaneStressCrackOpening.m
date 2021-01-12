@@ -1,12 +1,13 @@
 clear all 
 close all
 x = linspace(-0.5,0,200);
-y = linspace(0.005,0.005,200);
+y = linspace(0.0,0.0,200);
 
 r = sqrt(x.^2 + y.^2);
+th = atan(y./x)+pi;
 
 % Theta (rad) 
-th = linspace(0, pi, 200);
+% th = linspace(0, pi, 200);
 % h0 is the height 
 h0 = 10000.0;
 % Amount of displacement 
@@ -21,13 +22,14 @@ a = [ac];
 c = [1.55 1.15];
 % c = [0.422449];
 for ii = 1:length(c)
-    y2(ii,:) = a*sin(th./2);
-    y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
-%     y1(ii,:) = c(ii)*cos(th);
+    y2(ii,:) = a*sqrt(r).*sin((th./2)); 
+    y1(ii,:) = c(ii)*r.*cos(th);
+
+%     y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
 %     y1(ii,:) = c(ii)*(y2(ii,:)/a).^2;
     
-    y2_norm(ii,:) = (1/a)*sin(th./2);
-    y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
+%     y2_norm(ii,:) = (1/a)*sin(th./2);
+%     y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
 end
 
 figure(1)
@@ -37,8 +39,6 @@ plot(-y1(2,:), y2(2,:), 'LineWidth', 2.5)
 hold on
 % h1 = plot(y1_1, y2_1, 'o');
 
-y1_1 = Disp.y5;
-y2_1 = Disp.y6; 
 
 h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
@@ -97,13 +97,13 @@ leg = legend([h1, h2, h3, h4],["X+3, Y+5", "X+3, Y+6", "X+3, Y+8", "X+3, Y+10"],
 ax = gca;
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
 ylabel("$y_2$", 'Interpreter', 'LaTeX')
-xlim([0 0.5])
+xlim([0 0.2])
 ylim([0 0.2])
 ax.FontSize = 15; 
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 
-saveas(gcf, 'Varying_c_comparison.eps', 'epsc')
+saveas(gcf, 'Varying_c.eps', 'epsc')
 
 %%
 figure(2)
