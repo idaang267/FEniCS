@@ -35,7 +35,7 @@ c = 1.55;
 %%
 k_I = 1;
 mu = 1;
-scale = 0.2;
+scale = 1.0;
 
 test_par = k_I/(4*mu); 
 
@@ -158,20 +158,33 @@ plot(linspace(1.5, 2.5, 101), scale*y2_rhs, 'b', 'LineWidth', 2.5)
 leg = legend([h1, h2],["u1", "u2"], 'Location', 'Best');
 
 %%
+x_fea = KI1E3S2.Points0;
+ux_fea = KI1E3S2.Disp0;
+uy_fea = KI1E3S2.Disp1;
+k_I = 0.001;
+mu = 1;
 
-x = linspace(-0.5,0,200);
-y = linspace(0.0,0.0,200);
+par = k_I/(4*mu); 
+
+x = linspace(-0.5,0,201);
+y = linspace(0.0,0.0,201);
 
 r = sqrt(x.^2 + y.^2);
 th = atan(y./x)+pi;
-uy = test_par*sqrt(r_b_r/(2*pi)).*(13/3*sin(th_b_r./2) - sin(3*th_b_r./2)) + ...
-         test_par^2*(1/(sqrt(2*pi)))^2*(th_b_r/15 - 52/45*(th_b_r/4 - 3/8*sin(2*th_b_r)) - 61/48*sin(th_b_r) + 26/15*sin(2*th_b_r) - 3/16*sin(3*th_b_r)) ;
-ux = test_par*sqrt(r_b_r/(2*pi)).*(7/3*cos(th_b_r./2) - cos(3*th_b_r./2)) + ...
-         test_par^2*(1/(sqrt(2*pi)))^2*(-1/15*log(r_b_r) - 52/45*(log(r_b_r) + 3/4*sin(th_b_r).^2) - 103/48*cos(th_b_r) + 26/15*cos(2*th_b_r) -3/16*cos(3*th_b_r));
+r = r(1,1:200);
+th = th(1,1:200);
+ux = par*sqrt(r/(2*pi)).*(7/3*cos(th./2) - cos(3*th./2)) + ...
+     par^2*(1/(sqrt(2*pi)))^2*(-1/15*log(r) - 52/45*(log(r) + 3/4*sin(th).^2) - 103/48*cos(th) + 26/15*cos(2*th) -3/16*cos(3*th));
+uy = par*sqrt(r/(2*pi)).*(13/3*sin(th./2) - sin(3*th./2)) + ...
+     par^2*(1/(sqrt(2*pi)))^2*(th/15 - 52/45*(th/4 - 3/8*sin(2*th)) - 61/48*sin(th) + 26/15*sin(2*th) - 3/16*sin(3*th)) ;
+% ux - ux(0, 0) and uy - uy(0, 0)
+uy_0 = uy - uy(end);
+ux_0 = ux - ux(end); 
 
 figure(1)
 hold on 
-plot(-ux(1,:), uy(1,:), 'LineWidth', 2.5)
+h1 = plot(x(1,1:200), (ux_0(1,:)), 'r', 'LineWidth', 2.5)
+plot(x(1,1:200), (uy_0(1,:)), 'b', 'LineWidth', 2.5)
 
-ux_fea = TestS2.Displacement0;
-uy_fea = TestS2.Displacement1;
+plot(x_fea, ux_fea, 'r--', 'LineWidth', 2.5)
+plot(x_fea, uy_fea, 'b--', 'LineWidth', 2.5)

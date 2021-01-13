@@ -88,12 +88,11 @@ userpar.add("mu", 1)           # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 500)
-userpar.add("meshsizeY", 400)
+userpar.add("meshsizeX", 300)
+userpar.add("meshsizeY", 30)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
 userpar.add("load_steps", 10)
-userpar.add("KI",1)         # Mode I loading
 
 # Parse command-line options
 userpar.parse()
@@ -104,22 +103,20 @@ load_max = userpar["load_max"]
 load_steps = userpar["load_steps"]
 
 # Geometry parameters
-L, H = 1.0, 1.0        # Length (x) and height (y-direction)
+L, H = 15.0, 1.5        # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
-# Material model parameters
+# Material model parameters for plane stress
 mu    = float(userpar["mu"])           # Shear modulus
-nu    = userpar["nu"]           # Poisson's Ratio
+nu    = userpar["nu"]                  # Poisson's Ratio
 E     = 2.0*(1.0+nu)*mu     # Young's Modulus
 lmbda = E*nu/((1.0-nu)**2)  # Lame Parameter
-kappa = (3-nu)/(1+nu)           # Plane Stress Bulk modulus
-#2*(1+nu)*mu/(3*(1-2*nu)) # Bulk Modulus
+kappa = (3.0-nu)/(1.0+nu)                  # Bulk Modulus
 
 # Fracture toughness and residual stiffness
-KI    = float(userpar["KI"])
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 
@@ -135,7 +132,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured and refined mesh
-mesh = Mesh("SimpleCrack.xml")
+mesh = Mesh("2DShearTestRef.xml")
 # mesh = RectangleMesh(Point(-L/2, 0), Point(L/2, H), Nx, Ny)
 # Mesh printout
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
@@ -157,31 +154,27 @@ AM_tolerance = 1e-4
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
-class right_boundary(SubDomain):
+class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], 0.5, 0.1*hsize)
-
-class left_boundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], -0.5, 0.1*hsize)
+        return on_boundary and near(x[1], 1.5, 0.1*hsize)
 
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], -0.5, 0.1 *hsize)
+        return on_boundary and near(x[1], 0.0, 0.1 *hsize)
 
-class top_boundary(SubDomain):
+class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0.5, 0.1*hsize)
+        return on_boundary and near(x[0], 15.0, 0.1*hsize)
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.0, 0.01) and near(x[1], 0.0, 0.01)
+        return near(x[0], 5.0, 0.1*hsize) and near(x[1], 0.75, 0.1*hsize)
 
 # Convert all boundary classes for visualization
-right_boundary = right_boundary()
-left_boundary = left_boundary()
-bot_boundary = bot_boundary()
 top_boundary = top_boundary()
+bot_boundary = bot_boundary()
+right_boundary = right_boundary()
+
 pin_point = pin_point()
 # Define lines and points
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
@@ -189,10 +182,9 @@ points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
 
 # show lines of interest
 lines.set_all(0)
-right_boundary.mark(lines, 1)
-left_boundary.mark(lines, 2)
-bot_boundary.mark(lines, 3)
-top_boundary.mark(lines, 4)
+top_boundary.mark(lines, 1)
+bot_boundary.mark(lines, 2)
+right_boundary.mark(lines, 3)
 file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
@@ -226,40 +218,20 @@ v_q = TestFunction(V_u)
 
 # Dirichlet boundary condition
 # --------------------------------------------------------------------
-# dim = V_u.dim()
-# ndim = mesh.geometry().dim()
-# coords = V_u.tabulate_dof_coordinates().reshape(dim, ndim)
-# xcoords = coords[:,0]
-# ycoords = coords[:,1]
-# POI_1 = np.where(xcoords == 0.5)[0]
-# POI_2 = np.where(np.logical_and(ycoords >= -0.5, ycoords <= 0.5))[0]
-# cor_RHS = coords[POI_1]
-# np.savetxt(savedir + '/coordinates.txt', cor_RHS)
-
 u00 = Constant((0.0))
 u0 = Expression(["0.0", "0.0"], degree=0)
+u1 = Expression("t", t= 0.0, degree=0)
+u2 = Expression("-t", t= 0.0, degree=0)
 
-# Cartesian to Polar
-r_bc = Expression("sqrt(x[0]*x[0]+x[1]*x[1])",degree=1)
-th_bc = Expression("atan2(x[1], x[0])", degree=1)
-
-ramp_par = 0.0
-# Displacement x and y
-u_bc = Expression(["ramp_par*(KI/(4*mu))*(sqrt(r_bc/(2*pi))*(7/3*cos(th_bc/2) - cos(3*th_bc/2))) + \
-                   ramp_par*ramp_par*(KI/(4*mu*sqrt(2*pi)))*(KI/(4*mu*sqrt(2*pi)))*(-1/15*std::log(r_bc)-52/45*(std::log(r_bc)+3/4*sin(th_bc)*sin(th_bc)) - 103/48*cos(th_bc) + 26/15*cos(2*th_bc)-3/16*cos(3*th_bc))",
-                   "ramp_par*(KI/(4*mu))*(sqrt(r_bc/(2*pi))*(13/3*sin(th_bc/2) - sin(3*th_bc/2))) + \
-                   ramp_par*ramp_par*(KI/(4*mu*sqrt(2*pi)))*(KI/(4*mu*sqrt(2*pi)))*(th_bc/15 - 52/45*(th_bc/4 - 3/8*sin(2*th_bc)) - 61/48*sin(th_bc) + 26/15*sin(2*th_bc) - 3/16*sin(3*th_bc))"],
-                   ramp_par=ramp_par, KI=KI, mu=mu, r_bc=r_bc, th_bc=th_bc, degree=1)
-
-# Define on respective boundary
-bc_u1 = DirichletBC(V_u.sub(0), u_bc, top_boundary)
-bc_u2 = DirichletBC(V_u.sub(0), u_bc, right_boundary)
-bc_u3 = DirichletBC(V_u.sub(0), u_bc, bot_boundary)
-bc_u4 = DirichletBC(V_u.sub(0), u_bc, left_boundary)
-# bc_u9 = DirichletBC(V_u.sub(0), u0, pin_point)
+# roller boundary
+bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
+# bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method=)
+# top and bottom boundaries are subjected to a displacement in the y direction
+bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
 
 # Combine
-bc_u = [bc_u1, bc_u2, bc_u3, bc_u4]
+bc_u = [bc_u0, bc_u1, bc_u2]
 
 # Initial Conditions (IC)
 #------------------------------------------------------------------------------
@@ -288,7 +260,7 @@ def P(u):
 body_force = Constant((0., 0.))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+                    - p*(J-1.0)*dx - 1./(2.*lmbda)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
@@ -307,7 +279,7 @@ solver_up.parameters.update(solver_up_parameters)
 # info(solver_up.parameters, True) # uncomment to see available parameters
 
 # loading and initialization of vectors to store time datas
-test_scale = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
 # energies         = np.zeros((len(load_multipliers), 5))
 # iterations       = np.zeros((len(load_multipliers), 2))
 
@@ -326,14 +298,14 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(test_scale):
-    ramp_par = test_scale[i_t]
+for (i_t, t) in enumerate(load_multipliers):
 
     # Update the displacement with each iteration
-    u_bc.ramp_par = ramp_par
+    u1.t = t * ut
+    u2.t = t * ut
 
     if MPI.rank(MPI.comm_world) == 0:
-        print("\033[1;32m--- Starting of step {0:2d}: test = {1:2f} ---\033[1;m".format(i_t, test_scale[i_t]))
+        print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
 
     # Solve elastic problem
     solver_up.solve()

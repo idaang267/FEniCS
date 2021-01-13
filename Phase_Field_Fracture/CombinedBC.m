@@ -33,9 +33,9 @@ lambda_a = 1 + Delta/h0;
 a = 2*sqrt(h0/pi)*(lambda_a - inv(lambda_a));
 c = 1.55;
 %%
-k_I = 1;
+k_I = 0.001;
 mu = 1;
-scale = 0.2;
+scale = 1.0;
 
 test_par = k_I/(4*mu); 
 
@@ -158,9 +158,11 @@ plot(linspace(1.5, 2.5, 101), scale*y2_rhs, 'b', 'LineWidth', 2.5)
 leg = legend([h1, h2],["u1", "u2"], 'Location', 'Best');
 
 %%
-k_I = 1;
+x_fea = KI1E3S2.Points0;
+ux_fea = KI1E3S2.Disp0;
+uy_fea = KI1E3S2.Disp1;
+k_I = 0.001;
 mu = 1;
-scale = 0.2;
 
 par = k_I/(4*mu); 
 
@@ -181,8 +183,11 @@ ux_0 = ux - ux(end);
 
 figure(1)
 hold on 
-plot(ux_0(1,:), uy_0(1,:), 'LineWidth', 2.5)
+h1 = plot(x(1,1:200), (ux_0(1,:)), 'r', 'LineWidth', 2.5)
+h2 = plot(x(1,1:200), (uy_0(1,:)), 'b', 'LineWidth', 2.5)
 
-ux_fea = TestS1.Displacement0;
-uy_fea = TestS1.Displacement1;
-plot(ux_fea, uy_fea, 'LineWidth', 2.5)
+plot(x_fea, ux_fea, 'r--', 'LineWidth', 2.5)
+plot(x_fea, uy_fea, 'b--', 'LineWidth', 2.5)
+xlabel("X-Coord", 'Interpreter', 'LaTeX')
+ylabel("Displacement", 'Interpreter', 'LaTeX')
+leg = legend([h1, h2],["X-Disp", "Y-Disp"], 'Location', 'Best');

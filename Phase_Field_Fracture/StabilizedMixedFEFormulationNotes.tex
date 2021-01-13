@@ -174,11 +174,15 @@ Following the code, we have the following energy functional of the energy proble
 \widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
 \widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda}
 \end{align*}
+Changes to relieve the residual stresses
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - (\alpha^2 + k_\ell) \frac{p^2}{2 \lambda} 
+\end{equation}
 Where we know $k_\ell$ is a modeling parameter, so we can list the energy functional as: 
 \begin{equation}
-\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} 
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \alpha^2 \frac{p^2}{2 \lambda} 
 \end{equation}
-Derive the 1st PK stress
+Derive the 1st PK stress, the change to the last term does not affect this derivation: 
 \begin{align*}
 \mathbf{P} &= \frac{\partial \widetilde{W} (\mathbf{F})}{\partial \mathbf{F}} \\
 		    &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p \frac{\partial \det \mathbf{F}}{\partial \mathbf{F}} \\
