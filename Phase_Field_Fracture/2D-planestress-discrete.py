@@ -92,8 +92,8 @@ userpar.add("meshsizeX", 500)
 userpar.add("meshsizeY", 400)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
-userpar.add("load_steps", 10)
-userpar.add("KI",1)         # Mode I loading
+userpar.add("load_steps", 2)
+userpar.add("KI",1e-3)         # Mode I loading
 
 # Parse command-line options
 userpar.parse()
@@ -110,13 +110,12 @@ Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
-# Material model parameters
-mu    = float(userpar["mu"])           # Shear modulus
+# Material model parameters for plane stress
+mu    = float(userpar["mu"])    # Shear modulus
 nu    = userpar["nu"]           # Poisson's Ratio
-E     = 2.0*(1.0+nu)*mu     # Young's Modulus
-lmbda = E*nu/((1.0-nu)**2)  # Lame Parameter
-kappa = (3-nu)/(1+nu)           # Plane Stress Bulk modulus
-#2*(1+nu)*mu/(3*(1-2*nu)) # Bulk Modulus
+E     = 2.0*(1.0+nu)*mu         # Young's Modulus
+lmbda = E*nu/((1.0-nu)**2)      # Lame Parameter
+kappa = (3-nu)/(1+nu)           # Bulk modulus
 
 # Fracture toughness and residual stiffness
 KI    = float(userpar["KI"])
@@ -287,15 +286,15 @@ def P(u):
 # Zero body force
 body_force = Constant((0., 0.))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+elastic_energy    = (mu/2.)*(Ic-3.-2.*ln(J))*dx \
+                    - p*(J-1.)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Define the stabilization term and the additional weak form eq.
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
-     + (F33**2 - 1 - p*J/mu)*v_F33*dx
+     + (F33**2 - 1. - p*J/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 

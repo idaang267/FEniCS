@@ -158,9 +158,9 @@ plot(linspace(1.5, 2.5, 101), scale*y2_rhs, 'b', 'LineWidth', 2.5)
 leg = legend([h1, h2],["u1", "u2"], 'Location', 'Best');
 
 %%
-x_fea = KI1E3S2.Points0;
-ux_fea = KI1E3S2.Disp0;
-uy_fea = KI1E3S2.Disp1;
+x_fea = KI0S1.Points0;
+ux_fea = KI0S1.Disp0;
+uy_fea = KI0S1.Disp1;
 k_I = 0.001;
 mu = 1;
 
@@ -191,3 +191,6 @@ plot(x_fea, uy_fea, 'b--', 'LineWidth', 2.5)
 xlabel("X-Coord", 'Interpreter', 'LaTeX')
 ylabel("Displacement", 'Interpreter', 'LaTeX')
 leg = legend([h1, h2],["X-Disp", "Y-Disp"], 'Location', 'Best');
+
+saveas(gcf, 'BouchbinderDisp.eps', 'epsc')
+

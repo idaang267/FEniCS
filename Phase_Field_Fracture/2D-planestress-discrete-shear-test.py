@@ -1,14 +1,13 @@
 # FEniCS code  Fracture Mechanics
 ################################################################################
 #
-# A stabilized mixed finite element method for brittle fracture in
-# incompressible hyperelastic materials
+# A mixed finite element method for brittle fracture in incompressible
+# hyperelastic materials
 #
-# Modified for plane stress cases
+# Modified for plane stress - no phase field terms
 #
 # Author: Bin Li
 # Email: bl736@cornell.edu
-# date: 10/01/2018
 #
 ################################################################################
 # e.g. python3 traction-stabilized.py --meshsize 100						   #
@@ -132,7 +131,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured and refined mesh
-mesh = Mesh("2DShearTestRef.xml")
+mesh = Mesh("2DRectangle.xml")
 # mesh = RectangleMesh(Point(-L/2, 0), Point(L/2, H), Nx, Ny)
 # Mesh printout
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
@@ -259,15 +258,15 @@ def P(u):
 # Zero body force
 body_force = Constant((0., 0.))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - p*(J-1.0)*dx - 1./(2.*lmbda)*p**2*dx
+elastic_energy    = (mu/2.)*(Ic-3.-2.*ln(J))*dx \
+                    - p*(J-1.)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
-# Define the stabilization term and the additional weak form eq.
 # Compute directional derivative about w_p in the direction of v (Gradient)
+# Define the additional weak form eq. for plane stress
 F_u = derivative(elastic_potential, w_p, v_q) \
-     + (F33**2 - 1 - p*J/mu)*v_F33*dx
+     + (F33**2 - 1. - p*J/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -280,8 +279,8 @@ solver_up.parameters.update(solver_up_parameters)
 
 # loading and initialization of vectors to store time datas
 load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
-# energies         = np.zeros((len(load_multipliers), 5))
-# iterations       = np.zeros((len(load_multipliers), 2))
+# energies       = np.zeros((len(load_multipliers), 5))
+# iterations     = np.zeros((len(load_multipliers), 2))
 
 # Split into displacement and pressure
 (u, p, F33) = w_p.split()
