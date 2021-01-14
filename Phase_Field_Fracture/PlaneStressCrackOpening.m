@@ -1,5 +1,8 @@
 clear all 
 close all
+
+%% Long and Hui displacement BCs
+
 x = linspace(-0.5,0,200);
 y = linspace(0.0,0.0,200);
 
@@ -9,36 +12,25 @@ th = atan(y./x)+pi;
 % Theta (rad) 
 % th = linspace(0, pi, 200);
 % h0 is the height 
-h0 = 10000.0;
+h0 = 1.0;
 % Amount of displacement 
-Delta = 100; 
+Delta = 0.01; 
 % stretch in direction of displacement 
 lambda_a = 1 + Delta/h0;
 
 % Known a for specific geometry 
-ac = 2*sqrt(h0/pi)*(lambda_a - inv(lambda_a));
-a = [ac];
+a = 2*sqrt(h0/pi)*(lambda_a - inv(lambda_a));
 % Unknown amplitudes
-c = [1.55 1.15];
-% c = [0.422449];
-for ii = 1:length(c)
-    y2(ii,:) = a*sqrt(r).*sin((th./2)); 
-    y1(ii,:) = c(ii)*r.*cos(th);
-
-%     y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
-%     y1(ii,:) = c(ii)*(y2(ii,:)/a).^2;
-    
-%     y2_norm(ii,:) = (1/a)*sin(th./2);
-%     y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
-end
+c = 1.55 ;
+% Displacement BC: 
+y2 = a*sqrt(r).*sin(th./2); 
+y1 = c*r.*cos(th);
 
 figure(1)
 hold on 
 plot(-y1(1,:), y2(1,:), 'LineWidth', 2.5)
-plot(-y1(2,:), y2(2,:), 'LineWidth', 2.5)
 hold on
 % h1 = plot(y1_1, y2_1, 'o');
-
 
 h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
@@ -49,6 +41,12 @@ ylim([0 0.04])
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
 saveas(gcf, 'Log.eps', 'epsc')
+
+%     y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
+%     y1(ii,:) = c(ii)*(y2(ii,:)/a).^2;
+    
+%     y2_norm(ii,:) = (1/a)*sin(th./2);
+%     y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
 
 %% Plotting
 

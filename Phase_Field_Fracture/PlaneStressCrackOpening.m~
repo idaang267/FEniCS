@@ -9,28 +9,25 @@ th = atan(y./x)+pi;
 % Theta (rad) 
 % th = linspace(0, pi, 200);
 % h0 is the height 
-h0 = 10000.0;
+h0 = 1.0;
 % Amount of displacement 
-Delta = 100; 
+Delta = 0.01; 
 % stretch in direction of displacement 
 lambda_a = 1 + Delta/h0;
 
 % Known a for specific geometry 
 ac = 2*sqrt(h0/pi)*(lambda_a - inv(lambda_a));
-a = [ac];
 % Unknown amplitudes
-c = [1.15 1.55];
-% c = [0.422449];
-for ii = 1:length(c)
-    y2(ii,:) = a*sqrt(r).*sin((th./2)); 
-    y1(ii,:) = c(ii)*r.*cos(th);
+c = 1.55 ;
+% Displacement BC: 
+y2(ii,:) = a*sqrt(r).*sin((th./2)); 
+y1(ii,:) = c(ii)*r.*cos(th);
 
 %     y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
 %     y1(ii,:) = c(ii)*(y2(ii,:)/a).^2;
     
 %     y2_norm(ii,:) = (1/a)*sin(th./2);
 %     y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
-end
 
 figure(1)
 hold on 
@@ -97,7 +94,7 @@ leg = legend([h1, h2, h3, h4],["X+3, Y+5", "X+3, Y+6", "X+3, Y+8", "X+3, Y+10"],
 ax = gca;
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
 ylabel("$y_2$", 'Interpreter', 'LaTeX')
-xlim([0 0.5])
+xlim([0 0.2])
 ylim([0 0.2])
 ax.FontSize = 15; 
 set(gca, 'XScale', 'log')
