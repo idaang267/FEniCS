@@ -1,27 +1,66 @@
 clear all 
 close all
-x = linspace(-0.5,0,200);
+ux_f = TestS2.uxux00;
+uy_f = TestS2.uyuy00;
+
+x_f = TestS2.Points0;
+y1_f = TestS2.y1;
+y2_f = TestS2.y2; 
+
+%% Long and Hui displacement BCs
+x = linspace(-2.5,0,200);
 y = linspace(0.0,0.0,200);
 
 r = sqrt(x.^2 + y.^2);
-th = atan(y./x)+pi;
-
 % Theta (rad) 
-% th = linspace(0, pi, 200);
+th = atan(y./x)+pi;
+th(end) = pi; 
 % h0 is the height 
 h0 = 1.0;
 % Amount of displacement 
 Delta = 0.01; 
-% stretch in direction of displacement 
+% Stretch
 lambda_a = 1 + Delta/h0;
 
 % Known a for specific geometry 
-ac = 2*sqrt(h0/pi)*(lambda_a - inv(lambda_a));
+a = 2*sqrt(h0/pi)*(lambda_a - 1/lambda_a);
 % Unknown amplitudes
-c = 1.55 ;
+c = 1000 ;
 % Displacement BC: 
-y2(ii,:) = a*sqrt(r).*sin((th./2)); 
-y1(ii,:) = c(ii)*r.*cos(th);
+y2 = a*sqrt(r).*sin(th./2); 
+y1 = c*r.*cos(th);
+
+figure(5)
+h1 = plot(y1,y2, 'ro', 'LineWidth', 2.5)
+hold on 
+h2 = plot(y1_f, y2_f, 'bo-', 'LineWidth', 2.5)
+xlabel("$y_1$", 'Interpreter', 'LaTeX')
+ylabel("$y_2$", 'Interpreter', 'LaTeX')
+ax.FontSize = 15; 
+leg = legend([h1, h2],["Analytical", "FEA"], 'Location', 'Best');
+
+figure(1)
+h1 = plot(x, y1(1,:), 'r', 'LineWidth', 2.5)
+hold on 
+h2 = plot(x_f, y1_f, 'b', 'LineWidth', 2.5)
+
+figure(2)
+hold on
+plot(x, y2(1,:), 'r', 'LineWidth', 2.5)
+plot(x_f, y2_f, 'b', 'LineWidth', 2.5)
+
+h1 = plot(-y1(1,:), y2(1,:), 'r', 'LineWidth', 2.5);
+hold on 
+h2 = plot(y1_f, y2_f, 'b', 'LineWidth', 2.5);
+
+% h1 = plot(y1_1, y2_1, 'o');
+
+
+xlim([0 0.04])
+ylim([0 0.04])
+set(gca, 'XScale', 'log')
+set(gca, 'YScale', 'log')
+saveas(gcf, 'Log.eps', 'epsc')
 
 %     y1(ii,:) = 2*c(ii)*((y2(ii,:)/a).^2).*(cos(th)/(1-cos(th)));
 %     y1(ii,:) = c(ii)*(y2(ii,:)/a).^2;
@@ -29,44 +68,7 @@ y1(ii,:) = c(ii)*r.*cos(th);
 %     y2_norm(ii,:) = (1/a)*sin(th./2);
 %     y1_norm(ii,:) = 2*c(ii)*y2(ii,:).^2*(cos(th)/(1-cos(th)));    
 
-figure(1)
-hold on 
-plot(-y1(1,:), y2(1,:), 'LineWidth', 2.5)
-plot(-y1(2,:), y2(2,:), 'LineWidth', 2.5)
-hold on
-% h1 = plot(y1_1, y2_1, 'o');
-
-
-h1 = plot(y1_1, y2_1, 'LineWidth', 2.5);
-xlabel("$y_1$", 'Interpreter', 'LaTeX')
-ylabel("$y_2$", 'Interpreter', 'LaTeX')
-ax.FontSize = 15; 
-xlim([0 0.04])
-ylim([0 0.04])
-set(gca, 'XScale', 'log')
-set(gca, 'YScale', 'log')
-saveas(gcf, 'Log.eps', 'epsc')
-
 %% Plotting
-
-y1_1 = VaryingC.y1;
-y2_1 = VaryingC.y2;
-y1_2 = VaryingC.y3;
-y2_2 = VaryingC.y4;
-y1_3 = VaryingC.y5;
-y2_3 = VaryingC.y6;
-y1_4 = VaryingC.y7;
-y2_4 = VaryingC.y8;
-y1_5 = VaryingC.y9;
-y2_5 = VaryingC.y10;
-y1_6 = VaryingC.y11;
-y2_6 = VaryingC.y12;
-y1_7 = VaryingC.y13;
-y2_7 = VaryingC.y14;
-y1_8 = VaryingC.y15;
-y2_8 = VaryingC.y16;
-y1_9 = VaryingC.y17;
-y2_9 = VaryingC.y18;
 
 figure(1)
 hold on
