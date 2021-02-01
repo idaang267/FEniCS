@@ -9,7 +9,8 @@
 \usepackage[round,numbers]{natbib}
 \usepackage[colorlinks = false]{hyperref}
 \usepackage{xcolor}
-
+\usepackage{verbatim}
+\usepackage{listings}
 
 \numberwithin{equation}{section}
 \begin{document}
@@ -44,7 +45,12 @@ $\lambda$: Lamé modulus
 \begin{equation}
 \lambda = \frac{\nu E}{(1+ \nu) (1 - 2 \nu)}
 \end{equation}
-$\mathcal{E}_\ell$: potential energy functional 
+For Plane Stress
+\begin{equation}
+\kappa = \frac{3- \nu}{1 +\nu}, \quad \lambda = \frac{E \nu}{(1 - \nu)^2}
+\end{equation}
+$\mathcal{E}_\ell$: potential energy functional \\
+$a(\alpha)$ is the decreasing stiffness modulation function \\ 
 $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume \\
 $c_w$ is a normalization constant 
 
@@ -82,75 +88,72 @@ We instead consider a damage dependent relaxation of the incompressibility const
 \begin{equation}\label{EqEnergyRelaxed}
 \widetilde{\mathcal{W}}(\mathbf{F},\alpha) = a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2}\kappa\left(J-1\right)^2
 \end{equation}
-where the decreasing stiffness modulation function and $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume
+where the decreasing stiffness modulation function is $a (\alpha)$ and $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume
 \begin{equation}\label{EqStiffMod}
 a (\alpha) = (1 - \alpha)^2 \quad w(\alpha) = \alpha
 \end{equation}
-In the code we have the following definition
+In the code, we have the following definition
 \begin{align*}
 b (\alpha) = (1 - \alpha)^3 = \sqrt{a^3(\alpha)}
 \end{align*}
 To circumvent numerical difficulties, we resort to the classical mixed formulation and introduce the pressure-like field 
-\begin{equation}\label{eq_pressure}
-p = -\sqrt{a^3(\alpha)}\kappa\left(J-1\right),
-\end{equation}
-as an independent variable along with the displacement field. \\ \\
-Lastly, the normalization constant is defined as: 
-\begin{align}\label{NormConst} % normalization constant.
-c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
+\begin{align}\label{eq_pressure}
+\begin{split}
+p &= -\sqrt{a^3(\alpha)}\kappa\left(J-1\right) \\ 
+p &= - b(\alpha) \kappa \left(J-1\right) 
+\end{split}
 \end{align}
+as an independent variable along with the displacement field. \\ \\
+Following the code, we have the following energy functional of the energy problem
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
+\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda}
+\end{align*}
+Changes to relieve the residual stresses seen in the plane stress model:
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_1 - 3 - 2 \ln J) - b(\alpha) p (J-1) - (\alpha^2 + k_\ell) \frac{p^2}{2 \lambda} 
+\end{equation}
+Where we know $k_\ell$ is a modeling parameter, so we can list the final energy functional as: 
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_1 - 3 - 2 \ln J) - b(\alpha) p (J-1) - \alpha^2 \frac{p^2}{2 \lambda} 
+\end{equation}
 The first Piola-Kirchhoff stress tensor is given: 
 \begin{align}\label{eq_firstPK}
 \begin{split}
-\mathbf{P} &= \frac{\partial \tilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
+\mathbf{P} &= \frac{\partial \widetilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
 		 &= \frac{\partial}{\partial \mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
-		 &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
-\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
-\mathbf{P} &= a(\alpha)\frac{\mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} 
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} \quad \text{substituting in pressure equation} \\
+\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b(\alpha) p J \mathbf{F}^{-T} 
 \end{split}
 \end{align}
-Note that we DO NOT consider this form of the modified functional; therefore, we do not consider this PK stress. 
 
 %===============================
-\subsubsection{According to the rough draft}
-Therefore our modified function:
-\begin{align*}
-\widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \kappa (J-1)^2 \\
-	&= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \frac{-p}{\sqrt{a^{3}(\alpha)}} (J-1) \\
-	&= a(\alpha)\mathcal{W}(\mathbf{F}) - \sqrt{a^3(\alpha)} \frac{p}{2} (J-1) \\
- \widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1)
-\end{align*}
-In the rough draft of the paper we have Eq. 5: energy functional of a possibly fractured elastic body with isotropic surface energy
-\begin{align*}
-\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &=\int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
-\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1) \bigg] d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega \\
-\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} a(\alpha)\mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) \frac{p}{2} (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
-\end{align*}
-\textcolor{red}{Note that we are missing one term.} 
-
-%===============================
-\subsubsection{According to the code}
-In the code we have the following for the energy functional of the energy problem 
-\begin{align*}
-\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} 
-\end{align*}
-Energy functional, where we ignore the surface term 
-\begin{align*}
-\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &= \int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
-	&= \int_{\Omega} a(\alpha) \mathcal{W} (\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) p (J-1) d \Omega - \int_{\Omega} \frac{p^2}{2 \lambda} d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
-\end{align*}
-
-%===============================
-\subsubsection{According to a derivation from Bin2020 Paper}
-Versus Eq. 21 where we drop $\lambda_b$ which is not a consideration in this formulation
+\subsubsection{Derivation from Bin2020 Paper}
+Here, unlike Eq. 21 from Bin2020, we drop $\lambda_b$ which is not a consideration in this formulation
 \begin{align}
-\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) =\int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}, \alpha) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}, \alpha) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
+\end{align}
+The normalization constant is defined as: 
+\begin{align}\label{NormConst} % normalization constant.
+c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
 \end{align}
 Starting from Eq. 25 in the 2020 Li and Bouklas paper where $\kappa$ is the bulk modulus 
+\begin{equation}
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \Lambda, \alpha\right) = \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} \Lambda(p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega
+\end{equation}
+Identify the stationary point of the energy functional with respect to \textcolor{red}{pressure} (not $\Lambda$)
+\begin{align*}
+\begin{split}
+\frac{\partial \mathcal{E}_{\ell}}{\partial p} &= \int_{\Omega} \frac{p}{\kappa} d \Omega + \int_{\Omega} \Lambda d \Omega \\
+0 &= \frac{p}{\kappa} + \Lambda \rightarrow \Lambda = -p/\kappa 
+\end{split}
+\end{align*}
+Substituting this relationship into the energy functional yields: 
 \begin{align}
 \begin{split}
-\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \Lambda, \alpha\right) &= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} \Lambda(p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \quad \Lambda = -p/\kappa \\
-		&= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} - \frac{p}{\kappa} (p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \\
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} - \frac{p}{\kappa} (p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \\
 		&= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega -\int_{\Omega} \frac{p^2}{\kappa} d \Omega - \int_{\Omega} \frac{p}{\kappa} \sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega \\
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1)) d \Omega
 \end{split}
@@ -161,7 +164,7 @@ Substitute in $\mathcal{E}_{\ell} (\boldsymbol{u}, \alpha )$ and substitute Eq. 
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega 
 \end{split}
 \end{align*}
-After taking the directional derivative of the prior equation, we can introduce the stabilization term 
+The prior equation includes the full weak form, unless we want to consider linear interpolation of all fields. In that case, we can introduce the stabilization term 
 \begin{align*}
 - \frac{\varpi h^2}{2\mu} \sqrt{a^3(\alpha)} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV = 0 
 \end{align*}
@@ -169,38 +172,29 @@ After taking the directional derivative of the prior equation, we can introduce 
 %===============================
 %===============================
 \subsection{Changes for 2D Plane-Stress Models}
-Following the code, we have the following energy functional of the energy problem
+Recalling the 1st PK stress in Eq. \ref{eq_firstPK}.
 \begin{align*}
-\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
-\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda}
+\mathbf{P} = a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p J \mathbf{F}^{-T}
 \end{align*}
-Changes to relieve the residual stresses
-\begin{equation}
-\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - (\alpha^2 + k_\ell) \frac{p^2}{2 \lambda} 
-\end{equation}
-Where we know $k_\ell$ is a modeling parameter, so we can list the energy functional as: 
-\begin{equation}
-\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \alpha^2 \frac{p^2}{2 \lambda} 
-\end{equation}
-Derive the 1st PK stress, the change to the last term does not affect this derivation: 
+In a plane-stress case, the $\mathbf{P_{33}}$ component is zero:
 \begin{align*}
-\mathbf{P} &= \frac{\partial \widetilde{W} (\mathbf{F})}{\partial \mathbf{F}} \\
-		    &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p \frac{\partial \det \mathbf{F}}{\partial \mathbf{F}} \\
-\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b (\alpha) p J \mathbf{F}^{-T}
-\end{align*}
-Taking the third component to be zero, in the plane stress case
-\begin{align*}
-\mathbf{P}_{33} = a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
-(1- \alpha)^2 \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha)^3 p J \mathbf{F}^{-1}_{33} &= 0 \\
-\mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - (1- \alpha) p J \mathbf{F}^{-1}_{33} &= 0 \\
-\mathbf{F}_{33} - \mathbf{F}^{-1}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} &= 0 \\
-\mathbf{F}_{33} \mathbf{F}_{33} - \mathbf{F}^{-1}_{33} \mathbf{F}_{33} - \frac{(1- \alpha) p J}{\mu} \mathbf{F}^{-1}_{33} \mathbf{F}_{33} &= 0 \\
-\mathbf{F}_{33}^2 - 1 - \frac{(1- \alpha) p J}{\mu} &= 0
+\mathbf{P}_{33} = a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} &= 0 
 \end{align*}
 This can be multiplied by its associated test function to obtain the weak form 
 \begin{align*}
-\int_{\Omega} \bigg( \mathbf{F}_{33}^2 - 1 - \frac{(1-\alpha) p J}{\mu} \bigg) v_{F_{33}} dV &= 0
+\int_{\Omega} \bigg(a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} \bigg) v_{F_{33}} dV &= 0
 \end{align*}
+In the FEniCS code, we expand the solution space to include displacement, pressure, and a component of the deformation gradient $\mathbf{F_{33}}$. Therefore, we include a change to the invariants of the deformation tensors: 
+\begin{lstlisting}
+J = det(F)*F33
+Ic = tr(C) + F33**2
+\end{lstlisting}
+Together with the weak form from above: 
+\begin{lstlisting}
+F_u = derivative(elastic_potential, w_p, v_q) \
+      + (a(alpha)*mu*(F33 - 1/F33) - b(alpha)*p*J/F33)*v_F33*dx
+\end{lstlisting}
+
 %===============================
 %===============================
 \subsubsection{Changes for 2D Discrete Crack Model}
@@ -210,11 +204,6 @@ If we are considering a discrete fracture method
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega \\
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} p(J-1) d \Omega \\
 \end{split}
-\end{align*}
-with the stabilization term and plane stress in the weak form 
-\begin{align*}
-- \frac{\varpi h^2}{2\mu} \int_{\Omega} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV &= 0 \\
-\int_{\Omega} \bigg( \mathbf{F}_{33}^2 - 1 - \frac{p J}{\mu} \bigg) v_{F_{33}} dV &= 0
 \end{align*}
 where we have assumed for the energy functional 
 \begin{align*}
@@ -230,6 +219,11 @@ Taking the third component to be zero
 P_{33} &=  \mu (F_{33} - F_{33}^{-1}) - p J F_{33}^{-1} = 0 \\
 		&= F_{33} - F_{33}^{-1} - \frac{p J}{\mu} F_{33}^{-1} = 0 \\
 P_{33} &= F_{33}^2 - 1 - \frac{p J}{\mu} = 0
+\end{align*}
+with the stabilization term and plane stress in the weak form 
+\begin{align*}
+- \frac{\varpi h^2}{2\mu} \int_{\Omega} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV &= 0 \\
+\int_{\Omega} \bigg( \mathbf{F}_{33}^2 - 1 - \frac{p J}{\mu} \bigg) v_{F_{33}} dV &= 0
 \end{align*}
 
 %===============================
@@ -467,5 +461,38 @@ Leaving
 
 \begin{equation}
 \end{equation}
+
+\begin{comment}
+%===============================
+\subsubsection{According to the rough draft}
+Therefore our modified function:
+\begin{align*}
+\widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \kappa (J-1)^2 \\
+	&= a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2} \frac{-p}{\sqrt{a^{3}(\alpha)}} (J-1) \\
+	&= a(\alpha)\mathcal{W}(\mathbf{F}) - \sqrt{a^3(\alpha)} \frac{p}{2} (J-1) \\
+ \widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1)
+\end{align*}
+In the rough draft of the paper we have Eq. 5: energy functional of a possibly fractured elastic body with isotropic surface energy
+\begin{align*}
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &=\int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
+\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) - b(\alpha) \frac{p}{2} (J-1) \bigg] d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega \\
+\mathcal{E}_{\ell}(\boldsymbol{u}, p, \alpha) &=\int_{\Omega} a(\alpha)\mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) \frac{p}{2} (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\end{align*}
+\textcolor{red}{Note that we are missing one term.} 
+
+%===============================
+\subsubsection{According to the code}
+In the code we have the following for the energy functional of the energy problem 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} 
+\end{align*}
+Energy functional, where we ignore the surface term 
+\begin{align*}
+\mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) &= \int_{\Omega} \widetilde{\mathcal{W}}(\mathbf{F},\alpha)  d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega - \int_{\partial_N \Omega} \mathbf{\tilde{g}_0} \cdot \mathbf{u} d A \\
+	&= \int_{\Omega} a(\alpha) \mathcal{W} (\mathbf{F}) d \Omega - \int_{\Omega} b(\alpha) p (J-1) d \Omega - \int_{\Omega} \frac{p^2}{2 \lambda} d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
+\end{align*}
+
+\end{comment}
+
 
 \end{document}
