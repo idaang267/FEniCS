@@ -18,8 +18,8 @@ colors = {[0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.
 
 SubPlotTitle = {"ellx = 5", "ellx = 10", "ellx = 15", "ellx = 20"};
 
-% DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/Test_ellx_change/';
-DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/Test_ellx_change/';
+DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/PressureProfile/';
+% DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/Test_ellx_change/';
 count = 1; 
 for i = 1:length(ellx)
     hsize(i) = Y/Ny(i);
@@ -52,25 +52,7 @@ figure(1)
 xlabel("Y-Coordinates")
 ylabel("Pressure")
 
-xline(0, '--k')
-for ii = 1:20
-    xline(ii*hsize(end), '--k')
-end
 % leg = legend(["5: " + num2str(PhaseFieldWidth(1)), "5: " + num2str(PhaseFieldWidth(2)), "5: " + num2str(PhaseFieldWidth(3)), "5: " + + num2str(PhaseFieldWidth(4))], 'Location', 'Best');
-leg = legend(["10", "100", "1000", "10000"], 'Location', 'Best');
+leg = legend([h1(1), h1(2), h1(3), h1(4)], ["10", "100", "1000", "10000"], 'Location', 'Best');
 title(leg, "$\kappa$", 'Interpreter', 'Latex');
 saveas(gcf, "PressureProfile.fig")
-
-figure(2) 
-xlabel("Y-Coordinates")
-ylabel("$P_{33}$", 'Interpreter', 'Latex')
-saveas(gcf, "StressProfile.fig")
-
-xline(0, '--k')
-for ii = 1:50
-    xline(ii*hsize(end), '--k')
-end
-% leg = legend(["5: " + num2str(PhaseFieldWidth(1)), "5: " + num2str(PhaseFieldWidth(2)), "5: " + num2str(PhaseFieldWidth(3)), "5: " + + num2str(PhaseFieldWidth(4))], 'Location', 'Best');
-leg = legend(["10", "100", "1000", "10000"], 'Location', 'Best');
-title(leg, "$\kappa$", 'Interpreter', 'Latex');
-saveas(gcf, 'ResidualStressProfile.eps', 'epsc')
