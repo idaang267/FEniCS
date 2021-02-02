@@ -2,9 +2,9 @@ clear all
 close all
 
 Y = 2;
-Nx = [250, 500, 500, 500, 500, 500, 500, 500];
-Ny = [200, 200, 200, 200, 200, 200, 200, 200];
-kappa = [10, 10000, 10, 10000, 10, 10000, 10, 10000];
+Nx = [250, 500, 250, 500, 250, 500, 250, 500];
+Ny = [100, 200, 100, 200, 100, 200, 100, 200];
+kappa = [10, 10, 10, 10, 10, 10, 10, 10];
 ellx = [5, 5, 10, 10, 15, 15, 20, 20];
 colors = {[0, 0, 0], [0 0.4470 0.7410], [0, 0, 0], [0 0.4470 0.7410],...
           [0, 0, 0], [0 0.4470 0.7410], [0, 0, 0], [0 0.4470 0.7410]};
@@ -16,8 +16,8 @@ colors = {[0, 0, 0], [0 0.4470 0.7410], [0, 0, 0], [0 0.4470 0.7410],...
 
 SubPlotTitle = {"ellx = 5", "ellx = 10", "ellx = 15", "ellx = 20"};
 
-DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfile/';
-% DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/Test_ellx_change/';
+% DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfile/';
+DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfile/';
 count = 1; 
 for i = 1:length(ellx)
     hsize(i) = Y/Ny(i);
@@ -43,8 +43,8 @@ end
 figure(2)
 xlabel("Y-Coordinates")
 ylabel("$P_{33}$", 'Interpreter', 'Latex')
-leg = legend([h2(1), h2(2), h2(3), h2(4)], ["10","10000"], 'Location', 'Best');
-title(leg, "$\kappa$", 'Interpreter', 'Latex');
+leg = legend([h2(1), h2(2), h2(3), h2(4)], ["Ny = 100","Ny = 200"], 'Location', 'Best');
+% title(leg, "$\kappa$", 'Interpreter', 'Latex');
 % saveas(gcf, "StressProfile_Nx_500_Ny_200.fig")
 
 %%
