@@ -47,10 +47,13 @@ end
 figure(2)
 xlabel("Y-Coordinates")
 ylabel("$P_{33}$", 'Interpreter', 'Latex')
-leg = legend([h2(1), h2(2), h2(3), h2(4)], ["20", "40", "60", "80"], 'Location', 'Best');
+leg = legend([h2(1), h2(2), h2(3), h2(4)], ["20: 0.4", "40: 0.8", "60: 1.2", "80: 1.6"], 'Location', 'Best');
+leg = legend([h2(5), h2(6), h2(7), h2(8)], ["20: 0.2", "40: 0.4", "60: 0.6", "80: 0.8"], 'Location', 'Best');
+leg = legend([h2(9), h2(10), h2(11), h2(12)], ["20: 0.16", "40: 0.32", "60: 0.48", "80: 0.64"], 'Location', 'Best');
+leg = legend([h2(13), h2(14), h2(15), h2(16)], ["20: 0.08", "40: 0.16", "60: 0.24", "80: 0.32"], 'Location', 'Best');
 title(leg, "Elements");
 title(leg, "$\kappa$", 'Interpreter', 'Latex');
-saveas(gcf, "StressProfile_Nx_v_Ny_v_k_10_W_v.fig")
+saveas(gcf, "StressProfile_Nx_v_Ny_v_k_10_hsize_v.fig")
 
 %%
 xline(0, '--k')
