@@ -47,16 +47,16 @@ end
 figure(1)
 xlabel("Y-Coordinates")
 ylabel("Pressure")
-ylim([-1, +0.01])
+xlim([-0.05, +0.05])
 
 % leg = legend(["5: " + num2str(PhaseFieldWidth(1)), "5: " + num2str(PhaseFieldWidth(2)), "5: " + num2str(PhaseFieldWidth(3)), "5: " + + num2str(PhaseFieldWidth(4))], 'Location', 'Best');
 leg = legend([h1(1), h1(2)], ["10", "10000"], 'Location', 'Best');
-% leg = legend([h1(1), h1(2), h1(3), h1(4)], ["10", "100", "1000", "10000"], 'Location', 'Best');
+leg = legend([h1(1), h1(2), h1(3), h1(4)], ["20", "40", "60", "80"], 'Location', 'Best');
 leg = legend([h1(1), h1(2)], ["0.02", "0.01"], 'Location', 'Best');
 leg = legend([h1(3), h1(4)], ["0.02", "0.01"], 'Location', 'Best');
 leg = legend([h1(5), h1(6)], ["0.008", "0.004"], 'Location', 'Best');
 leg = legend([h1(7), h1(8)], ["0.008", "0.004"], 'Location', 'Best');
-title(leg, "hsize");
+title(leg, "Elements");
 
 title(leg, "$\kappa$", 'Interpreter', 'Latex');
-saveas(gcf, "PressureProfile_Nx_v_Ny_v_k_10.fig")
+saveas(gcf, "PressureProfile_Nx_1250_Ny_100.fig")
