@@ -2,16 +2,16 @@ clear all
 close all
 
 Y = 2;
-Nx = [250, 250, 250, 250];
-Ny = [100, 100, 100, 100];
-kappa = [10, 10, 10, 10];
-ellx = [5, 10, 15, 20];
+Nx = [1250, 1250, 1250, 1250, 1250];
+Ny = [100, 100, 100, 100, 150];
+kappa = [10, 10, 10, 10, 10];
+ellx = [5, 10, 15, 20, 25];
 % colors = {[0, 0, 0], [0 0.4470 0.7410],...
 %           [0, 0, 0], [0 0.4470 0.7410],...
 %           [0, 0, 0], [0 0.4470 0.7410],...
 %           [0, 0, 0], [0 0.4470 0.7410]};
 
-colors = {[0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.5560],...
+colors = {[0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330], [0.4940 0.1840 0.5560], [0.4 0.4 0.8],...
     [0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.5560],...
     [0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.5560],...
     [0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.5560]};
@@ -20,8 +20,8 @@ colors = {[0, 0, 0], [0 0.4470 0.7410], [0.3010 0.7450 0.9330],[0.4940 0.1840 0.
 % SubPlotTitle = {"ellx = 5", "ellx = 10", "ellx = 15", "ellx = 20"};
 % SubPlotTitle = {"Width: 0.40", "Width: 0.80", "Width = 0.16", "Width = 0.32"};
 
-DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfilePlaneStress/';
-% DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfile/';
+% DataPath = '/home/ida/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfilePlaneStress/';
+DataPath = '/Users/idaang/Documents/GitHub/FEniCS/Phase_Field_Fracture/StressProfile/';
 count = 1; 
 for i = 1:length(ellx)
     hsize(i) = Y/Ny(i);
@@ -37,11 +37,11 @@ for i = 1:length(ellx)
     hold on 
     h2(i) = plot(Points(i,:), NominalStress(i,:), 'Color', colors{1,i}, 'LineWidth', 2.5);
     set(gca, 'YScale', 'log')
-    set(gca, 'YScale', 'linear')
+%     set(gca, 'YScale', 'linear')
 
 %     ylim([1E-5 1])
     
-    if i == 4 || i == 8 || i == 12
+    if i == 5 || i == 8 || i == 12
         count = count + 1; 
     end 
 end
