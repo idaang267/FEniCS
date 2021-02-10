@@ -106,17 +106,9 @@ p &= - b(\alpha) \kappa \left(J-1\right)
 as an independent variable along with the displacement field. \\ \\
 Following the code, we have the following energy functional of the energy problem
 \begin{align*}
-\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda} \\
-\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \lambda}
+\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa} \\
+\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa}
 \end{align*}
-Changes to relieve the residual stresses seen in the plane stress model:
-\begin{equation}
-\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_1 - 3 - 2 \ln J) - b(\alpha) p (J-1) - (\alpha^2 + k_\ell) \frac{p^2}{2 \lambda} 
-\end{equation}
-Where we know $k_\ell$ is a modeling parameter, so we can list the final energy functional as: 
-\begin{equation}
-\widetilde{W} (\mathbf{F}, \alpha) = a (\alpha) \frac{\mu}{2} (I_1 - 3 - 2 \ln J) - b(\alpha) p (J-1) - \alpha^2 \frac{p^2}{2 \lambda} 
-\end{equation}
 The first Piola-Kirchhoff stress tensor is given: 
 \begin{align}\label{eq_firstPK}
 \begin{split}
@@ -201,7 +193,7 @@ F_u = derivative(elastic_potential, w_p, v_q) \
 If we are considering a discrete fracture method
 \begin{align*}
 \begin{split}
-\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega \\
+\mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell} + \ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega \\
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} p(J-1) d \Omega \\
 \end{split}
 \end{align*}
@@ -253,10 +245,198 @@ Taking the third component to be zero
 \begin{align*}
 P_{33} &= a(\alpha) \mu (F_{33} - F_{33}^{-1}) = 0 
 \end{align*}
+
+\newpage
+
 %===============================
 %===============================
 %===============================
-\section{Following Borden: Derivations of Analytical Phase Field}
+\section{Obtaining the Critical Stretch}
+In order to obtain the critical stretch of a particular specimen in Krishnan 2008, we can equate our dissipated energy or critical fracture energy density
+\begin{align*}
+\int_{\Gamma} G_c \, d \mathbf{S} = \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\end{align*}
+to Eq. 15 for the energy release rate of the strip geometry.
+\begin{align*}
+J = h \mu \bigg( \lambda_a - \frac{1}{\lambda_a} \bigg)^2
+\end{align*}
+where the total height of the strip is $2h$ and $\mu$ is the shear modulus 
+
+%===============================
+%===============================
+%===============================
+\section{Strain energy decomposition}
+The Heaviside function is defined as 
+\begin{align*}
+H(x) = \frac{x + |x|}{2 x} =
+\begin{cases}
+	1, & x \geq 0, \\
+	0, & x < 0	
+\end{cases}
+\end{align*}
+The Macaulay bracket is defined
+\begin{align*}
+M(x) = \frac{x + |x|}{2} =
+\begin{cases}
+	x, & x \geq 0, \\
+	0, & x < 0	
+\end{cases}
+\end{align*}
+
+%===============================
+\subsection{Following Ye 2020 and Tang 2019}
+In the Ye 2020 paper, the internal energy is expressed as:
+\begin{align*}
+W_{int} (\mathbf{F}, \alpha, \nabla \alpha) = [a(\alpha) + k_{\ell}] W_{act} + W_{pas} + G_c \bigg( \frac{\alpha^2}{2 \ell} + \frac{\ell}{2} | \nabla \alpha|^2 \bigg) 
+\end{align*}
+Now in section 3.2.3 of Ye 2020, we can observe the decomposition for a Mooney Rivlin constitutive law:
+\begin{align*}
+\begin{split}
+W_{MR} (I_1, I_2) &= C_1 (I_1 - 3) + C_2 (I_2 - 3) \\
+W_{MR} (\lambda_1, \lambda_1, \lambda_3) &= C_1 (\lambda_1^2 + \lambda_2^2 + \lambda_3^2 - 3) + C_2 (\lambda_1^{-2} + \lambda_2^{-2} + \lambda_3^{-2} - 3) \\
+			&= C_1 \sum_{i = 1}^{3} (\lambda_i^2 - 1) + C_2 \sum_{i=1}^3 (\lambda_i^{-2} - 1) 
+\end{split}
+\end{align*}
+Which can be decomposed to active and passive internal energy terms. First we can rewrite: 
+\begin{align*}
+\begin{split}
+W_{MR} (\lambda_1, \lambda_1, \lambda_3) 
+	&= C_1 \sum_{i = 1}^{3} H(\lambda_i - 1) (\lambda_i^2 - 1) + C_2 \sum_{i=1}^3 H(\lambda_i - 1) (\lambda_i^{-2} - 1) \\
+	&+ C_1 \sum_{i = 1}^{3} H(1 - \lambda_i) (\lambda_i^2 - 1) + C_2 \sum_{i=1}^3 H(1 - \lambda_i) (\lambda_i^{-2} - 1) 
+\end{split}
+\end{align*}
+The active and passive terms can be stated as follows for a Mooney Rivlin constitutive law: 
+\begin{align*}
+\begin{split}
+W_{act} &= C_1 \sum_{i = 1}^{3} H(\lambda_i - 1) (\lambda_i^2 - 1) + C_2 \sum_{i=1}^3 H(\lambda_i - 1) (\lambda_i^{-2} - 1) \\
+W_{pas} &= C_1 \sum_{i = 1}^{3} H(1 - \lambda_i) (\lambda_i^2 - 1) + C_2 \sum_{i=1}^3 H(1 - \lambda_i) (\lambda_i^{-2} - 1) 
+\end{split}
+\end{align*}
+We can also note the definitions within Tang 2019 for Model $M_I$. In this moel, we consider the free energy density of a neo-Hookean constitutive law:
+\begin{align*}
+W (\mathbf{F}) = \frac{\mu}{2} (I_1 -3 - 2 \ln J) + \frac{\kappa}{2} (\ln J)^2
+\end{align*}
+which can also be rephrased in terms of stretches
+\begin{align*}
+W(\lambda_1, \lambda_2, \lambda_3) &= W_1 + W_2 \\
+		&= \frac{\mu}{2} \sum_{i = 1}^3 (\lambda_i^2 - 1 - 2 \ln \lambda_i) + \frac{\kappa}{2} (\ln J)^2
+\end{align*}
+where we note that $W_1$ is a linear function of $\ln \lambda_i$ and $W_2$ is a nonlinear function of $\ln J$ \\
+The free energy is stated as 
+\begin{align*}
+G_{rub} = [(1- K) \alpha^2 + K] W^+ + W^-
+\end{align*}
+\textcolor{red}{Note that K is not $\kappa$. No definition is provided in the paper.} This is another way of coupling the damage to the free energy density, and I believe we can rewrite our own version where:
+\begin{align*}
+G_{rub} = [a (\alpha) + k_{\ell}] W^+ + W^-
+\end{align*}
+Now we turn to the definition of $W^+$ and $W^-$ which refers to the energy with tensile stretching
+\begin{align*}
+W^+ = W(\lambda_i^+ + J^+) = \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^+)^2 - 1 - 2 \ln \lambda_i^+) + \frac{\kappa}{2} (\ln J^+)^2
+\end{align*}
+and the energy with compression respectively.
+\begin{align*}
+W^- = W(\lambda_i^- + J^-) = \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^-)^2 - 1 - 2 \ln \lambda_i^-) + \frac{\kappa}{2} (\ln J^-)^2
+\end{align*}
+The definitions for these superscript + and - terms gives us  
+\begin{align*}
+\lambda_i^+ &=
+\begin{cases}
+	\lambda_i, & \lambda_i > 1, \\
+	1, & \lambda_i \leq 1	
+\end{cases} \quad \quad 
+J^+ =
+\begin{cases}
+	J, & J > 1, \\
+	1, & J \leq 1	
+\end{cases} \\
+\lambda_i^- &=
+\begin{cases}
+	\lambda_i, & \lambda_i < 1, \\
+	1, & \lambda_i \geq 1	
+\end{cases} \quad \quad 
+J^+ =
+\begin{cases}
+	J, & J < 1, \\
+	1, & J \geq 1	
+\end{cases} \\
+\end{align*}
+This isn't the definition for the heaviside function, but it could be a shifted Macaulay bracket
+\begin{align*}
+M(x) = \frac{x-1 - |x-1|}{2} + 1 = 
+\begin{cases}
+	x, & x > 1, \\
+	1, & x \leq 1	
+\end{cases} 
+\end{align*}
+Now we can consider some examples. 
+\begin{align*}
+\text{For } J > 1: &\\
+W^+ &= \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^+)^2 - 1 - 2 \ln \lambda_i^+) + \frac{\kappa}{2} (\ln J^+)^2 \\
+W^- &= \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^-)^2 - 1 - 2 \ln \lambda_i^-)\\
+\text{For } J < 1: &\\
+W^+ &= \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^+)^2 - 1 - 2 \ln \lambda_i^+) \\
+W^- &= \frac{\mu}{2} \sum_{i = 1}^3 ( (\lambda_i^-)^2 - 1 - 2 \ln \lambda_i^-) + \frac{\kappa}{2} (\ln J^-)^2 
+\end{align*} 
+\textcolor{red}{Note: Not absolutely sure about this statement, because the statements in the paper have no + or - superscripts.} This should be roughly equivalent to the considerations in the Ye2020 paper. 
+
+\subsection{Our strain energy decomposition}
+Following the section above, we can consider our modified strain energy 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) 
+	&= a(\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa} \quad \text{where } p = - b(\alpha) \kappa (J-1) \\
+\widetilde{W} (\mathbf{F}, \alpha) 
+	&= a(\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2
+\end{align*}
+We can also rewrite the first term with regards to stretches
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 (\lambda_i^2 - 1 - 2 \ln \lambda_i) + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2
+\end{align*}
+Writing every term gives: 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H(\lambda_i - 1) (\lambda_i^2 - 1 - 2 \ln \lambda_i) \\
+	&+ a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H (1 - \lambda_i) (\lambda_i^2 - 1 - 2 \ln \lambda_i + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2
+\end{align*}
+Following Tang 2019 we rewrite the strain energy as 
+\begin{equation}
+\widetilde{W} (\mathbf{F}, \alpha) = \widetilde{W}_\text{act} (\mathbf{F}, \alpha ) +\widetilde{W}_\text{pas} (\mathbf{F}, \alpha)
+\end{equation}
+where the active and passive parts of the strain energy can be written as: 
+\begin{align*}
+\text{For } J \geq 1: & \\
+\widetilde{W}_\text{act} &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H(\lambda_i - 1) (\lambda_i^2 - 1 - 2 \ln \lambda_i) + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2 \\
+\widetilde{W}_{\text{pas}} &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H (1 - \lambda_i) (\lambda_i^2 - 1 - 2 \ln \lambda_i) \\
+\text{For } J < 1: \\
+\widetilde{W}_\text{act} &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H(\lambda_i - 1) (\lambda_i^2 - 1 - 2 \ln \lambda_i) \\
+\widetilde{W}_{\text{pas}} &= a(\alpha) \frac{\mu}{2} \sum_{i = 1}^3 H (1 - \lambda_i) (\lambda_i^2 - 1 - 2 \ln \lambda_i + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2
+\end{align*} 
+Overleaf (your) version \\
+where the active part of the strain energy is
+\begin{equation}
+\widetilde{W}_\text{act}\left(\mathbf{F},\alpha\right)=a(\alpha)\frac{\mu}{2}\sum_{i=1}^{3}H(\lambda_i-1)\left(\lambda_i^2-1-2\ln\lambda_i\right) + a^3(\alpha)H(J-1)\frac{1}{2}\kappa\left(J-1\right)^2,
+\end{equation}
+and the passive part of the strain energy is
+\begin{equation}
+\widetilde{W}_\text{pas}\left(\mathbf{F},\alpha\right)=a(\alpha)\frac{\mu}{2}\sum_{i=1}^{3}H(1-\lambda_i)\left(\lambda_i^2-1-2\ln\lambda_i\right) + a^3(\alpha)H(1-J)\frac{1}{2}\kappa\left(J-1\right)^2,
+\end{equation}
+
+\paragraph{Compute the principal stretches $\lambda_i$}
+The eigenvalues of Cauchy-Green strain tensor $\mathbf{C}$ are $\lambda_i^2$, $i=1,2,3$.
+With following definitions 
+\begin{equation}
+d=\frac{ Tr {\mathbf{C}}}{3},\quad e= \sqrt{\frac{ Tr { (\mathbf{C}-e\mathbf{I} )^2}}{6}},\quad
+f=\frac{1}{e}\left(\mathbf{C}-d\mathbf{I}\right),\quad g=\frac{\det{f}}{2},
+\end{equation}
+and assuming the eigenvalues satisfying $\lambda_3^2\le\lambda_2\le\lambda_1$, we could obtain \citep{smith1961eigenvalues}
+\begin{equation}
+\lambda_1^2 = d +2e\cos\left(\frac{\arccos g}{3}\right), \quad \lambda_3^2 = d +2e\cos\left(\frac{\arccos g}{3}+\frac{2\pi}{3}\right), \quad \lambda_2^2 = 3d -\lambda_1^2 -\lambda_3^3.
+\end{equation}
+
+
+%===============================
+%===============================
+%===============================
+\subsection{Following Borden: Derivations of Analytical Phase Field}
 Note the full potential energy functional, which can also be called the lagrangian
 \begin{align*}
 \mathcal{E}_{\ell} (\boldsymbol{u}, p, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega

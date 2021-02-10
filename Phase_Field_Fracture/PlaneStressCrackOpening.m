@@ -185,3 +185,11 @@ set(gca, 'YScale', 'log')
 
 % saveas(gcf, 'Varying_c.eps', 'epsc')
 
+%%
+h = 1;
+mu = 1;
+Gc = 6.033135859170121141e+06;
+
+syms lambda_a
+eq = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
+ans = double(solve(eq, lambda_a));

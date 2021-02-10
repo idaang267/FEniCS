@@ -4,6 +4,10 @@
 \BOOKMARK [2][-]{subsection.1.2}{Changes for 2D Plane-Stress Models}{section.1}% 4
 \BOOKMARK [3][-]{subsubsection.1.2.1}{Changes for 2D Discrete Crack Model}{subsection.1.2}% 5
 \BOOKMARK [3][-]{subsubsection.1.2.2}{Changes for 2D displacement formulation}{subsection.1.2}% 6
-\BOOKMARK [1][-]{section.2}{Following Borden: Derivations of Analytical Phase Field}{}% 7
-\BOOKMARK [2][-]{subsection.2.1}{Homogeneous Solution}{section.2}% 8
-\BOOKMARK [2][-]{subsection.2.2}{Non-Homogeneous Solution}{section.2}% 9
+\BOOKMARK [1][-]{section.2}{Obtaining the Critical Stretch}{}% 7
+\BOOKMARK [1][-]{section.3}{Strain energy decomposition}{}% 8
+\BOOKMARK [2][-]{subsection.3.1}{Following Ye 2020 and Tang 2019}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.2}{Our strain energy decomposition}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.3}{Following Borden: Derivations of Analytical Phase Field}{section.3}% 11
+\BOOKMARK [2][-]{subsection.3.4}{Homogeneous Solution}{section.3}% 12
+\BOOKMARK [2][-]{subsection.3.5}{Non-Homogeneous Solution}{section.3}% 13
