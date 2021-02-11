@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  10 FEB 2021 10:22
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.9.16)  11 FEB 2021 11:19
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -499,34 +499,63 @@ File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 181.
  [4] [5]
-[6] [7] [8]
+[6]
+Underfull \hbox (badness 10000) in paragraph at lines 323--326
 
-Package natbib Warning: Citation `smith1961eigenvalues' on page 9 undefined on 
-input line 430.
+ []
 
-[9]
-Overfull \hbox (7.9047pt too wide) detected at line 488
+[7] [8] [9] [10]
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 471.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `\lambda' on input line 471.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `subscript' on input line 471.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 471.
+
+
+Package natbib Warning: Citation `smith1961eigenvalues' on page 11 undefined on
+ input line 478.
+
+[11]
+Overfull \hbox (7.9047pt too wide) detected at line 536
 []
  []
 
 
 Package natbib Warning: There were undefined citations.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 678.
-[10]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 678.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 726.
+[12]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 726.
  (./StabilizedMixedFEFormulationNotes.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 678.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 678.
-Package rerunfilecheck Info: File `StabilizedMixedFEFormulationNotes.out' has n
-ot changed.
-(rerunfilecheck)             Checksum: 8ED36C6B1F922ED8222033ED12A81079;1050.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 678.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 726.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 726.
+
+
+Package rerunfilecheck Warning: File `StabilizedMixedFEFormulationNotes.out' ha
+s changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `StabilizedMixedFEFormulationNotes.o
+ut':
+(rerunfilecheck)             Before: CE14C1E9DBCABA465B87B65922A4098A;1036
+(rerunfilecheck)             After:  1FEB3D88FE05DC25B2BB1F4D4E492AF9;1129.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 726.
  ) 
 Here is how much of TeX's memory you used:
- 9986 strings out of 494510
- 142580 string characters out of 6176236
- 269883 words of memory out of 5000000
+ 9989 strings out of 494510
+ 142605 string characters out of 6176236
+ 271886 words of memory out of 5000000
  13493 multiletter control sequences out of 15000+600000
  14849 words of font info for 52 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
@@ -543,11 +572,11 @@ type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1
 ts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
 r8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb
 ></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on StabilizedMixedFEFormulationNotes.pdf (10 pages, 170842 bytes
+Output written on StabilizedMixedFEFormulationNotes.pdf (12 pages, 173936 bytes
 ).
 PDF statistics:
- 204 PDF objects out of 1000 (max. 8388607)
- 177 compressed objects within 2 object streams
- 57 named destinations out of 1000 (max. 500000)
+ 213 PDF objects out of 1000 (max. 8388607)
+ 184 compressed objects within 2 object streams
+ 60 named destinations out of 1000 (max. 500000)
  105 words of extra memory for PDF output out of 10000 (max. 10000000)
 
