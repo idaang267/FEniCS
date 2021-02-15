@@ -104,11 +104,12 @@ userpar.add("mu", 1)           # Shear modulus
 userpar.add("kappa",10e2)      # Bulk modulus
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 200)
-userpar.add("meshsizeY", 100)
+userpar.add("meshsizeX", 100)
+userpar.add("meshsizeY", 50)
+userpar.add("meshsizeZ", 50)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 1.0)
-userpar.add("load_steps", 101)
+userpar.add("load_max", 0.01)
+userpar.add("load_steps", 10)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -116,9 +117,10 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H, W = 15, 1.5, 0.01        # Length (x), height (y), and width (x-direction)
+L, H, W = 5, 1, 1            # Length (x), height (y), and width (x-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
+Nz   = userpar["meshsizeZ"]
 hsize = float(H/Ny)            # Geometry based definition for regularization
 S = userpar["load_steps"]
 
@@ -136,7 +138,7 @@ ell   = Constant(ell_multi*hsize)
 # Naming parameters for saving output
 modelname = "3D-stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_ellx_%.0f_d_%.2f_k_%.0f" % (Nx, Ny, ell_multi, userpar["load_max"], kappa)
+simulation_params = "L_%.0f_Nx_%.0f_H_%.0f_Ny_%.0f_W_%.0f_Nz_%.0f_lx_%.0f_d_%.2f_k_%.0f" % (L, Nx, H, Ny, W, Nz, ell_multi, userpar["load_max"], kappa)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -185,11 +187,16 @@ class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and near(x[1], H, 0.1 * hsize) #and between(x[0], (5, L))
 
+class pin_point(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], L/2, 0.1*hsize) and near(x[1], H/2, 0.1*hsize) and near(x[2], W/2, 0.1*hsize)
+
 # Convert all boundary classes for visualization
 left_boundary = left_boundary()
 right_boundary = right_boundary()
 top_boundary = top_boundary()
 bot_boundary = bot_boundary()
+pin_point = pin_point()
 
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
 points = MeshFunction("size_t", mesh, mesh.topology().dim() - 3)
@@ -203,6 +210,7 @@ file_results.write(lines)
 
 # Show points of interest
 points.set_all(0)
+pin_point.mark(points, 1)
 file_results = XDMFFile(savedir + "/" + "points.xdmf")
 file_results.write(points)
 
@@ -240,11 +248,10 @@ bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
 # top and bottom boundaries are subjected to a displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
-# Prevent z movement
-bc_u3 = DirichletBC(V_u.sub(0).sub(2), u00, top_boundary)
-bc_u4 = DirichletBC(V_u.sub(0).sub(2), u00, bot_boundary)
+# Pinned line in the center
+bc_u5 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
 # Combine boundary conditions
-bc_u = [bc_u0, bc_u1, bc_u2, bc_u3, bc_u4]
+bc_u = [bc_u1, bc_u2, bc_u5]
 
 # bc - alpha (zero damage)
 # No damage to the boundaries - damage does not initiate from constrained edges
@@ -262,11 +269,46 @@ C = F.T*F                   # Right Cauchy-Green tensor
 Ic = tr(C)
 J  = det(F)
 
+# Define some parameters for the eigenvalues
+d_par = tr(C)/3.
+e_par = sqrt(tr(C-d_par*I)**2/6.)
+f_par = (1./e_par)*(C-d_par*I)
+g_par = det(f_par)/2
+
+# Define the eigenvalues of C (principal stretches)
+lambda_1 = sqrt(d_par + 2.*e_par*cos(acos(g_par)/3.))
+lambda_3 = sqrt(d_par + 2.*e_par*cos((acos(g_par)/3.) + 2.*pi/3.))
+lambda_2 = sqrt(3.*d_par - lambda_1**2 - lambda_3**3)
+
+# m_par = tr(C)/3
+# q_par = det(C-m_par*I)/2
+# p_par = tr(C-m_par*I)**2/6
+#
+# phi = 1/3*atan(sqrt(p_par**3 - q_par**2)/q_par)
+# lambda_1 = m_par + 2*sqrt(p_par)*cos(phi)
+# lambda_2 = m_par - sqrt(p_par)*(cos(phi) + sqrt(3)*sin(phi))
+# lambda_3 = m_par - sqrt(p_par)*(cos(phi) - sqrt(3)*sin(phi))
+
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
 
-# Constitutive functions of the damage model
+# Functions of the damage model
 # ----------------------------------------------------------------------------
+def hs(x):# Heaviside function
+    return (x + abs(x))/(2.*x)
+
+hs_p_l1 = conditional(gt(lambda_1,1), lambda_1, 1)
+hs_p_l2 = conditional(gt(lambda_2,1), lambda_2, 1)
+hs_p_l3 = conditional(gt(lambda_3,1), lambda_3, 1)
+
+hs_p_J = conditional(gt(J,1), J, 1)
+
+hs_n_l1 = conditional(lt(lambda_1,1), lambda_1, 1)
+hs_n_l2 = conditional(lt(lambda_2,1), lambda_2, 1)
+hs_n_l3 = conditional(lt(lambda_3,1), lambda_3, 1)
+
+hs_n_J = conditional(lt(J,1), J, 1)
+
 def w(alpha):
     return alpha
 
@@ -282,16 +324,25 @@ body_force = Constant((0., 0., 0.))
 varpi_ = 1.0
 # Eq 19 in Klaas
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
-# Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+# Elastic energy
+W_act = (a(alpha)+k_ell)*(mu/2.)*(hs_p_l1**2-1.-2.*ln(hs_p_l1))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(hs_p_l2**2-1.-2.*ln(hs_p_l2))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(hs_p_l3**2-1.-2.*ln(hs_p_l3))*dx \
+      + a(alpha)**3*(kappa/2.)*(hs_p_J-1.)**2*dx
+W_pas = (a(alpha)+k_ell)*(mu/2.)*(hs_n_l1**2-1.-2.*ln(hs_n_l1))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(hs_n_l2**2-1.-2.*ln(hs_n_l2))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(hs_n_l3**2-1.-2.*ln(hs_n_l3))*dx \
+      + a(alpha)**3*(kappa/2.)*(hs_n_J-1.)**2*dx
+# additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
+elastic_energy    = W_act + W_pas
+# elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
+#                     - b(alpha)*p*(J-1.0)*dx - 1/(2*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Define the stabilization term
 # Compute directional derivative about w_p in the direction of v (Gradient)
-F_u = derivative(elastic_potential, w_p, v_q) \
-      - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
+F_u = derivative(elastic_potential, w_p, v_q) #\ - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -320,7 +371,7 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Set the lower and upper bound of the damage variable (0-1)
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 0.75, 0.1 * hsize) ? 1.0 : 0.0", \
+alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=2.5 & near(x[1], 0.5, 0.1 * hsize) ? 1.0 : 0.0", \
                        hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
