@@ -104,12 +104,12 @@ userpar.add("mu", 1)           # Shear modulus
 userpar.add("kappa",10e2)      # Bulk modulus
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 100)
-userpar.add("meshsizeY", 50)
-userpar.add("meshsizeZ", 50)
+userpar.add("meshsizeX", 200)
+userpar.add("meshsizeY", 40)
+userpar.add("meshsizeZ", 20)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.01)
-userpar.add("load_steps", 10)
+userpar.add("load_max", 0.001)
+userpar.add("load_steps", 20)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -117,7 +117,7 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H, W = 5, 1, 1            # Length (x), height (y), and width (x-direction)
+L, H, W = 5, 1, 0.5            # Length (x), height (y), and width (x-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 Nz   = userpar["meshsizeZ"]
@@ -218,7 +218,7 @@ file_results.write(points)
 # ----------------------------------------------------------------------------
 # Create function space for elasticity + damage
 P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-P2  = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+P2  = VectorElement("Lagrange", mesh.ufl_cell(), 2)
 # Stabilized mixed FEM for incompressible elasticity
 TH  = MixedElement([P2,P1])
 # Define function spaces for displacement and pressure in V_u and damage in V_alpha
@@ -297,17 +297,18 @@ lambda_2 = sqrt(3.*d_par - lambda_1**2 - lambda_3**3)
 def hs(x):# Heaviside function
     return (x + abs(x))/(2.*x)
 
-hs_p_l1 = conditional(gt(lambda_1,1), lambda_1, 1)
-hs_p_l2 = conditional(gt(lambda_2,1), lambda_2, 1)
-hs_p_l3 = conditional(gt(lambda_3,1), lambda_3, 1)
+# Structures of conditionals (condition, true value, false value)
+p_l1 = conditional(gt(lambda_1,1), lambda_1, 1)
+p_l2 = conditional(gt(lambda_2,1), lambda_2, 1)
+p_l3 = conditional(gt(lambda_3,1), lambda_3, 1)
 
-hs_p_J = conditional(gt(J,1), J, 1)
+p_J = conditional(gt(J,1), J, 1)
 
-hs_n_l1 = conditional(lt(lambda_1,1), lambda_1, 1)
-hs_n_l2 = conditional(lt(lambda_2,1), lambda_2, 1)
-hs_n_l3 = conditional(lt(lambda_3,1), lambda_3, 1)
+n_l1 = conditional(lt(lambda_1,1), lambda_1, 1)
+n_l2 = conditional(lt(lambda_2,1), lambda_2, 1)
+n_l3 = conditional(lt(lambda_3,1), lambda_3, 1)
 
-hs_n_J = conditional(lt(J,1), J, 1)
+n_J = conditional(lt(J,1), J, 1)
 
 def w(alpha):
     return alpha
@@ -325,14 +326,14 @@ varpi_ = 1.0
 # Eq 19 in Klaas
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy
-W_act = (a(alpha)+k_ell)*(mu/2.)*(hs_p_l1**2-1.-2.*ln(hs_p_l1))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(hs_p_l2**2-1.-2.*ln(hs_p_l2))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(hs_p_l3**2-1.-2.*ln(hs_p_l3))*dx \
-      + a(alpha)**3*(kappa/2.)*(hs_p_J-1.)**2*dx
-W_pas = (a(alpha)+k_ell)*(mu/2.)*(hs_n_l1**2-1.-2.*ln(hs_n_l1))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(hs_n_l2**2-1.-2.*ln(hs_n_l2))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(hs_n_l3**2-1.-2.*ln(hs_n_l3))*dx \
-      + a(alpha)**3*(kappa/2.)*(hs_n_J-1.)**2*dx
+W_act = (a(alpha)+k_ell)*(mu/2.)*(p_l1**2-1.-2.*ln(p_l1))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(p_l2**2-1.-2.*ln(p_l2))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(p_l3**2-1.-2.*ln(p_l3))*dx \
+      + a(alpha)**3*(kappa/2.)*(p_J-1.)**2*dx
+W_pas = (a(alpha)+k_ell)*(mu/2.)*(n_l1**2-1.-2.*ln(n_l1))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(n_l2**2-1.-2.*ln(n_l2))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*(n_l3**2-1.-2.*ln(n_l3))*dx \
+      + a(alpha)**3*(kappa/2.)*(n_J-1.)**2*dx
 # additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = W_act + W_pas
 # elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
@@ -342,7 +343,8 @@ elastic_potential = elastic_energy - external_work
 
 # Define the stabilization term
 # Compute directional derivative about w_p in the direction of v (Gradient)
-F_u = derivative(elastic_potential, w_p, v_q) #\ - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
+F_u = derivative(elastic_potential, w_p, v_q) #\
+    # - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
