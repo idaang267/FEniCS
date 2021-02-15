@@ -39,7 +39,7 @@ for i = 1:length(ellx)
     set(gca, 'YScale', 'log')
 %     set(gca, 'YScale', 'linear')
 
-%     ylim([1E-5 1])
+     ylim([1E-4 1])
     
     if i == 5 || i == 8 || i == 12
         count = count + 1; 
@@ -52,10 +52,10 @@ ylabel("$P_{33}$", 'Interpreter', 'Latex')
 leg = legend([h2(1), h2(2), h2(3), h2(4)], ["20: 0.4", "40: 0.8", "60: 1.2", "80: 1.6"], 'Location', 'Best');
 leg = legend([h2(5), h2(6), h2(7), h2(8)], ["20: 0.2", "40: 0.4", "60: 0.6", "80: 0.8"], 'Location', 'Best');
 leg = legend([h2(9), h2(10), h2(11), h2(12)], ["20: 0.16", "40: 0.32", "60: 0.48", "80: 0.64"], 'Location', 'Best');
-leg = legend([h2(13), h2(14), h2(15), h2(16)], ["20: 0.08", "40: 0.16", "60: 0.24", "80: 0.32"], 'Location', 'Best');
+leg = legend([h2(1), h2(2), h2(3), h2(4), h2(5)], ["20: 0.08", "40: 0.16", "60: 0.24", "80: 0.32", "100: 0.4"], 'Location', 'Best');
 title(leg, "Elements");
 title(leg, "$\kappa$", 'Interpreter', 'Latex');
-saveas(gcf, "StressProfile_PlaneStress_Nx_250_Ny_100_k_10.fig")
+saveas(gcf, "StressProfile_Nx_1250_Ny_100_k_10.fig")
 
 %%
 xline(0, '--k')
