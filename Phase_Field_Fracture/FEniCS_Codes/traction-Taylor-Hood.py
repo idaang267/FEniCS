@@ -1,16 +1,17 @@
-# -------------------------------------------
+# ------------------------------------------- 
 # FEniCS code  Variational Fracture Mechanics
-################################################################################
-#                                                                              #
-# A Taylor-Hood finite element method for gradient damage models of            #
-# fracture in incompressible hyperelastic materials                            #
-# author: Bin Li                                                               #
-# Email: bl736@cornell.edu                                                     #
-# date: 10/01/2018                                                             #
-#                                                                              #
-################################################################################
-# e.g. python3 traction-neo-Hookean.py --meshsize 100						   #
-################################################################################
+#################################################################################################################
+#                                                                                                               #
+# A Taylor-Hood finite element method for gradient damage models of                                             #
+# fracture in incompressible hyperelastic materials                                                             #
+# author: Bin Li                                                                                                #
+# Email: bl736@cornell.edu                                                                                      #
+# date: 10/01/2018                                                                                              #
+#                                                                                                               #
+#################################################################################################################
+# e.g. python3 traction-neo-Hookean.py --meshsize 100														                              	#
+#################################################################################################################
+
 
 # ----------------------------------------------------------------------------
 from __future__ import division
@@ -28,7 +29,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------------------------
-# Parameters for DOLFIN and SOLVER
+# Parameters for DOLFIN and SOLVER 
 # ----------------------------------------------------------------------------
 set_log_level(LogLevel.WARNING)  # 20, // information of general interest
 # set some dolfin specific parameters
@@ -36,7 +37,7 @@ set_log_level(LogLevel.WARNING)  # 20, // information of general interest
 parameters["form_compiler"]["representation"]="uflacs"
 parameters["form_compiler"]["optimize"]=True
 parameters["form_compiler"]["cpp_optimize"]=True
-parameters["form_compiler"]["quadrature_degree"]=2
+parameters["form_compiler"]["quadrature_degree"]=3
 info(parameters,True)
 
 # set the user parameters
@@ -46,8 +47,8 @@ userpar.add("mu",5.0e4)       # n*k*T Shear modulus
 userpar.add("Gc",2.4e3)       # fracture toughness
 userpar.add("nu",0.49995)     # bulk modulus for slightly compressibility
 userpar.add("k_ell",5.e-5)    # residual stiffness
-userpar.add("meshsize",100)
-userpar.add("load_min",0.)
+userpar.add("meshsize",100) 
+userpar.add("load_min",0.00)
 userpar.add("load_max",0.40)
 userpar.add("load_steps",101)
 # Parse command-line options
@@ -55,9 +56,9 @@ userpar.parse()
 
 # Material constants
 # ----------------------------------------------------------------------------
-mu    = userpar["mu"]
-Gc    = userpar["Gc"]
-nu    = userpar["nu"]
+mu    = userpar["mu"] 
+Gc    = userpar["Gc"]    
+nu    = userpar["nu"]             
 k_ell = userpar["k_ell"]
 
 # -----------------------------------------------------------------------------
@@ -65,15 +66,15 @@ k_ell = userpar["k_ell"]
 solver_u_parameters   = {"nonlinear_solver": "snes",
                          "symmetric": True,
                          "snes_solver": {"linear_solver": "mumps",
-                                         "method" : "newtontr",
-                                         "line_search": "cp",
-                                         "preconditioner" : "hypre_amg",
+                                         "method" : "newtonls", #"newtontr", "newtonls"
+                                         "line_search": "cp", # "basic", "bt", "l2", "cp", "nleqerr"
+                                         "preconditioner" : "hypre_amg", 
                                          "maximum_iterations": 200,
                                          "absolute_tolerance": 1e-10,
                                          "relative_tolerance": 1e-10,
                                          "solution_tolerance": 1e-10,
                                          "report": True,
-                                         "error_on_nonconvergence": False}}
+                                         "error_on_nonconvergence": False}}  
 
 # parameters of the PETSc/Tao solver used for the alpha-problem
 tao_solver_parameters = {"maximum_iterations": 100,
@@ -84,10 +85,10 @@ tao_solver_parameters = {"maximum_iterations": 100,
                          "method": "tron",
                          "gradient_absolute_tol": 1e-8,
                          "gradient_relative_tol": 1e-8,
-                         "error_on_nonconvergence": True}
+                         "error_on_nonconvergence": False}                       
 
 # Geometry paramaters
-L, H, W = 1.0, 0.1, 0.02
+L, H, W = 1.0, 0.05, 0.02
 N       = userpar["meshsize"]
 hsize   = float(L/N)
 
@@ -107,7 +108,7 @@ if MPI.rank(MPI.comm_world) == 0:
     if os.path.isdir(savedir):
         shutil.rmtree(savedir)
 
-# Mesh generation
+# Mesh generation 
 mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), N, int(N*H/L), int(N*W/L))
 geo_mesh  = XDMFFile(MPI.comm_world, savedir+meshname)
 geo_mesh.write(mesh)
@@ -115,7 +116,7 @@ geo_mesh.write(mesh)
 #read mesh
 mesh = Mesh()
 XDMF = XDMFFile(MPI.comm_world, "traction_3Dbar.xdmf")
-XDMF.read(mesh)
+XDMF.read(mesh)  
 """
 mesh.init()
 ndim = mesh.geometry().dim()  # get number of space dimensions
@@ -125,7 +126,8 @@ if MPI.rank(MPI.comm_world) == 0:
 # regularization paramater
 ell = Constant(5.0*hsize) # damage paramaters
 
-lmbda = mu*(2.0*(1.0+nu))*nu/((1.0+nu)*(1.0-2.0*nu))
+# Bulk modulus
+kappa = 2.0*mu*(1.0+nu)/(3.0*(1.0-2.0*nu)) 
 #-----------------------------------------------------------------------------
 p0 = -(3.0*8.0/3.0*mu*5.0*hsize+Gc)/(8.0/3.0*mu*5.0*hsize)
 q0 = 2.0
@@ -133,7 +135,7 @@ tc = 2.*sqrt(-p0/3.0)*cos(1./3.*acos(3.0*q0/2.0/p0*sqrt(-3.0/p0)))-1.0
 
 if MPI.rank(MPI.comm_world) == 0:
   print("The critical loading: [{}]".format(tc))
-  print("The lmbda/mu: {0:4e}".format(lmbda/mu))
+  print("The kappa/mu: {0:4e}".format(kappa/mu))
   print("The mu/Gc: {0:4e}".format(mu/Gc))
 
 # ----------------------------------------------------------------------------
@@ -145,8 +147,8 @@ def left_boundary(x, on_boundary):
 def right_boundary(x, on_boundary):
     return on_boundary and near(x[0], L, 0.1 * hsize)
 """
-## when using "pointwise", the boolean argument on_boundary
-## in SubDomain::inside will always be false
+## when using "pointwise", the boolean argument on_boundary 
+## in SubDomain::inside will always be false    
 def left_pinponts1(x, on_boundary):
     return  (x[0]-0.)**2 + (x[1]-H)**2 + (x[2]-0.)**2 < (0.1*mesh.hmax())**2
 def right_pinponts1(x, on_boundary):
@@ -157,13 +159,13 @@ def right_pinponts2(x, on_boundary):
     return  (x[0]-L)**2 + (x[1]-0.)**2  < (0.1*mesh.hmax())**2
 
 for x in mesh.coordinates():
-  if (x[0]-0.)**2 + (x[1]-H)**2 + (x[2]-0.)**2 < (0.1*mesh.hmax())**2:
+  if (x[0]-0.)**2 + (x[1]-H)**2 + (x[2]-0.)**2 < (0.1*mesh.hmax())**2: 
       print('%s is on x = L' % x)
-  if (x[0]-L)**2 + (x[1]-H)**2 + (x[2]-0.)**2 < (0.1*mesh.hmax())**2:
+  if (x[0]-L)**2 + (x[1]-H)**2 + (x[2]-0.)**2 < (0.1*mesh.hmax())**2: 
       print('%s is on x = R' % x)
-  if (x[0]-0.)**2 + (x[1]-0.)**2  < (0.1*mesh.hmax())**2:
+  if (x[0]-0.)**2 + (x[1]-0.)**2  < (0.1*mesh.hmax())**2: 
       print('%s is on x = L3' % x)
-  if (x[0]-L)**2 + (x[1]-0.)**2  < (0.1*mesh.hmax())**2:
+  if (x[0]-L)**2 + (x[1]-0.)**2  < (0.1*mesh.hmax())**2: 
       print('%s is on x = R3' % x)
 """
 # ----------------------------------------------------------------------------
@@ -180,12 +182,12 @@ def b(alpha):
     return (1.0-alpha)**3
 
 # ----------------------------------------------------------------------------
-# Variational formulation
+# Variational formulation 
 # ----------------------------------------------------------------------------
 # Create function space for elasticity + Damage
 # Taylor-Hood space for incompressible elasticity
-P1      = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-P2      = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+P1      = FiniteElement("Lagrange", mesh.ufl_cell(), 1) 
+P2      = VectorElement("Lagrange", mesh.ufl_cell(), 2) 
 TH      = MixedElement([P2,P1])
 V_u     = FunctionSpace(mesh, TH)
 
@@ -207,18 +209,18 @@ u0 = Expression("0.0", degree=0)
 u1 = Expression( "t",  t=0.0, degree=0)
 # bc - u (imposed displacement)
 bc_u0 = DirichletBC(V_u.sub(0).sub(0), u0, left_boundary)
-bc_u1 = DirichletBC(V_u.sub(0).sub(0), u1, right_boundary)
-bc_u2 = DirichletBC(V_u.sub(0).sub(1), u0, left_pinponts2,  method="pointwise")
-bc_u3 = DirichletBC(V_u.sub(0).sub(1), u0, right_pinponts2, method="pointwise")
-bc_u4 = DirichletBC(V_u.sub(0).sub(2), u0, left_pinponts1,  method="pointwise")
-bc_u5 = DirichletBC(V_u.sub(0).sub(2), u0, right_pinponts1, method="pointwise")
+bc_u1 = DirichletBC(V_u.sub(0).sub(0), u1, right_boundary) 
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u0, left_pinponts2,  method="pointwise") 
+bc_u3 = DirichletBC(V_u.sub(0).sub(1), u0, right_pinponts2, method="pointwise") 
+bc_u4 = DirichletBC(V_u.sub(0).sub(2), u0, left_pinponts1,  method="pointwise") 
+bc_u5 = DirichletBC(V_u.sub(0).sub(2), u0, right_pinponts1, method="pointwise") 
 bc_u  = [bc_u0, bc_u1, bc_u2, bc_u3, bc_u4, bc_u5]
 """
 u0 = Expression(["0.0","0.0","0.0"], degree=0)
 u1 = Expression("t",  t=0.0, degree=0)
 # bc - u (imposed displacement)
 bc_u0 = DirichletBC(V_u.sub(0), u0, left_boundary)
-bc_u1 = DirichletBC(V_u.sub(0).sub(0), u1, right_boundary)
+bc_u1 = DirichletBC(V_u.sub(0).sub(0), u1, right_boundary) 
 bc_u = [bc_u0, bc_u1]
 
 # bc - alpha (zero damage)
@@ -236,13 +238,60 @@ F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
-Ic = tr(C)
-J  = det(F)
+Ic = tr(C) # I1
+I2 = ((tr(C))**2-tr(C*C))/2.
+J  = det(F) # I3 = det(C)=J**2
 
-elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx-b(alpha)*p*(J-1.0)*dx-1./(2.*lmbda)*p**2*dx
+"""
+# Define the eigenvalues of C (principal stretches)
+# lmbda**3 - I1*lmbda**2 + I2*lmbda - I3 = 0
+a_parm = 1.0
+b_parm =-Ic
+c_parm = I2
+d_parm =-det(C)
+p_parm = (3.*a_parm*c_parm-b_parm**2)/(3.*a_parm**2)
+q_parm = (2.*b_parm**3-9.*a_parm*b_parm*c_parm+(27.*a_parm**2)*d_parm)/(27.*a_parm**3)
+
+lmbda1 = conditional(gt(p_parm,0.01),sqrt(2.*sqrt(-p_parm/3.)*cos(1./3.*acos(3.*q_parm/2./p*sqrt(-3./p_parm)))-b_parm/(3.*a_parm)), C[0,0])
+lmbda2 = conditional(gt(p_parm,0.01),sqrt(2.*sqrt(-p_parm/3.)*cos(1./3.*acos(3.*q_parm/2./p*sqrt(-3./p_parm))-2.*pi/3.)-b_parm/(3.*a_parm)), C[0,0])
+lmbda3 = conditional(gt(p_parm,0.01),sqrt(2.*sqrt(-p_parm/3.)*cos(1./3.*acos(3.*q_parm/2./p*sqrt(-3./p_parm))-4.*pi/3.)-b_parm/(3.*a_parm)), C[0,0])
+"""
+
+# Define some parameters for the eigenvalues
+d_par = tr(C)/3.
+e_par = sqrt(tr((C-d_par*I)*(C-d_par*I))/6.)
+f_par = (1./e_par)*(C-d_par*I)
+g_par = det(f_par)/2
+
+# Define the eigenvalues of C (principal stretches)
+lmbda1 = conditional(le(e_par,0.01), sqrt(C[0,0]), sqrt(d_par+2.*e_par*cos(acos(g_par)/3.)))
+lmbda3 = conditional(le(e_par,0.01), sqrt(C[0,0]), sqrt(d_par+2.*e_par*cos((acos(g_par)/3.)+2.*pi/3.)))
+lmbda2 = conditional(le(e_par,0.01), sqrt(C[0,0]), sqrt(3.*d_par-lmbda1**2-lmbda3**2))
+
+# Define the Heaviside step function
+# H(x) = 1, x>= 0; H(x) = 0, x< 0; 
+def Heaviside(x):
+    return conditional(ge(x, 0.), 1., 0.)
+
+
+# Elastic energy decomposition
+W_act = (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda1-1.)*(lmbda1**2-1.-2.*ln(lmbda1))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda2-1.)*(lmbda2**2-1.-2.*ln(lmbda2))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda3-1.)*(lmbda3**2-1.-2.*ln(lmbda3))*dx \
+      - b(alpha)*p*(J-1.)*Heaviside(J-1.)*dx - 1./(2.*kappa)*p**2*Heaviside(J-1.)*dx
+
+W_pas = (mu/2.)*Heaviside(1.-lmbda1)*(lmbda1**2-1.-2.*ln(lmbda1))*dx \
+      + (mu/2.)*Heaviside(1.-lmbda2)*(lmbda2**2-1.-2.*ln(lmbda2))*dx \
+      + (mu/2.)*Heaviside(1.-lmbda3)*(lmbda3**2-1.-2.*ln(lmbda3))*dx \
+      - p*(J-1.)*Heaviside(1.-J)*dx - 1./(2.*kappa)*p**2*Heaviside(1.-J)*dx
+
+#elastic_energy    = W_act + W_pas
+#elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx-b(alpha)*p*ln(J)*dx-1./(2.*kappa)*p**2*dx
+elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(lmbda1**2+lmbda2**2+lmbda3**2-3.0-2.0*ln(J))*dx-b(alpha)*p*ln(J)*dx-1./(2.*kappa)*p**2*dx
+
 body_force        = Constant((0., 0., 0.))
 external_work     = dot(body_force, u)*dx
-elastic_potential = elastic_energy - external_work
+elastic_potential = elastic_energy - external_work 
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q)
@@ -251,7 +300,7 @@ J_u = derivative(F_u, w_p, u_p)
 
 # Variational problem for the displacement
 problem_u = NonlinearVariationalProblem(F_u, w_p, bc_u, J=J_u)
-# Set up the solvers
+# Set up the solvers                                        
 solver_u  = NonlinearVariationalSolver(problem_u)
 solver_u.parameters.update(solver_u_parameters)
 # info(solver_u.parameters, True)
@@ -301,7 +350,7 @@ class DamageProblem(OptimisationProblem):
         for bc in self.bc_alpha:
             bc.apply(A)
 
-# Set up the solvers
+# Set up the solvers                                        
 solver_alpha  = PETScTAOSolver()
 solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
@@ -336,8 +385,8 @@ File(savedir+"/parameters.xml") << userpar
 for (i_t, t) in enumerate(load_multipliers):
     u1.t = t * ut
     if MPI.rank(MPI.comm_world) == 0:
-        print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
-    # Alternate Mininimization
+        print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t)) 
+    # Alternate Mininimization 
     # Initialization
     iteration = 1
     err_alpha = 1.0
@@ -345,7 +394,7 @@ for (i_t, t) in enumerate(load_multipliers):
     while err_alpha > AM_tolerance and iteration < maxiteration:
         # solve elastic problem
         solver_u.solve()
-        # solve damage problem with box constraint
+        # solve damage problem with box constraint 
         solver_alpha.solve(DamageProblem(), alpha.vector(), alpha_lb.vector(), alpha_ub.vector())
         #u_file = File("displacement.pvd")
         #u_file << u
@@ -361,14 +410,14 @@ for (i_t, t) in enumerate(load_multipliers):
           print("\nVolume Ratio: [{}]".format(volume_ratio))
         # update iteration
         alpha_0.assign(alpha)
-        iteration = iteration + 1
+        iteration = iteration + 1   
     # updating the lower bound to account for the irreversibility
     alpha_lb.vector()[:] = alpha.vector()
     alpha.rename("Damage", "alpha")
     u.rename("Displacement", "u")
     p.rename("Pressure", "p")
 
-    # Dump solution to file
+    # Dump solution to file 
     file_alpha.write(alpha, t)
     file_u.write(u, t)
     file_p.write(p, t)
@@ -376,7 +425,7 @@ for (i_t, t) in enumerate(load_multipliers):
     # ----------------------------------------
     # Some post-processing
     # ----------------------------------------
-    # Save number of iterations for the time step
+    # Save number of iterations for the time step    
     iterations[i_t] = np.array([t, iteration])
 
     # Calculate the energies
