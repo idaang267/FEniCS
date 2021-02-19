@@ -3,8 +3,8 @@ close all
 
 y1_d_ls = PhaseFieldPlotS2.u1;
 y2_d_ls = PhaseFieldPlotS2.u2; 
-y1_p_1 = PhaseFieldPlotS2.u3;
-y2_p_1 = PhaseFieldPlotS2.u4; 
+y1_p_2 = PhaseFieldPlotS2.u3;
+y2_p_2 = PhaseFieldPlotS2.u4; 
 y1_p_3 = TestS1.y7;
 y2_p_3 = TestS1.y8; 
 
