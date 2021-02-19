@@ -17,10 +17,15 @@ y2_p_2 = PhaseFieldPlotS1.y6;
 y1_p_3 = PhaseFieldPlotS1.y7;
 y2_p_3 = PhaseFieldPlotS1.y8;
 
+y1_d = PhaseFieldS1.y1;
+y2_d = PhaseFieldS1.y2;
+y1_p_1 = PhaseFieldS1.y3;
+y2_p_1 = PhaseFieldS1.y4;
 
-y1_p_1 = PhaseFieldS2.y1;
-y2_p_1 = PhaseFieldS2.y2;
-x_p = PhaseFieldS2.Points0; 
+y1_d = PhaseFieldS1.y5;
+y2_d = PhaseFieldS1.y6;
+y1_p_1 = PhaseFieldS1.y7;
+y2_p_1 = PhaseFieldS1.y8;
 
 %% Long and Hui displacement BCs
 x = linspace(-4,0.00,500);
@@ -33,7 +38,7 @@ th(end) = pi;
 % h0 is the height 
 h0 = 1.0;
 % Amount of displacement 
-Delta = 0.01; 
+Delta = 0.1; 
 % Stretch
 lambda_a = 1 + Delta/h0;
 
@@ -48,7 +53,7 @@ y1 = c*r.*cos(th);
 figure(5)
 hold on 
 h1 = plot(y1,y2, 'ko', 'LineWidth', 2.5);
-h2 = plot(y1_d_ls, y2_d_ls, 'ro', 'LineWidth', 2.5)
+h2 = plot(y1_d, y2_d, 'ro', 'LineWidth', 2.5)
 hold on 
 h3 = plot(y1_p_1, y2_p_1, 'bo', 'LineWidth', 2.5);
 h4 = plot(y1_p_2, y2_p_2, 'go', 'LineWidth', 2.5);
@@ -68,8 +73,8 @@ plot(x_p, y2_p_1)
 
 
 %%
-saveas(gcf, "SmallStrain_h_0-001.fig")
-title("$\lambda_a = 1.01$", "Interpreter", 'LaTeX')
+saveas(gcf, "LargeStrain_h_0-001.fig")
+title("$\lambda_a = 1.1$", "Interpreter", 'LaTeX')
 leg = legend([h1, h3, h4],["Analytical", "Phase Field: kappa = 10E3", "Phase Field: kappa = 10E4"], 'Location', 'Best');
 
 figure(6)
