@@ -480,6 +480,27 @@ and assuming the eigenvalues satisfying $\lambda_3^2\le\lambda_2\le\lambda_1$, w
 \lambda_1^2 = d +2e\cos\left(\frac{\arccos g}{3}\right), \quad \lambda_3^2 = d +2e\cos\left(\frac{\arccos g}{3}+\frac{2\pi}{3}\right), \quad \lambda_2^2 = 3d -\lambda_1^2 -\lambda_3^3.
 \end{equation}
 
+\subsection{Hybrid Formulation}
+The principal stretches can be computed as shown above, but for spherical stretch ($\mathbf{C}= constant \mathbf{I}$) leading to NaN error. This means that for 3D strain decomposition using the explicit eigenvalue formulation, the computation of the first variation and second variation are nontrivial. FEniCS auto-differential function cannot detect these special cases.  \\ \\
+The workaround is to consider the Hybrid model in Ambati 2015: A review on phase-field models of brittle fracture and a new fast hybrid formulation.
+\begin{align*}
+\mathbf{\sigma} (\mathbf{u}, \alpha) &= (1- \alpha)^2 \frac{\partial W (\mathbf{\epsilon})}{\partial \mathbf{\epsilon}} \\
+- l^2 \nabla^2 \alpha + \alpha &= \frac{2 l}{G_c} (1-\alpha) \mathcal{H}^+
+\end{align*}
+Again, we consider our modified strain energy 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) = a(\alpha) \frac{\mu}{2} (I_c - 3 - 2 \ln J) + \frac{\kappa}{2} a(\alpha)^3 (J-1)^2
+\end{align*}
+Then the active and
+\begin{equation}
+\widetilde{W}_\text{act}\left(\mathbf{F},\alpha\right)=a(\alpha)\frac{\mu}{2}\sum_{i=1}^{3}H(\lambda_i-1)\left(\lambda_i^2-1-2\ln\lambda_i\right) + a^3(\alpha)H(J-1)\frac{1}{2}\kappa\left(J-1\right)^2,
+\end{equation}
+the passive part of the strain energy is
+\begin{equation}
+\widetilde{W}_\text{pas}\left(\mathbf{F},\alpha\right) = \frac{\mu}{2}\sum_{i=1}^{3}H(1-\lambda_i)\left(\lambda_i^2-1-2\ln\lambda_i\right) + H(1-J)\frac{1}{2}\kappa\left(J-1\right)^2,
+\end{equation}
+
+
 %===============================
 %===============================
 %===============================

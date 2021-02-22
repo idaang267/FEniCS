@@ -1,12 +1,19 @@
 clear all 
 close all
 
+y1_p_1 = PFS1.y1;
+y2_p_1 = PFS1.y2;
+y1_p_2 = PFS1.y3;
+y2_p_2 = PFS1.y4;
+y1_p_3 = PFS1.y5;
+y2_p_3 = PFS1.y6;
+y1_p_4 = PFS1.y7;
+y2_p_4 = PFS1.y8; 
+
 y1_d_ls = PhaseFieldPlotS2.u1;
 y2_d_ls = PhaseFieldPlotS2.u2; 
 y1_p_1 = PhaseFieldPlotS2.u3;
 y2_p_1 = PhaseFieldPlotS2.u4; 
-y1_p_3 = TestS1.y7;
-y2_p_3 = TestS1.y8; 
 
 y1_d_ls = PhaseFieldPlotS1.y1;
 y2_d_ls = PhaseFieldPlotS1.y2; 
@@ -38,7 +45,7 @@ th(end) = pi;
 % h0 is the height 
 h0 = 1.0;
 % Amount of displacement 
-Delta = 0.1; 
+Delta = 0.01; 
 % Stretch
 lambda_a = 1 + Delta/h0;
 
@@ -58,9 +65,12 @@ hold on
 h3 = plot(y1_p_1, y2_p_1, 'bo', 'LineWidth', 2.5);
 h4 = plot(y1_p_2, y2_p_2, 'go', 'LineWidth', 2.5);
 h5 = plot(y1_p_3, y2_p_3, 'mo', 'LineWidth', 2.5);
+h6 = plot(y1_p_4, y2_p_4, 'ko', 'LineWidth', 2.5);
+
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
 ylabel("$y_2$", 'Interpreter', 'LaTeX')
 ax.FontSize = 15; 
+leg = legend([h3, h4, h5, h6],["pf=0.016, k=10", "pf=0.016, k=10e3", "pf=0.08, k=10", "pf=0.08, k=10e3"], 'Location', 'Best');
 leg = legend([h2, h3],["Discrete", "Phase Field"], 'Location', 'Best');
 % leg = legend([h1, h3, h4, h5],["Analytical", "X=10, Y=2", "X=10, Y=5", "X=10, Y=10"], 'Location', 'Best');
 set(gca, 'XScale', 'log')
@@ -73,8 +83,8 @@ plot(x_p, y2_p_1)
 
 
 %%
-saveas(gcf, "LargeStrain_h_0-001.fig")
-title("$\lambda_a = 1.1$", "Interpreter", 'LaTeX')
+saveas(gcf, "pf_width_k_v.fig")
+title("$\lambda_a = 1.01$", "Interpreter", 'LaTeX')
 leg = legend([h1, h3, h4],["Analytical", "Phase Field: kappa = 10E3", "Phase Field: kappa = 10E4"], 'Location', 'Best');
 
 figure(6)
