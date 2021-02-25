@@ -507,7 +507,7 @@ the passive part of the strain energy is
 \section{Following Borden: Derivations of Analytical Phase Field}
 Note the full potential energy functional, which can also be called the lagrangian
 \begin{align*}
-\mathcal{E}_{\ell} (\boldsymbol{u}, p, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+\mathcal{E}_{\ell} (\boldsymbol{u}, p, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega - \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
 \end{align*}
 We can use the Euler-Lagrange equations to arrive at the equations of motion by taking the derivative with respect to displacement, pressure, and the scalar damage field. Starting with displacement:
 \begin{align*}
@@ -520,13 +520,13 @@ We can use the Euler-Lagrange equations to arrive at the equations of motion by 
 \frac{\partial \mathcal{E}_{\ell}}{\partial \alpha} &= - \int_{\Omega} 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) \, d \Omega + \int_{\Omega} 3 p (1- \alpha)^2 (J-1) d \Omega + \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] d \Omega 
 \end{align*}
 Therefore we have three equations: \\
-First should be mechanical eq, second is a an equation for pressure, 
-%\begin{align*}
-%a (\alpha) \pdv{\mathcal{W} (\mathbf{F})}{\mathbf{u}} &= 0 \quad \text{Chain Rule} \\
-%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{\mathbf{F}}{\mathbf{u}} &= 0 \\
-%a (\alpha) \pdv{\mathcal{W}}{\mathbf{F}} \pdv{(\nabla \mathbf{u} + \mathbf{I} )}{\mathbf{u}} &= 0 \\
-%a (\alpha) \mathbf{P} \pdv{}{\mathbf{u}} \bigg( \pdv{\mathbf{u}}{\mathbf{x}} \bigg) &= 0 \quad \text{unsure of final steps}
-%\end{align*}
+First is mechanical eq,
+\begin{align*}
+\frac{\partial \mathcal{W} (\mathbf{F})}{\partial u_i} = 0 \\
+\frac{\partial}{\partial x_j} \bigg( \frac{\partial \mathcal{W}}{\partial \epsilon_{ij}} \bigg) &= 0 \\
+\frac{\partial \sigma_{ij}}{\partial x_j} &= 0 
+\end{align*}
+Second is an equation for pressure, 
 \begin{align*}
 -\frac{p}{\kappa} - \sqrt{a^3(\alpha)} (J-1) &= 0 \\
 -\frac{p}{\kappa} - (1-\alpha)^3 (J-1) &= 0 \\
@@ -542,24 +542,50 @@ Substitute second equation into third
 \end{align*}
 
 \subsection{Homogeneous Solution}
-Therefore, we can study the homogeneous solution by ignoring spatial derivatives of $\alpha$
+We can study the homogeneous solution by ignoring spatial derivatives of $\alpha$. If we don't substitute p:
+\begin{align*}
+- 2 (1 - \alpha_h) \, \mathcal{W} (\mathbf{F}) + 3 p (1- \alpha_h)2 (J-1) + \frac{G_{c}}{c_{w} \ell } = 0 
+\end{align*}
+or if we substitute pressure
 \begin{align*}
 - 2 (1 - \alpha_{h}) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha_{h})^5 (J-1)^2 + \frac{G_{c}}{c_{w} \ell} &= 0 
 \end{align*}
-We can expand and arrange
-\begin{align*}
-- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 (1 - 5 \alpha_h + 10 \alpha_h^2 - 10 \alpha_h^3 + 5 \alpha_h^4 - \alpha_h^5) + \frac{G_{c}}{c_{w} \ell} &= 0 \\
-- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) + \frac{G_{c}}{c_{w} \ell} \\
-- 3 \kappa(J-1)^2 + 15 \kappa(J-1)^2 \alpha_h - 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0 \\
-- 2 \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 + \frac{G_{c}}{c_{w} \ell} + \big[ 2 \mathcal{W} (\mathbf{F}) + 15 \kappa(J-1)^2 \big] \alpha_h \\
-- 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0
-\end{align*}
+%We can expand and arrange
+%\begin{align*}
+%- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 (1 - 5 \alpha_h + 10 \alpha_h^2 - 10 \alpha_h^3 + 5 \alpha_h^4 - \alpha_h^5) + \frac{G_{c}}{c_{w} \ell} &= 0 \\
+%- 2 \mathcal{W} (\mathbf{F}) + 2 \alpha_{h} \mathcal{W} (\mathbf{F}) + \frac{G_{c}}{c_{w} \ell} \\
+%- 3 \kappa(J-1)^2 + 15 \kappa(J-1)^2 \alpha_h - 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0 \\
+%- 2 \mathcal{W} (\mathbf{F}) - 3 \kappa(J-1)^2 + \frac{G_{c}}{c_{w} \ell} + \big[ 2 \mathcal{W} (\mathbf{F}) + 15 \kappa(J-1)^2 \big] \alpha_h \\
+%- 30 \kappa(J-1)^2 \alpha_h^2 + 30 \kappa(J-1)^2 \alpha_h^3 - 15 \kappa(J-1)^2 \alpha_h^4 + \kappa(J-1)^2 \alpha_h^5 &= 0
+%\end{align*}
 
 \subsection{Non-Homogeneous Solution}
 Now for the Non-homogenous solution, we have the following
 \begin{align*}
-- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) - 3 \kappa (1-\alpha)^5 (J-1)^2 + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
+- 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1-\alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg[ \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg] &= 0 
 \end{align*}
+Multiply by $d \alpha / dx$
+\begin{align*}
+\frac{d \alpha}{d x} \bigg[ - 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1-\alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg( \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg) \bigg] &= 0 \\
+\frac{d}{d x} \int \bigg[ - 2 (1 - \alpha) \, \mathcal{W} (\mathbf{F}) + 3 p (1-\alpha)^2 (J-1) + \frac{G_{c}}{c_{w}} \bigg( \frac{1}{\ell} + 2 \ell \nabla^2 \alpha \bigg) \bigg] d \alpha &= 0 \\
+\frac{d}{d x} \bigg[ (1 - \alpha)^2 \, \mathcal{W} (\mathbf{F}) - p (1-\alpha)^3 (J-1) + \frac{G_{c}}{c_{w}} \bigg( \frac{\alpha}{\ell} + 2 \ell \nabla^2 \alpha \bigg) \bigg] &= 0 \\
+\end{align*}
+now integrate from x to infinity
+\begin{align*}
+\bigg[ (1 - \alpha)^2 \, \mathcal{W} (\mathbf{F}) - p (1-\alpha)^3 (J-1) + \frac{G_{c}}{c_{w}} \bigg( \frac{\alpha}{\ell} + 2 \ell \nabla^2 \alpha \bigg) \bigg] \bigg\rvert_0^{\infty} &= 0 \\
+(1 - \alpha)^2 \, \mathcal{W} (\mathbf{F}) - p (1-\alpha)^3 (J-1) + \frac{G_{c}}{c_{w}} \bigg( \frac{\alpha}{\ell} + 2 \ell \nabla^2 \alpha \bigg) & \\
+- \bigg[ (1 - \alpha_h)^2 \, \mathcal{W} (\mathbf{F}) - p (1-\alpha_h)^3 (J-1) + \alpha_h \frac{G_{c}}{c_{w} \ell} \bigg] &= 0
+\end{align*}
+with some rearrangement we can call the bracketed section 
+\begin{equation}
+a_{hom} = (1 - \alpha_h)^2 \, \mathcal{W} (\mathbf{F}) - p (1-\alpha_h)^3 (J-1) + \alpha_h \frac{G_{c}}{c_{w} \ell} 
+\end{equation}
+which can yield an expression that can solve for the phase field profile
+\begin{align*}
+-(1 - \alpha)^2 \, \mathcal{W} (\mathbf{F}) + p (1-\alpha)^3 (J-1) - \frac{G_{c}}{c_{w}} \frac{\alpha}{\ell} + \bigg[ a_{hom} \bigg] &= 2 \ell \nabla^2 \alpha \frac{G_{c}}{c_{w}} \\
+\frac{c_w}{ 2 \ell G_c} \bigg[ -(1 - \alpha)^2 \, \mathcal{W} (\mathbf{F}) + p (1-\alpha)^3 (J-1) \bigg] - \frac{\alpha}{2 \ell^2} + \frac{c_w}{2 \ell G_c} \bigg[ a_{hom} \bigg] &= \frac{d^2 \alpha}{dx^2}
+\end{align*}
+This expression needs to be non-dimensionalized accurately in order to be plotted
 
 
 % Beginning of multiline comment

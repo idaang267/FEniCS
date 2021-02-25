@@ -16,3 +16,23 @@ Fc = int(f,[x,inf])
 Fc = int(f,[-inf,x])
 
 diff(c(x), x, x)
+
+%% 
+
+% function of x with one parameter c 
+fun = @(x,c) 1./(x.^3-2*x-c);
+
+% Evaluate the integral from x=0 to x=2 at c=5.
+for c = 1:5
+    q(c) = integral(@(x) fun(x,c),0,2)
+end
+
+plot(linspace(1,5,5),q)
+
+fun = @(c, beta) (beta.^2/c.^2 + c.^2/2 - c).^(1/2);
+
+c = linspace(0,1,10);
+for i = 1:length(c)
+    x(i) = integral(@() fun(c,beta), 0, c(i));
+end
+

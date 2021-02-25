@@ -1,14 +1,14 @@
 clear all 
 close all
 
-y1_p_1 = PFS1.y1;
-y2_p_1 = PFS1.y2;
-y1_p_2 = PFS1.y3;
-y2_p_2 = PFS1.y4;
-y1_p_3 = PFS1.y5;
-y2_p_3 = PFS1.y6;
-y1_p_4 = PFS1.y7;
-y2_p_4 = PFS1.y8; 
+y1_p_1 = DPFS1.y1;
+y2_p_1 = DPFS1.y2;
+y1_p_2 = DPFS1.y3;
+y2_p_2 = DPFS1.y4;
+y1_p_3 = DPFS1.y5;
+y2_p_3 = DPFS1.y6;
+y1_p_4 = DPFS1.y7;
+y2_p_4 = DPFS1.y8; 
 
 y1_d_ls = PhaseFieldPlotS2.u1;
 y2_d_ls = PhaseFieldPlotS2.u2; 
@@ -70,8 +70,9 @@ h6 = plot(y1_p_4, y2_p_4, 'ko', 'LineWidth', 2.5);
 xlabel("$y_1$", 'Interpreter', 'LaTeX')
 ylabel("$y_2$", 'Interpreter', 'LaTeX')
 ax.FontSize = 15; 
-leg = legend([h3, h4, h5, h6],["pf=0.016, k=10", "pf=0.016, k=10e3", "pf=0.08, k=10", "pf=0.08, k=10e3"], 'Location', 'Best');
-leg = legend([h2, h3],["Discrete", "Phase Field"], 'Location', 'Best');
+leg = legend([h3, h4, h5, h6],["", "", "pf=0.08, k=10", "pf=0.08, k=10e3"], 'Location', 'Best');
+leg = legend([h3, h4],["Original", "Threshold: 0.9"], 'Location', 'Best');
+leg = legend([h3, h4, h5, h6],["Original", "Threshold: 0.9", "Threshold: 0.8", "Threshold: 0.7"], 'Location', 'Best');
 % leg = legend([h1, h3, h4, h5],["Analytical", "X=10, Y=2", "X=10, Y=5", "X=10, Y=10"], 'Location', 'Best');
 set(gca, 'XScale', 'log')
 set(gca, 'YScale', 'log')
