@@ -102,15 +102,14 @@ class DamageProblem(OptimisationProblem):
 parameters.parse()
 userpar = Parameters("user")
 userpar.add("mu", 1)     # Shear modulus - normalized by n*k_b*T ?
-userpar.add("kappa",10e3)
+userpar.add("kappa",10)
 userpar.add("Gc", 2.4e6)       # Fracture toughness
 userpar.add("k_ell", 5.e-5)    # residual stiffness
-userpar.add("meshsizeX", 250)
-userpar.add("meshsizeY", 100)
+userpar.add("meshsizeX", 1000)
+userpar.add("meshsizeY", 200)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 0.1)
 userpar.add("load_steps", 5)
-userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
 
@@ -118,7 +117,7 @@ userpar.parse()
 # ----------------------------------------------------------------------------
 # Geometry parameters
 # Length (x) and height (y-direction)
-L, H = 5, 2.0
+L, H = 5, 1.0
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
@@ -132,14 +131,11 @@ kappa = userpar["kappa"]        # Bulk Modulus
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
-ell_multi = userpar["ell_multi"]
-# Damage regularization parameter - internal length scale used for tuning Gc
-ell = Constant(ell_multi*hsize)
 
 # Naming for the saved output
-modelname = "2D-planestrain"
+modelname = "2D-planestrain-discrete"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_ellx_%.0f_d_%.2f_k_%.0f" % (Nx, Ny, ell_multi, userpar["load_max"], kappa)
+simulation_params = "Nx_%.0f_Ny_%.0f_d_%.2f_k_%.0f" % (Nx, Ny, userpar["load_max"], kappa)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing
@@ -148,10 +144,11 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured mesh
-mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
+mesh = Mesh("2DShearTestHalf.xml")
+# mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
 # Mesh generation of structured and refined mesh
 # mesh = Mesh("2DShearTestRef.xml")
-# Mesh rpintout
+# Mesh printout
 # geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 # geo_mesh.write(mesh)
 
@@ -160,9 +157,6 @@ mesh.init()
 ndim = mesh.geometry().dim()
 if MPI.rank(MPI.comm_world) == 0:
     print ("the dimension of mesh: {0:2d}".format(ndim))
-
-# Characteristic element length - used for stabilization
-h = CellDiameter(mesh)
 
 # Loading Parameters
 ut = 1.0           # Reference value for the loading (imposed displacement)
@@ -173,28 +167,34 @@ AM_tolerance = 1e-4
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
+class top_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], 1.0, 0.1*hsize)
+
+class bot_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], 0.0, 0.1 *hsize) and between(x[0], (0.0, 2.5))
+
 class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and near(x[0], 2.5, 0.1*hsize)
 
-class bot_boundary(SubDomain):
+class left_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], -1.0, 0.1 *hsize) #and between(x[0], (0.0, 2.5))
-
-class top_boundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 1.0, 0.1*hsize)
+        return on_boundary and near(x[0], -2.5, 0.1*hsize)
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[0], 0.0, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
 
 # Convert all boundary classes for visualization
-right_boundary = right_boundary()
-bot_boundary = bot_boundary()
 top_boundary = top_boundary()
+bot_boundary = bot_boundary()
+right_boundary = right_boundary()
+left_boundary = left_boundary()
 pin_point = pin_point()
 
+# Define lines and points
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
 
@@ -205,18 +205,30 @@ top_boundary.mark(lines, 1)
 file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
+# Show points of interest
+points.set_all(0)
+pin_point.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
+
 # Variational formulation
 # ----------------------------------------------------------------------------
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
-# Create function space for elasticity + damage
-P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-P2  = VectorElement("Lagrange", mesh.ufl_cell(), 2)
-# Stabilized mixed FEM for incompressible elasticity
-TH  = MixedElement([P2,P1])
-# Define function spaces for displacement and pressure in V_u and damage in V_alpha
+# Taylor-Hood space for incompressible elasticity
+P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
+P1 = FunctionSpace(mesh, "Lagrange", 1)
+P2elem = P2.ufl_element()
+P1elem = P1.ufl_element()
+TH  = MixedElement([P2elem,P1elem])
+
+# # Create function space for elasticity + damage
+# P2  = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+# P1  = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+# # Stabilized mixed FEM for incompressible elasticity
+# TH  = MixedElement([P2,P1])
+# Define function spaces for displacement and pressure in V_u
 V_u = FunctionSpace(mesh, TH)
-V_alpha = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define the function, test and trial fields for elasticity problem
 w_p    = Function(V_u)
@@ -224,10 +236,6 @@ u_p    = TrialFunction(V_u)
 v_q    = TestFunction(V_u)
 (u, p) = split(w_p)     # Displacement and pressure
 (v, q) = split(v_q)     # Test functions for displacement and pressure
-# Define the function, test and trial fields for damage problem
-alpha  = Function(V_alpha)
-dalpha = TrialFunction(V_alpha)
-beta   = TestFunction(V_alpha)
 
 # Dirichlet boundary condition
 # --------------------------------------------------------------------
@@ -235,20 +243,16 @@ u00 = Constant((0.0))
 u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
+
 # Top/bottom boundaries have displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
-bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+# bottom boundary has rollers
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u00, bot_boundary)
 # Pointwise
 bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
 
 # combine boundary conditions
 bc_u = [bc_u0, bc_u1, bc_u2]
-
-# bc - alpha (zero damage)
-# No damage to the boundaries - damage does not initiate from constrained edges
-bc_alpha0 = DirichletBC(V_alpha, 0.0, bot_boundary)
-bc_alpha1 = DirichletBC(V_alpha, 0.0, top_boundary)
-bc_alpha = [bc_alpha0, bc_alpha1]
 
 # Define the energy functional of damage problem
 # --------------------------------------------------------------------
@@ -262,34 +266,20 @@ C = F.T*F                   # Right Cauchy-Green tensor
 J  = det(F)
 Ic = tr(C) + 1
 
-# Constitutive functions of the damage model
-# ----------------------------------------------------------------------------
-def w(alpha):
-    return alpha
-
-def a(alpha):
-    return (1.0-alpha)**2
-
-def b(alpha):
-    return (1.0-alpha)**3
-
 # Nominal stress tensor
-def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
+def P(u):
+    return mu*(F - inv(F.T)) - p*J*inv(F.T)
 
 # Zero body force
 body_force        = Constant((0., 0.))
-# Non-dimension non-negative stability parameter
-varpi_ = 1.0
-varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
+                    - p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
-F_u = derivative(elastic_potential, w_p, v_q) #\ - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
+F_u = derivative(elastic_potential, w_p, v_q)
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -300,29 +290,9 @@ solver_u  = NonlinearVariationalSolver(problem_u)
 solver_u.parameters.update(solver_u_parameters)
 # info(solver_u.parameters, True)
 
-# Define the energy functional of damage problem
-# --------------------------------------------------------------------
-# Initial/known alpha
-alpha_0 = interpolate(Expression("0.", degree=0), V_alpha)
-z = sympy.Symbol("z", positive=True)
-c_w = float(4 * sympy.integrate(sympy.sqrt(w(z)), (z, 0, 1)))
-dissipated_energy = Gc/float(c_w)*(w(alpha)/ell + ell*dot(grad(alpha), grad(alpha)))*dx
-damage_functional = elastic_potential + dissipated_energy
-
-# Compute directional derivative about alpha in the direction of beta (Gradient)
-E_alpha = derivative(damage_functional, alpha, beta)
-# Compute directional derivative about alpha in the direction of dalpha (Hessian)
-E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
-
-# Set the lower and upper bound of the damage variable (0-1)
-# alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=-2.5 & x[0]<=0 & near(x[1], 0.0, 0.01*hsize) ? 1.0 : 0.0", hsize = hsize, degree=0), V_alpha)
-alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
-
 # Loading and initialization of vectors to store time datas
 load_multipliers  = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
 energies          = np.zeros((len(load_multipliers), 5))
-iterations        = np.zeros((len(load_multipliers), 2))
 
 # Set the saved data file name
 (u, p)     = w_p.split()
@@ -342,76 +312,31 @@ timer0 = time.process_time()
 for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t
-    u2.t = t
 
     # Structure used for one printout of the statement
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
 
-    # Alternate Mininimization
-    # -------------------------------------------------------------------------
-    # Initialization
-    iteration = 1
-    err_alpha = 1.0
-    # Conditions for Iterations
-    while err_alpha > AM_tolerance and iteration < maxiteration:
-        # Solve elastic problem
-        solver_u.solve()
-        # Solve damage problem with box constraint
-        solver_alpha.solve(DamageProblem(), alpha.vector(), alpha_lb.vector(), alpha_ub.vector())
-        # Test error
-        alpha_error = alpha.vector() - alpha_0.vector()
-        err_alpha = alpha_error.norm('linf')
-        # Monitor the results
-        volume_ratio = assemble(J/(L*H)*dx)
-        if MPI.rank(MPI.comm_world) == 0:
-          print ("AM Iteration: {0:3d},  alpha_error: {1:>14.8f}".format(iteration, err_alpha))
-          print("\nVolume Ratio: [{}]".format(volume_ratio))
-        # Update variables for next iteration
-        alpha_0.assign(alpha)
-        iteration = iteration + 1
-
-    # Updating the lower bound to account for the irreversibility
-    alpha_lb.vector()[:] = alpha.vector()
+    # Solve elastic problem
+    solver_u.solve()
 
     # Project nominal stress to tensor function space
-    PTensor = project(P(u, alpha), TT)
+    PTensor = project(P(u), TT)
+    JScalar = project(J, P1)
 
     # Rename for paraview
-    alpha.rename("Damage", "alpha")
     u.rename("Displacement", "u")
     p.rename("Pressure", "p")
     PTensor.rename("Nominal Stress", "P")
+    JScalar.rename("J", "J")
 
     # Write solution to file
-    file_tot.write(alpha, t)
     file_tot.write(u, t)
     file_tot.write(p, t)
     file_tot.write(PTensor,t)
+    file_tot.write(JScalar,t)
 
-    # Post-processing
-    # ----------------------------------------
-    # Save number of iterations for the time step
-    iterations[i_t] = np.array([t, iteration])
-
-    # Calculate the energies
-    elastic_energy_value = assemble(elastic_energy)
-    surface_energy_value = assemble(dissipated_energy)
-
-    energies[i_t] = np.array([t, elastic_energy_value, surface_energy_value, \
-                              elastic_energy_value+surface_energy_value, volume_ratio])
-
-    if MPI.rank(MPI.comm_world) == 0:
-        print("\nEnd of timestep {0:3d} with load multiplier {1:4f}".format(i_t, t))
-        print("\nElastic and Surface Energies: [{0:6f},{1:6f}]".format(elastic_energy_value, surface_energy_value))
-        print("\nElastic and Surface Energies: [{},{}]".format(elastic_energy_value, surface_energy_value))
-        print("\nVolume Ratio: [{}]".format(volume_ratio))
-        print("-----------------------------------------")
-        # Save some global quantities as a function of the time
-        np.savetxt(savedir + '/stabilized-energies.txt', energies)
-        np.savetxt(savedir + '/stabilized-iterations.txt', iterations)
-
-# ----------------------------------------------------------------------------
+#----------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))
 
 

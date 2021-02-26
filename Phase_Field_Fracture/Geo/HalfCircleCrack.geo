@@ -7,8 +7,8 @@ r_d = 0.1;
 // Length of crack
 c_d = 0.05;
 // rougher mesh to finer
-ms_r = 1E-5; // 1E-6;
-ms = 1E-2; // 2E-3;
+ms_r = 5E-6;
+ms = 5E-3;
 
 // Points
 Point(1) = {0, 0, 0, ms_r}; // < centerpoint

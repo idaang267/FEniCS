@@ -1,0 +1,28 @@
+Download gmsh from the following website: https://gmsh.info/
+You can download GMSH for almost any OS
+Note that these instructions are for my personal Linux workstation
+
+Rename to something simple "gmsh-4.6.0"
+Copy from your downloads folder to /usr/local/bin/
+    Start in the folder that gmsh resides in
+    sudo cp -R gmsh-4.6.0 /usr/local/bin/
+    Navigate to your base directory by:
+      cd
+      atom .bashrc
+    Add the following line to the bottom of your .bashrc file
+      export PATH=$PATH:/usr/local/bin/gmsh-4.6.0/bin/
+    Save your .bashrc file, close, and source it by:
+      source .bashrc
+    Now you can run from anywhere by writing in commandline:
+      gmsh
+    For opening a specific geo file
+      gmsh name.geo
+
+Instructions for converting a geo file to msh to xml
+  gmsh name.geo -format msh2 -3
+  dolfin-convert name.msh name.xml
+
+You can use test.py to convert your xml file to xdmf to view in Paraview (Lines Below)
+  from dolfin import *
+  mesh = Mesh("name.xml")
+  XDMFFile("mesh.xdmf").write(mesh)

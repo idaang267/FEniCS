@@ -89,12 +89,12 @@ userpar.add("mu", 1)          # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 1000)
-userpar.add("meshsizeY", 500)
+userpar.add("meshsizeX", 400)
+userpar.add("meshsizeY", 200)
 userpar.add("load_min", 0.)
 userpar.add("load_max", 1.0)
-userpar.add("load_steps", 21)
-userpar.add("ell_multi", 20)
+userpar.add("load_steps", 11)
+userpar.add("ell_multi", 10)
 # Parse command-line options
 userpar.parse()
 
@@ -120,7 +120,7 @@ k_ell = userpar["k_ell"]
 ell_multi = userpar["ell_multi"]
 
 # Naming parameters for saving output
-modelname = "2D-discrete-stabilized"
+modelname = "2D-test"
 meshname  = modelname + "-mesh.xdmf"
 simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
@@ -200,6 +200,9 @@ file_results.write(points)
 
 # Variational formulation
 # ----------------------------------------------------------------------------
+# Tensor space for projection of stress
+TT = TensorFunctionSpace(mesh,'DG',0)
+
 P2 = VectorFunctionSpace(mesh, "Lagrange", 1)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
 P2elem = P2.ufl_element()
@@ -249,6 +252,9 @@ Ic = tr(C) + F33**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
+def P(u):
+    return mu*(F - inv(F.T)) + p*J*inv(F.T)
+
 # Zero body force
 body_force = Constant((0., 0.))
 # Non-dimension non-negative stability parameter
@@ -256,16 +262,18 @@ varpi_ = 1.0
 # Eq 19 in Klaas
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx + p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
-external_work     = dot(body_force, u)*dx
-elastic_potential = elastic_energy - external_work
+# elastic_energy    = (mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
+#                     + p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+# external_work     = dot(body_force, u)*dx
+# elastic_potential = elastic_energy - external_work
 
 # Define the energy functional of the damage problem - the fracture energy
 # dissipated_energy = Gc*dx
 
 # Define the stabilization term and the additional weak form eq.
 # Compute directional derivative about w_p in the direction of v (Gradient)
-F_u = derivative(elastic_potential, w_p, v_q) \
+#derivative(elastic_potential, w_p, v_q) \
+F_u = inner(P(u), grad(v))*dx \
         - varpi*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
       + (F33**2 - 1 + p*J/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
@@ -307,15 +315,23 @@ for (i_t, t) in enumerate(load_multipliers):
     # Solve elastic problem
     solver_up.solve()
 
+    # Project nominal stress to tensor function space
+    PTensor = project(P(u), TT)
+    JScalar = project(J, P1)
+
     # Rename for paraview
     u.rename("Displacement", "u")
     p.rename("Pressure", "p")
     F33.rename("F33", "F33")
+    PTensor.rename("Nominal Stress", "P")
+    JScalar.rename("J", "J")
 
     # Write solution to file
     file_tot.write(u, t)
     file_tot.write(p, t)
     file_tot.write(F33, t)
+    file_tot.write(PTensor,t)
+    file_tot.write(JScalar,t)
 
 # ----------------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))

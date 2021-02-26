@@ -6,8 +6,9 @@ Mesh.Algorithm = 8; // Delaunay for quads
 ms = 0.05;
 
 // Dimensions in x y
-x_d = 15;
-y_d = 1.5;
+x_d = 5;
+y_d = 1;
+c_d = 2.5; 
 
 // Points for plane defined counter-clockwise
 Point(1) = {0, 0, 0, ms};

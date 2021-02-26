@@ -395,7 +395,35 @@ Because we integrate the same expression from minus infinity to x, we can write:
 \begin{equation}
 \frac{dc}{dx} = sgn(x) \sqrt{\frac{1}{2 \ell_0^2} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ - \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] \bigg]}
 \end{equation}
+In the paper, the last bracket as stated as 
+\begin{equation}
+a = - \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h
+\end{equation}
 
+\subsubsection{Normalization}
+We want to obtain a non-dimensional form for plotting. 
+\begin{align*}
+\text{Stresses: } \sigma^* &= \frac{\sigma}{C_h E} \\
+\text{Length Scales: } \ell_0^* &= \frac{\ell_0}{L_0} \quad \quad x^* = \frac{x}{L_0}
+\end{align*}
+where $C_h$ is the non-dimensional constant assumed to be 1. Not to be confused with $c_h$ the homogeneous phase field value. 
+\begin{align*}
+L_0 = \frac{G_c}{C_h E}
+\end{align*}
+Therefore, we can normalize the following expression temporarily ignoring the sign 
+\begin{align*}
+\frac{dc}{dx} &= \sqrt{\frac{1}{2 \ell_0^2} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ - \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] \bigg]} \\
+\bigg( \frac{dc}{dx} \bigg)^2 &=  \frac{1}{2 \ell_0^2} \bigg[ - \frac{\ell_0 \sigma^2}{c^2 E \mathcal{G}_c} + \frac{c^2}{2}  -  c  - \bigg[ - \frac{\ell_0 \sigma^2}{c_h^2 E \mathcal{G}_c} + \frac{c_h^2}{2} -  c_h \bigg] \bigg] \\
+\bigg( \frac{dc^*}{d (x^* L_0)} \bigg)^2 &= \frac{1}{2 (\ell_0^* L_0)^2} \bigg[ - \frac{\ell_0^* L_0 (\sigma^* C_h E)^2}{(c^*)^2 E \mathcal{G}_c} + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* L_0 (\sigma^* C_h E)^2}{(c^*_h)^2 E \mathcal{G}_c} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] \\
+\bigg( \frac{dc^*}{d (x^* L_0)} \bigg)^2 &= \frac{1}{2 (\ell_0^*)^2 L_0^2} \bigg[ - \frac{\ell_0^* L_0 (\sigma^*)^2  E}{(c^*)^2 \mathcal{G}_c} + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* L_0 (\sigma^*)^2 E}{(c^*_h)^2 \mathcal{G}_c} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] \\
+\bigg( \frac{dc^*}{d (x^* L_0)} \bigg)^2 &= \frac{1}{2 (\ell_0^*)^2 L_0^2} \bigg[ - \frac{\ell_0^* (\sigma^*)^2 }{(c^*)^2 } + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* (\sigma^*)^2}{(c^*_h)^2} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] \\
+(dc^*)^2 &= \frac{1}{2 (\ell_0^*)^2 L_0^2} \bigg[ - \frac{\ell_0^* (\sigma^*)^2 }{(c^*)^2 } + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* (\sigma^*)^2}{(c^*_h)^2} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] (d (x^* L_0))^2 \\
+(dc^*)^2 &= \frac{1}{2 (\ell_0^*)^2} \bigg[ - \frac{\ell_0^* (\sigma^*)^2 }{(c^*)^2 } + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* (\sigma^*)^2}{(c^*_h)^2} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] (d x^*)^2
+\end{align*}
+Therefore, we can obtain an integral that solves for the coordinates 
+\begin{align*}
+x^* = \int_{c_{crack}}^{c (L_0 x^*)} \bigg[\frac{1}{2 (\ell_0^*)^2} \bigg[ - \frac{\ell_0^* (\sigma^*)^2 }{(c^*)^2 } + \frac{(c^*)^2}{2}  -  c^*  - \bigg[ - \frac{\ell_0^* (\sigma^*)^2}{(c^*_h)^2} + \frac{(c^*_h)^2}{2} -  c^*_h \bigg] \bigg] \bigg]^{-1/2} d c^*
+\end{align*}
 
 %\begin{figure}[h]
 %    \centering

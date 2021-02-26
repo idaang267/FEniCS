@@ -2,7 +2,7 @@
 ################################################################################
 #
 # A finite element method for gradient damage models of fracture in
-# incompressible hyperelastic materials. Modified to a u formulation    
+# incompressible hyperelastic materials. Modified to a u formulation
 #
 # Modified for plane-stress cases
 #
@@ -107,7 +107,7 @@ class InitialConditions(UserExpression):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 0.1)         # Shear modulus - normalized by n*k_b*T ?
+userpar.add("mu", 1.0)         # Shear modulus - normalized by n*k_b*T ?
 userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
@@ -304,7 +304,7 @@ Ic = tr(C) + (F33)**2
 # --------------------------------------------------------------------
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F))
+    return a(alpha)*mu*(F - inv(F.T))
 
 # Zero body force
 body_force = Constant((0., 0.))

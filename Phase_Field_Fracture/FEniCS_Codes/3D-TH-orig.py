@@ -102,10 +102,9 @@ userpar.add("mu",1)       # n*k*T Shear modulus
 userpar.add("kappa",10e2)
 userpar.add("Gc",2.4e6)       # fracture toughness
 userpar.add("k_ell",5.e-5)    # residual stiffness
-userpar.add("alpha_t", 0.8)   # Damage threshold
-userpar.add("meshsizeX", 50)
-userpar.add("meshsizeY", 25)
-userpar.add("meshsizeZ", 25)
+userpar.add("meshsizeX", 100)
+userpar.add("meshsizeY", 10)
+userpar.add("meshsizeZ", 10)
 userpar.add("load_min",0.)
 userpar.add("load_max", 0.01)
 userpar.add("load_steps", 5)
@@ -124,7 +123,6 @@ hsize   = float(H/Ny)
 # Material constants
 mu    = userpar["mu"]
 kappa = userpar["kappa"]
-alpha_t = userpar["alpha_t"]
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
@@ -139,7 +137,7 @@ AM_tolerance = 1e-4
 
 modelname = "3D-TaylorHood"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_Nz_%.0f_ellx_%.0f_at_%.1f" % (Nx, Ny, Nz, ell_multi, alpha_t)
+simulation_params = "Nx_%.0f_Ny_%.0f_Nz_%.0f_ellx_%.0f" % (Nx, Ny, Nz, ell_multi)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 if MPI.rank(MPI.comm_world) == 0:
@@ -160,20 +158,34 @@ if MPI.rank(MPI.comm_world) == 0:
 # ----------------------------------------------------------------------------
 class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], L, 0.1*hsize)
+        return on_boundary and near(x[0], L, hsize)
 
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0, 0.1 * hsize)
+        return on_boundary and near(x[1], 0, hsize)
+
+class top_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[1], H, hsize)
+
+class back_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[2], 0, hsize)
+
+class front_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[2], W, hsize)
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], L/2, 0.1*hsize) and near(x[1], H/2, 0.1*hsize) and near(x[2], W/2, 0.1*hsize)
+        return near(x[0], L/2, hsize) and near(x[1], H/2, hsize) and near(x[2], W/2, hsize)
 
 # Convert all boundary classes for visualization
 right_boundary = right_boundary()
 bot_boundary = bot_boundary()
 top_boundary = top_boundary()
+back_boundary = back_boundary()
+front_boundary = front_boundary()
 pin_point = pin_point()
 
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
@@ -190,12 +202,7 @@ file_results.write(lines)
 # ----------------------------------------------------------------------------
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
-# Create function space for elasticity + Damage
-# Taylor-Hood space for incompressible elasticity
-# P1      = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-# P2      = VectorElement("Lagrange", mesh.ufl_cell(), 2)
-# TH      = MixedElement([P2,P1])
-# V_u     = FunctionSpace(mesh, TH)
+# Create Taylor-Hood function space for elasticity + Damage
 P2 = VectorFunctionSpace(mesh, "Lagrange", 2)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
 P2elem = P2.ufl_element()
@@ -206,11 +213,13 @@ TH  = MixedElement([P2elem,P1elem])
 V_u     = FunctionSpace(mesh, TH)
 V_alpha = FunctionSpace(mesh, "Lagrange", 1)
 
-# Define the function, test and trial fields
+# Define the function, test and trial fields for elasticity problem
 w_p     = Function(V_u)
 u_p     = TrialFunction(V_u)
 v_q     = TestFunction(V_u)
 (u, p)  = split(w_p)
+
+# define the function, test, and trial for damage problem
 alpha   = Function(V_alpha)
 dalpha  = TrialFunction(V_alpha)
 beta    = TestFunction(V_alpha)
@@ -221,12 +230,15 @@ u00 = Constant((0.0))
 u0 = Expression(["0.0","0.0","0.0"], degree=0)
 u1 = Expression("t",  t=0.0, degree=0)
 u2 = Expression("-t", t=0.0, degree=0)
-# bc - u (imposed displacement)
+# Displacement on top and bottom boundaries 
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+# Rollers on front and back boundary constraining displacement in the z
+bc_u3 = DirichletBC(V_u.sub(0).sub(2), u00, back_boundary)
+bc_u4 = DirichletBC(V_u.sub(0).sub(2), u00, front_boundary)
 # Pinned center point
 bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point)
-bc_u = [bc_u0, bc_u1, bc_u2]
+bc_u = [bc_u0, bc_u1, bc_u2, bc_u3, bc_u4]
 
 # bc - alpha (zero damage)
 bc_alpha0 = DirichletBC(V_alpha, 0.0, top_boundary)
@@ -244,10 +256,6 @@ def a(alpha):
 def b(alpha):
     return (1.0-alpha)**3
 
-# Define a damage criterion according to damage threshold, alpha_t
-def d_crit(alpha_t):
-    return conditional(ge(alpha, alpha_t), 0, 1)
-
 # Define the energy functional of damage problem
 # --------------------------------------------------------------------
 # Kinematics
@@ -262,12 +270,11 @@ J  = det(F)
 
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - d_crit(alpha_t)*b(alpha)*p*J*inv(F.T)
+    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
 
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - d_crit(alpha_t)*b(alpha)*p*(J-1.0)*dx \
-                    - 1./(2.*kappa)*d_crit(alpha_t)*p**2*dx
+                    - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
 body_force        = Constant((0., 0., 0.))
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work

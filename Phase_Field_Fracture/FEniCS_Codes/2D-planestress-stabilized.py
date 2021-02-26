@@ -70,7 +70,6 @@ tao_solver_parameters = {"maximum_iterations": 100,
                          "gradient_relative_tol": 1e-8,
                          "error_on_nonconvergence": True}
 
-
 # Variational problem for the damage problem (non-linear - use variational inequality solvers in PETSc)
 # Define the minimisation problem by using OptimisationProblem class
 class DamageProblem(OptimisationProblem):
@@ -109,44 +108,43 @@ class InitialConditions(UserExpression):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 0.1)          # Shear modulus - normalized by n*k_b*T ?
-userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
+userpar.add("mu", 1)          # Shear modulus
+userpar.add("kappa",10e2)
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 800)
-userpar.add("meshsizeY", 400)
+userpar.add("meshsizeX", 8000)
+userpar.add("meshsizeY", 20)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 1.0)
-userpar.add("load_steps", 11)
-userpar.add("ell_multi", 10)
+userpar.add("load_max", 0.01)
+userpar.add("load_steps", 4)
+userpar.add("ell_multi", 4)
 # Parse command-line options
 userpar.parse()
 
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H = 15, 1.5        # Length (x) and height (y-direction)
+L, H = 8, 0.02#2.0        # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
-# Ny = int(N*H/L)
 hsize = float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
 # Material model parameters
 mu    = userpar["mu"]           # Shear modulus
-nu    = userpar["nu"]           # Poisson's Ratio
-lmbda = 2.0*mu*nu/(1.0-2.0*nu)  # Lame Parameter
-kappa = 2*(1+nu)*mu/(3*(1-2*nu))# Bulk Modulus
+kappa = userpar["kappa"]        # Bulk Modulus
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 ell_multi = userpar["ell_multi"]
+# Damage regularization parameter - internal length scale used for tuning Gc
+ell = Constant(ell_multi*hsize)
 
 # Naming parameters for saving output
 modelname = "2D-stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f_k_%.1f" % (Nx, Ny, S, ell_multi, kappa)
+simulation_params = "Nx_%.0f_Ny_%.0f_ellx_%.0f_d_%.2f_k_%.0f" % (Nx, Ny, ell_multi, userpar["load_max"], kappa)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -155,9 +153,9 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured mesh
-mesh = RectangleMesh(Point(0, 0), Point(L, H), Nx, Ny)
+mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
 # Mesh generation of structured and refined mesh
-# mesh = Mesh("2DShearTestRef.xml")
+# mesh = Mesh("2DShearTest3Ref.xml")
 # Mesh rpintout
 # geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 # geo_mesh.write(mesh)
@@ -169,8 +167,6 @@ ndim = mesh.geometry().dim()
 if MPI.rank(MPI.comm_world) == 0:
     print ("Mesh Dimension: {0:2d}".format(ndim))
 
-# Damage regularization parameter - internal length scale used for tuning Gc
-ell = Constant(ell_multi*hsize)
 # Characteristic element length - used for stabilization
 h = CellDiameter(mesh)
 
@@ -189,27 +185,32 @@ tc = 2.*sqrt(-p0/3.0)*cos(1./3.*acos(3.0*q0/2.0/p0*sqrt(-3.0/p0)))-1.0
 
 if MPI.rank(MPI.comm_world) == 0:
   print("The critical loading: [{}]".format(tc))
-  print("The lmbda/mu: {0:4e}".format(lmbda/mu))
+  # print("The lmbda/mu: {0:4e}".format(lmbda/mu))
   print("The mu/Gc: {0:4e}".format(mu/Gc))
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
 class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], L, 0.1*hsize)
+        return on_boundary and near(x[0], L/2, 0.1*hsize)
 
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0, 0.1 * hsize)
+        return on_boundary and near(x[1], -1.0, 0.1 *hsize) #and between(x[0], (0.0, 2.5))
 
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], H, 0.1 * hsize)
+        return on_boundary and near(x[1], 1.0, 0.1*hsize)
+
+class pin_point(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.0, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
 
 # Convert all boundary classes for visualization
 right_boundary = right_boundary()
 bot_boundary = bot_boundary()
 top_boundary = top_boundary()
+pin_point = pin_point()
 
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
@@ -225,17 +226,6 @@ file_results.write(lines)
 # points.set_all(0)
 # file_results = XDMFFile(savedir + "/" + "points.xdmf")
 # file_results.write(points)
-
-# Constitutive functions of the damage model
-# ----------------------------------------------------------------------------
-def w(alpha):
-    return alpha
-
-def a(alpha):
-    return (1.0-alpha)**2
-
-def b(alpha):
-    return (1.0-alpha)**3
 
 # Variational formulation
 # ----------------------------------------------------------------------------
@@ -271,7 +261,7 @@ u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
 # bc - u (imposed displacement)
-bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
+bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
 
 # Top/bottom boundaries have displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
@@ -304,9 +294,20 @@ Ic = tr(C) + (F33)**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
+
+# Constitutive functions of the damage model
+def w(alpha):
+    return alpha
+
+def a(alpha):
+    return (1.0-alpha)**2
+
+def b(alpha):
+    return (1.0-alpha)**3
+
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F)) - b(alpha)*p*J*inv(F)
+    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
 
 # Zero body force
 body_force = Constant((0., 0.))
@@ -316,7 +317,7 @@ varpi_ = 1.0
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+                    - b(alpha)*p*(J-1.0)*dx - 1/(2*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
@@ -324,7 +325,7 @@ elastic_potential = elastic_energy - external_work
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
       - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
-      + (F33**2 - 1 - p*J*(1-alpha)/mu)*v_F33*dx
+      + (a(alpha)*mu*(F33 - 1/F33) - b(alpha)*p*J/F33)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -353,7 +354,7 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Set the lower and upper bound of the damage variable (0-1)
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 0.75, 0.1 * hsize) ? 1.0 : 0.0", \
+alpha_lb = interpolate(Expression("x[0]>=-4.0 & x[0]<=0 & near(x[1], 0.0, 0.01*hsize) ? 1.0 : 0.0", \
                        hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 

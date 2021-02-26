@@ -17,6 +17,7 @@ from __future__ import division
 from dolfin import *
 from mshr import *
 from scipy import optimize
+from ufl import eq
 
 import argparse
 import math
@@ -105,10 +106,10 @@ userpar.add("kappa",10e2)      # Bulk modulus
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
 userpar.add("meshsizeX", 200)
-userpar.add("meshsizeY", 40)
-userpar.add("meshsizeZ", 20)
+userpar.add("meshsizeY", 51)
+userpar.add("meshsizeZ", 51)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.001)
+userpar.add("load_max", 0.01)
 userpar.add("load_steps", 20)
 userpar.add("ell_multi", 5)
 # Parse command-line options
@@ -117,7 +118,7 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H, W = 5, 1, 0.5            # Length (x), height (y), and width (x-direction)
+L, H, W = 1, 0.25, 0.25             # Length (x), height (y), and width (x-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 Nz   = userpar["meshsizeZ"]
@@ -136,7 +137,7 @@ ell_multi = userpar["ell_multi"]
 ell   = Constant(ell_multi*hsize)
 
 # Naming parameters for saving output
-modelname = "3D-stabilized"
+modelname = "3D-Taylor-Hood"
 meshname  = modelname + "-mesh.xdmf"
 simulation_params = "L_%.0f_Nx_%.0f_H_%.0f_Ny_%.0f_W_%.0f_Nz_%.0f_lx_%.0f_d_%.2f_k_%.0f" % (L, Nx, H, Ny, W, Nz, ell_multi, userpar["load_max"], kappa)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
@@ -147,7 +148,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation
-mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), Nx, Ny, 10)
+mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(L, H, W), Nx, Ny, Nz)
 # mesh = Mesh("ShearTestRef.xml")
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 geo_mesh.write(mesh)
@@ -247,11 +248,11 @@ u2 = Expression("-t", t= 0.0, degree=0)
 bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
 # top and bottom boundaries are subjected to a displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
-bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+bc_u2 = DirichletBC(V_u.sub(0), u0, bot_boundary)
 # Pinned line in the center
 bc_u5 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
 # Combine boundary conditions
-bc_u = [bc_u1, bc_u2, bc_u5]
+bc_u = [bc_u1, bc_u2]
 
 # bc - alpha (zero damage)
 # No damage to the boundaries - damage does not initiate from constrained edges
@@ -271,44 +272,29 @@ J  = det(F)
 
 # Define some parameters for the eigenvalues
 d_par = tr(C)/3.
-e_par = sqrt(tr(C-d_par*I)**2/6.)
-f_par = (1./e_par)*(C-d_par*I)
-g_par = det(f_par)/2
+e_par = sqrt(tr((C-d_par*I)*(C-d_par*I))/6.)
+f_par = conditional(eq(tr((C-d_par*I)*(C-d_par*I)),0.), 0.*I, (1./e_par)*(C-d_par*I))
+# Bound the argument of 'acos ' both from above and from below - very important!
+g_par0 = det(f_par)/2.
+g_par1 = conditional( ge(g_par0,  1.-DOLFIN_EPS),  1.-DOLFIN_EPS, g_par0 )
+g_par  = conditional( le(g_par0, -1.+DOLFIN_EPS), -1.+DOLFIN_EPS, g_par1 )
+h_par = acos(g_par)/3.
 
 # Define the eigenvalues of C (principal stretches)
-lambda_1 = sqrt(d_par + 2.*e_par*cos(acos(g_par)/3.))
-lambda_3 = sqrt(d_par + 2.*e_par*cos((acos(g_par)/3.) + 2.*pi/3.))
-lambda_2 = sqrt(3.*d_par - lambda_1**2 - lambda_3**3)
-
-# m_par = tr(C)/3
-# q_par = det(C-m_par*I)/2
-# p_par = tr(C-m_par*I)**2/6
-#
-# phi = 1/3*atan(sqrt(p_par**3 - q_par**2)/q_par)
-# lambda_1 = m_par + 2*sqrt(p_par)*cos(phi)
-# lambda_2 = m_par - sqrt(p_par)*(cos(phi) + sqrt(3)*sin(phi))
-# lambda_3 = m_par - sqrt(p_par)*(cos(phi) - sqrt(3)*sin(phi))
+# lmbda1s <= lmbda2s<= lmbda3s
+lmbda1s = d_par+2.*e_par*cos(h_par+2.*pi/3.)
+lmbda2s = d_par+2.*e_par*cos(h_par+4.*pi/3.)
+lmbda3s = d_par+2.*e_par*cos(h_par+6.*pi/3.)
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
 
 # Functions of the damage model
 # ----------------------------------------------------------------------------
-def hs(x):# Heaviside function
-    return (x + abs(x))/(2.*x)
-
-# Structures of conditionals (condition, true value, false value)
-p_l1 = conditional(gt(lambda_1,1), lambda_1, 1)
-p_l2 = conditional(gt(lambda_2,1), lambda_2, 1)
-p_l3 = conditional(gt(lambda_3,1), lambda_3, 1)
-
-p_J = conditional(gt(J,1), J, 1)
-
-n_l1 = conditional(lt(lambda_1,1), lambda_1, 1)
-n_l2 = conditional(lt(lambda_2,1), lambda_2, 1)
-n_l3 = conditional(lt(lambda_3,1), lambda_3, 1)
-
-n_J = conditional(lt(J,1), J, 1)
+# Define the Heaviside step function
+# H(x) = 1, x>= 0; H(x) = 0, x< 0;
+def Heaviside(x):
+    return conditional(ge(x, 0.), 1., 0.)
 
 def w(alpha):
     return alpha
@@ -325,19 +311,21 @@ body_force = Constant((0., 0., 0.))
 varpi_ = 1.0
 # Eq 19 in Klaas
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
-# Elastic energy
-W_act = (a(alpha)+k_ell)*(mu/2.)*(p_l1**2-1.-2.*ln(p_l1))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(p_l2**2-1.-2.*ln(p_l2))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(p_l3**2-1.-2.*ln(p_l3))*dx \
-      + a(alpha)**3*(kappa/2.)*(p_J-1.)**2*dx
-W_pas = (a(alpha)+k_ell)*(mu/2.)*(n_l1**2-1.-2.*ln(n_l1))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(n_l2**2-1.-2.*ln(n_l2))*dx \
-      + (a(alpha)+k_ell)*(mu/2.)*(n_l3**2-1.-2.*ln(n_l3))*dx \
-      + a(alpha)**3*(kappa/2.)*(n_J-1.)**2*dx
+# Elastic energy decomposition
+W_act = (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda1s-1.)*(lmbda1s-1.-2.*ln(lmbda1s))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda2s-1.)*(lmbda2s-1.-2.*ln(lmbda2s))*dx \
+      + (a(alpha)+k_ell)*(mu/2.)*Heaviside(lmbda3s-1.)*(lmbda3s-1.-2.*ln(lmbda3s))*dx \
+      + a(alpha)**3*(kappa/2.)*Heaviside(J-1.)*(J-1.)**2*dx
+
+W_pas = (mu/2.)*Heaviside(1.-lmbda1s)*(lmbda1s-1.-2.*ln(lmbda1s))*dx \
+      + (mu/2.)*Heaviside(1.-lmbda2s)*(lmbda2s-1.-2.*ln(lmbda2s))*dx \
+      + (mu/2.)*Heaviside(1.-lmbda3s)*(lmbda3s-1.-2.*ln(lmbda3s))*dx \
+      + (kappa/2.)*Heaviside(1.-J)*(J-1.)**2*dx
+
 # additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy    = W_act + W_pas
-# elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-#                     - b(alpha)*p*(J-1.0)*dx - 1/(2*kappa)*p**2*dx
+elastic_energy = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
+                - b(alpha)*p*(J-1)*dx - 1./(2.*kappa)*p**2*dx
+               # + (kappa/2.)*a(alpha)**3*(J-1)**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
@@ -364,7 +352,7 @@ z = sympy.Symbol("z", positive=True)
 c_w = float(4 * sympy.integrate(sympy.sqrt(w(z)), (z, 0, 1)))
 # Define the phase-field fracture term of the damage functional
 dissipated_energy = Gc/float(c_w)*(w(alpha)/ell + ell*dot(grad(alpha), grad(alpha)))*dx
-damage_functional = elastic_potential + dissipated_energy
+damage_functional = W_act + W_pas + dissipated_energy
 
 # Compute directional derivative about alpha in the direction of beta (Gradient)
 E_alpha = derivative(damage_functional, alpha, beta)
@@ -373,8 +361,8 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Set the lower and upper bound of the damage variable (0-1)
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=2.5 & near(x[1], 0.5, 0.1 * hsize) ? 1.0 : 0.0", \
-                       hsize = hsize, degree=0), V_alpha)
+alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=L/2. & near(x[1], H/2.0, 0.1 * hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, L=L, H=H, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
 # Set up the solvers
@@ -405,7 +393,7 @@ timer0 = time.process_time()
 for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t * ut
-    u2.t = t * ut
+    # u2.t = t * ut
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
 

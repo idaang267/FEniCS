@@ -83,16 +83,15 @@ class InitialConditions(UserExpression):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 1)           # Shear modulus - normalized by n*k_b*T ?
-userpar.add("nu", 0.49995)     # Poisson's Ratio for slight compressibility
+userpar.add("mu", 1)           # Shear Modulus
+userpar.add("kappa", 10e2)      # Bulk Modulus
 userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 300)
-userpar.add("meshsizeY", 30)
+userpar.add("meshsizeX", 5000)
+userpar.add("meshsizeY", 10)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 1.0)
-userpar.add("load_steps", 10)
-
+userpar.add("load_max", 0.01)
+userpar.add("load_steps", 4)
 # Parse command-line options
 userpar.parse()
 
@@ -102,27 +101,28 @@ load_max = userpar["load_max"]
 load_steps = userpar["load_steps"]
 
 # Geometry parameters
-L, H = 15.0, 1.5        # Length (x) and height (y-direction)
+L, H = 5.0, 0.01        # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
 # Material model parameters for plane stress
-mu    = float(userpar["mu"])           # Shear modulus
-nu    = userpar["nu"]                  # Poisson's Ratio
-E     = 2.0*(1.0+nu)*mu     # Young's Modulus
-lmbda = E*nu/((1.0-nu)**2)  # Lame Parameter
-kappa = (3.0-nu)/(1.0+nu)                  # Bulk Modulus
+mu    = userpar["mu"]
+kappa = userpar["kappa"]
+# nu    = userpar["nu"]           # Poisson's Ratio
+# E     = 2.0*(1.0+nu)*mu         # Young's Modulus
+# lmbda = E*nu/((1.0-nu)**2)      # Lame Parameter
+# kappa = (3.0-nu)/(1.0+nu)       # Bulk Modulus
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 
 # Naming parameters for saving output
-modelname = "2D-test"
+modelname = "2D-planestress"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_s_%.0f" % (Nx, Ny, load_steps)
+simulation_params = "L_%.0f_H_%.0f_s_%.0f_D_%.2f" % (L, H, load_steps, load_max)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -131,7 +131,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured and refined mesh
-mesh = Mesh("2DRectangle.xml")
+mesh = Mesh("2DShearTestHalf.xml")
 # mesh = RectangleMesh(Point(-L/2, 0), Point(L/2, H), Nx, Ny)
 # Mesh printout
 geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
@@ -155,24 +155,29 @@ AM_tolerance = 1e-4
 # ----------------------------------------------------------------------------
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 1.5, 0.1*hsize)
+        return on_boundary and near(x[1], 1.0, 0.1*hsize)
 
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0.0, 0.1 *hsize)
+        return on_boundary and near(x[1], 0.0, 0.1 *hsize) and between(x[0], (0.0, 2.5))
 
 class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], 15.0, 0.1*hsize)
+        return on_boundary and near(x[0], L/2, 0.1*hsize)
+
+class left_boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], -L/2, 0.1*hsize)
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 5.0, 0.1*hsize) and near(x[1], 0.75, 0.1*hsize)
+        return near(x[0], 0.01, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
 
 # Convert all boundary classes for visualization
 top_boundary = top_boundary()
 bot_boundary = bot_boundary()
 right_boundary = right_boundary()
+left_boundary = left_boundary()
 
 pin_point = pin_point()
 # Define lines and points
@@ -184,6 +189,7 @@ lines.set_all(0)
 top_boundary.mark(lines, 1)
 bot_boundary.mark(lines, 2)
 right_boundary.mark(lines, 3)
+left_boundary.mark(lines, 4)
 file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
@@ -222,14 +228,14 @@ u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
 
-# roller boundary
-bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
-# bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method=)
-# top and bottom boundaries are subjected to a displacement in the y direction
+# top boundary is subjected to a displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
-bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+# bottom boundary has rollers
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u00, bot_boundary)
 
-# Combine
+bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
+
+# Combined
 bc_u = [bc_u0, bc_u1, bc_u2]
 
 # Initial Conditions (IC)
@@ -301,7 +307,7 @@ for (i_t, t) in enumerate(load_multipliers):
 
     # Update the displacement with each iteration
     u1.t = t * ut
-    u2.t = t * ut
+    # u2.t = t * ut
 
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
