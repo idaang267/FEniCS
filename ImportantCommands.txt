@@ -62,6 +62,7 @@ Git Commands
   git push origin master
 
 Git Clone Repo
+  sudo apt install git
   Login into Github
   By the code button, copy the link
   git clone https://github.com/idaang267/etc.git
@@ -99,4 +100,7 @@ Multiphenics Installation
   Navigate to multiphenics folder
   python3 setup.py install
 
+sudo apt install python3-pip
+pip3 install scipy
+pip3 install matplotlib
 pip3 install meshio[all]
