@@ -1,8 +1,5 @@
 Working with the server
   Login
-    ssh cornell@128.84.52.141
-    password: RBCP@ssw0rd
-    su - idaang
     ssh idaang@128.84.52.141
     password: 1234
   Logout

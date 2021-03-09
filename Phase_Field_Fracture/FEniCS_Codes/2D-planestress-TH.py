@@ -106,39 +106,38 @@ class InitialConditions(UserExpression):
 # set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu",1)           # n*k*T Shear modulus
-userpar.add("nu",0.49995)     # bulk modulus for slightly compressibility
-userpar.add("Gc",2.4e6)       # fracture toughness
+userpar.add("mu",1)           # Shear modulus
+userpar.add("kappa",10e2)     # Bulk modulus
+userpar.add("Gc",1)       # fracture toughness
 userpar.add("k_ell",5.e-5)    # residual stiffness
 userpar.add("meshsizeX", 500)
-userpar.add("meshsizeY", 500)
+userpar.add("meshsizeY", 50)
 userpar.add("load_min",0.)
-userpar.add("load_max",1.0)
-userpar.add("load_steps",11)
-userpar.add("ell_multi", 10)
+userpar.add("load_max", 0.52)
+userpar.add("load_steps", 30)
+userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
 
 # Constants
 # ----------------------------------------------------------------------------
 # Geometry paramaters
-L, H  = 15, 1.5
+L, H  = 10, 1
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
-
 hsize = float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
 # Material parameters
 mu    = userpar["mu"]               # Shear Modulus
-nu    = userpar["nu"]               # Poisson's Ratio
-lmbda = 2.0*mu*nu/(1.0-2.0*nu)      # Lame Parameter
-kappa = 2*(1+nu)*mu/(3*(1-2*nu))    # Bulk Modulus
+kappa = userpar["kappa"]        # Bulk Modulus
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 ell_multi = userpar["ell_multi"]
+# Damage regularization parameter - internal length scale used for tuning Gc
+ell = Constant(ell_multi*hsize)
 
 # Naming parameters for saving output
 modelname = "2D-TaylorHood"
@@ -152,7 +151,7 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation
-mesh = RectangleMesh(Point(0, 0), Point(L, H), Nx, Ny)
+mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
 #mesh = Mesh("2DShearTestRef.xml")
 # geo_mesh  = XDMFFile(MPI.comm_world, savedir+meshname)
 # geo_mesh.write(mesh)
@@ -163,9 +162,6 @@ ndim = mesh.geometry().dim()
 # Structure used for one printout of the statement
 if MPI.rank(MPI.comm_world) == 0:
     print ("the dimension of mesh: {0:2d}".format(ndim))
-
-# Damage regularization parameter - internal length scale used for tuning Gc
-ell = Constant(ell_multi*hsize)
 
 # Numerical parameters of the alternate minimization
 maxiteration = 2000
@@ -178,27 +174,27 @@ tc = 2.*sqrt(-p0/3.0)*cos(1./3.*acos(3.0*q0/2.0/p0*sqrt(-3.0/p0)))-1.0
 
 if MPI.rank(MPI.comm_world) == 0:
   print("The critical loading: [{}]".format(tc))
-  print("The lmbda/mu: {0:4e}".format(lmbda/mu))
+  # print("The lmbda/mu: {0:4e}".format(lmbda/mu))
   print("The mu/Gc: {0:4e}".format(mu/Gc))
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
-class right_boundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], L, 0.1*hsize)
-
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0, 0.1 * hsize)
+        return on_boundary and near(x[1], -H/2, hsize)
 
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], H, 0.1 * hsize)
+        return on_boundary and near(x[1], H/2, hsize)
+
+class pin_point(SubDomain):
+    def inside(self, x, on_boundary):
+        return near(x[0], 0.5, hsize) and near(x[1], 0.0, hsize)
 
 # Convert all boundary classes for visualization
-right_boundary = right_boundary()
 bot_boundary = bot_boundary()
 top_boundary = top_boundary()
+pin_point = pin_point()
 
 lines = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
@@ -209,6 +205,12 @@ bot_boundary.mark(lines, 1)
 top_boundary.mark(lines, 1)
 file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
+
+# Show points of interest
+points.set_all(0)
+pin_point.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
 
 # Constitutive functions of the damage model
 # ----------------------------------------------------------------------------
@@ -254,7 +256,7 @@ u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t=0.0, degree=0)
 u2 = Expression("-t", t=0.0, degree=0)
 # bc - u (imposed displacement)
-bc_u0 = DirichletBC(V_u.sub(0).sub(0), u00, right_boundary)
+bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point)
 # Top/bottom boundaries have displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
@@ -316,7 +318,6 @@ solver_u.parameters.update(solver_u_parameters)
 # info(solver_u.parameters, True)
 
 # Define the energy functional of damage problem
-# Variational problem for the damage
 # --------------------------------------------------------------------
 alpha_0 = interpolate(Expression("0.", degree=0), V_alpha)  # initial (known) alpha
 # Define the specific energy dissipation per unit volume
@@ -333,7 +334,7 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Lower and upper bound, set to 0 and 1 respectively
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=0 & x[0]<=5.0 & near(x[1], 0.75, 0.1 * hsize) ? 1.0 : 0.0", \
+alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-3.5 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
                        hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
@@ -388,7 +389,6 @@ for (i_t, t) in enumerate(load_multipliers):
         volume_ratio = assemble(J/(L*H)*dx)
         if MPI.rank(MPI.comm_world) == 0:
           print ("AM Iteration: {0:3d},  alpha_error: {1:>14.8f}".format(iteration, err_alpha))
-          print("\nVolume Ratio: [{}]".format(volume_ratio))
         # update iteration
         alpha_0.assign(alpha)
         iteration = iteration + 1
@@ -436,7 +436,6 @@ for (i_t, t) in enumerate(load_multipliers):
 
 # ----------------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))
-
 
 # Plot energy and stresses
 if MPI.rank(MPI.comm_world) == 0:
