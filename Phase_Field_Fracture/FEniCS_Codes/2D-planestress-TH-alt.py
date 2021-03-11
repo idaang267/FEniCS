@@ -114,7 +114,7 @@ userpar.add("meshsizeX", 500)
 userpar.add("meshsizeY", 50)
 userpar.add("load_min",0.)
 userpar.add("load_max", 0.52)
-userpar.add("load_steps", 50)
+userpar.add("load_steps", 30)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -142,7 +142,7 @@ ell = Constant(ell_multi*hsize)
 # Naming parameters for saving output
 modelname = "2D-TaylorHood"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
+simulation_params = "Alt-Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -292,7 +292,7 @@ Ic = tr(C) + F33**2
 # --------------------------------------------------------------------
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F)) - b(alpha)*p*J*inv(F)
+    return a(alpha)*mu*(F - inv(F)) - b(alpha)*p*inv(F)
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
@@ -300,13 +300,13 @@ def P(u, alpha):
 body_force        = Constant((0., 0.))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*(J-1.0)*dx - 1./(2.*kappa)*p**2*dx
+                    - b(alpha)*p*ln(J)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
-      + (F33**2 - 1 - p*J*(1-alpha)/mu)*v_F33*dx
+      + (mu*(F33 - 1/F33) - (1-alpha)*p/F33)*v_F33*dx
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -334,7 +334,7 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Lower and upper bound, set to 0 and 1 respectively
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-2.5 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
+alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-3.5 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
                        hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
@@ -343,14 +343,8 @@ solver_alpha  = PETScTAOSolver()
 solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
-# loading and initialization of vectors to store time data
-load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
-fcn_load = []
-for steps in load_multipliers:
-    exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
-    fcn_load.append(exp1)
-print(fcn_load)
-
+# loading and initialization of vectors to store time datas
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
 energies         = np.zeros((len(load_multipliers), 5))
 iterations       = np.zeros((len(load_multipliers), 2))
 
@@ -369,7 +363,7 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(fcn_load):
+for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
@@ -416,7 +410,7 @@ for (i_t, t) in enumerate(fcn_load):
     file_tot.write(u, t)
     file_tot.write(p, t)
     file_tot.write(F33, t)
-    file_tot.write(PTensor, t)
+    file_tot.write(PTensor,t)
 
     # Post-processing
     # ----------------------------------------

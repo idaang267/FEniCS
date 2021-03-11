@@ -425,7 +425,6 @@ if MPI.rank(MPI.comm_world) == 0:
     plt.savefig(savedir + 'TimeProgression' + sim_param1 + sim_param3 + sim_param4 + '.pdf', transparent=True)
     plt.close()
 
-
 end_time = time.time()
 if MPI.rank(MPI.comm_world) == 0:
     print("Total RunTime: " + str(end_time-start_time))

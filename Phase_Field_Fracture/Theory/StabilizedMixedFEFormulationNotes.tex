@@ -252,15 +252,32 @@ P_{33} &= a(\alpha) \mu (F_{33} - F_{33}^{-1}) = 0
 %===============================
 %===============================
 \section{Obtaining the Critical Stretch}
+Assuming a Neo-Hookean energy where $\mu$ is the shear modulus 
+\begin{align*}
+W(I_1, I_2) &= \beta_1 (I_1 - 3) + \beta_2 (I_2 - 3) \quad \text{where } \beta_1 = \frac{\mu}{2}, \, \beta_2 = 0 \\
+W(I_1, I_2) &= \frac{\mu}{2} (I_1 - 3) \quad \text{where } I_1 = I_2 = \lambda_A^2 + \lambda_A^{-2} + 1 \\
+W(I_1, I_2) &= \frac{\mu}{2} \bigg( \lambda_A^2 + \frac{1}{\lambda_A^2} - 2 \bigg) \\
+W(I_1, I_2) &= \frac{\mu}{2} \bigg( \lambda_A - \frac{1}{\lambda_A} \bigg)^2
+\end{align*}
+The J-integral for a pure shear strip geometry can be calculated as:
+\begin{align*}
+J &= 2 h_0 W(I_1, I_2) \\
+J &= h_0 \mu \bigg( \lambda_A - \frac{1}{\lambda_A} \bigg)^2
+\end{align*}
+where for the stretch:
+\begin{align*}
+\lambda_A = 1 + \frac{\Delta}{h_0}
+\end{align*}
+where the total height of the strip is $2h_0$ and $\Delta$ is the loading \\ \\
+Theoretically the criticial fracture energy is equivalent to the energy release rate  
+\begin{align*}
+G_c = J 
+\end{align*}
 In order to obtain the critical stretch of a particular specimen in Krishnan 2008, we can equate our dissipated energy or critical fracture energy density
 \begin{align*}
 \int_{\Gamma} G_c \, d \mathbf{S} = \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
 \end{align*}
-to Eq. 15 for the energy release rate of the strip geometry.
-\begin{align*}
-J = h \mu \bigg( \lambda_a - \frac{1}{\lambda_a} \bigg)^2
-\end{align*}
-where the total height of the strip is $2h$ and $\mu$ is the shear modulus 
+
 
 %===============================
 %===============================
