@@ -110,21 +110,21 @@ parameters.parse()
 userpar = Parameters("user")
 userpar.add("mu", 1)          # Shear modulus
 userpar.add("kappa",10e2)
-userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
+userpar.add("Gc", 1)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 8000)
-userpar.add("meshsizeY", 20)
+userpar.add("meshsizeX", 500)
+userpar.add("meshsizeY", 50)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.01)
-userpar.add("load_steps", 4)
-userpar.add("ell_multi", 4)
+userpar.add("load_max", 0.52)
+userpar.add("load_steps", 50)
+userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
 
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H = 8, 0.02#2.0        # Length (x) and height (y-direction)
+L, H = 10, 1           # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
@@ -142,9 +142,9 @@ ell_multi = userpar["ell_multi"]
 ell = Constant(ell_multi*hsize)
 
 # Naming parameters for saving output
-modelname = "2D-stabilized"
+modelname = "2D-Stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_ellx_%.0f_d_%.2f_k_%.0f" % (Nx, Ny, ell_multi, userpar["load_max"], kappa)
+simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -174,7 +174,7 @@ h = CellDiameter(mesh)
 ut = 1.0
 
 # Numerical parameters of the alternate minimization scheme
-maxiteration = 2000         # Sets a limit on number of iterations
+maxiteration = 4000         # Sets a limit on number of iterations
 AM_tolerance = 1e-4
 
 #-----------------------------------------------------------------------------
@@ -190,24 +190,19 @@ if MPI.rank(MPI.comm_world) == 0:
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
-class right_boundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary and near(x[0], L/2, 0.1*hsize)
-
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], -1.0, 0.1 *hsize) #and between(x[0], (0.0, 2.5))
+        return on_boundary and near(x[1], -H/2, hsize) #and between(x[0], (0.0, 2.5))
 
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 1.0, 0.1*hsize)
+        return on_boundary and near(x[1], H/2, hsize)
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.0, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
+        return near(x[0], L/2, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
 
 # Convert all boundary classes for visualization
-right_boundary = right_boundary()
 bot_boundary = bot_boundary()
 top_boundary = top_boundary()
 pin_point = pin_point()
@@ -223,15 +218,26 @@ file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
 # Show points of interest
-# points.set_all(0)
-# file_results = XDMFFile(savedir + "/" + "points.xdmf")
-# file_results.write(points)
+points.set_all(0)
+pin_point.mark(points, 1)
+file_results = XDMFFile(savedir + "/" + "points.xdmf")
+file_results.write(points)
+
+# Constitutive functions of the damage model
+def w(alpha):
+    return alpha
+
+def a(alpha):
+    return (1.0-alpha)**2
+
+def b(alpha):
+    return (1.0-alpha)**3
 
 # Variational formulation
 # ----------------------------------------------------------------------------
 # Tensor space for projection of stress
 TT = TensorFunctionSpace(mesh,'DG',0)
-# Create function space for elasticity + damage
+# Create equal order function space for elasticity + damage
 P2 = VectorFunctionSpace(mesh, "Lagrange", 1)
 P1 = FunctionSpace(mesh, "Lagrange", 1)
 P2elem = P2.ufl_element()
@@ -260,9 +266,9 @@ u00 = Constant((0.0))
 u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
+
 # bc - u (imposed displacement)
 bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
-
 # Top/bottom boundaries have displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
@@ -295,19 +301,9 @@ Ic = tr(C) + (F33)**2
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
 
-# Constitutive functions of the damage model
-def w(alpha):
-    return alpha
-
-def a(alpha):
-    return (1.0-alpha)**2
-
-def b(alpha):
-    return (1.0-alpha)**3
-
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
+    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*inv(F.T)
 
 # Zero body force
 body_force = Constant((0., 0.))
@@ -317,7 +313,7 @@ varpi_ = 1.0
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*(J-1.0)*dx - 1/(2*kappa)*p**2*dx
+                    - b(alpha)*p*ln(J)*dx - 1/(2*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
@@ -325,7 +321,7 @@ elastic_potential = elastic_energy - external_work
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
       - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
-      + (a(alpha)*mu*(F33 - 1/F33) - b(alpha)*p*J/F33)*v_F33*dx
+      + (mu*(F33 - 1/F33) - (1-alpha)*p/F33)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -354,7 +350,7 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Set the lower and upper bound of the damage variable (0-1)
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=-4.0 & x[0]<=0 & near(x[1], 0.0, 0.01*hsize) ? 1.0 : 0.0", \
+alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-2.5 & near(x[1], 0.0, 0.1*hsize) ? 1.0 : 0.0", \
                        hsize = hsize, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
@@ -363,8 +359,14 @@ solver_alpha  = PETScTAOSolver()
 solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters, True) # uncomment to see available parameters
 
-# Loading and initialization of vectors to store data of interest
-load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+# Loading vector modeled after an exponential function
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
+fcn_load = []
+for steps in load_multipliers:
+    exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
+    fcn_load.append(exp1)
+
+# initialization of vectors to store data of interest
 energies         = np.zeros((len(load_multipliers), 5))
 iterations       = np.zeros((len(load_multipliers), 2))
 
@@ -383,7 +385,7 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(load_multipliers):
+for (i_t, t) in enumerate(fcn_load):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
@@ -410,7 +412,6 @@ for (i_t, t) in enumerate(load_multipliers):
         volume_ratio = assemble(J/(L*H)*dx)
         if MPI.rank(MPI.comm_world) == 0:
             print ("AM Iteration: {0:3d},  alpha_error: {1:>14.8f}".format(iteration, err_alpha))
-            print("\nVolume Ratio: [{}]".format(volume_ratio))
         # Update variables for next iteration
         alpha_0.assign(alpha)
         iteration = iteration + 1

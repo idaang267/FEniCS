@@ -1,52 +1,52 @@
+clear all
+close all
+
 % Initial parameters in order to choose our value of delta to aim for in
 h = 0.5;    % total strip height is 2*h
+meshsizeY = 25;
 mu = 1;     % Shear modulus
 Gc = 1;     % Critical fracture energy 
-
-% Unknown stretch 
-syms lambda_a
-eq = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
-th_lambda = double(solve(eq, lambda_a));
-
-% Unknown delta to prescribe 
-th_delta = h*(th_lambda(4) - 1)
+ell_multi = 5; 
 
 % Calculate the effective Gc 
-meshsizeY = 25;
 hsizeY = h/meshsizeY; 
-ell_multi = 5; 
 ell = ell_multi*hsizeY;
-Gc_e = 1.772407282725614763e+00;
-Gc_sim = Gc_e/((1+ (3/8)*hsizeY/ell));
+Gc_e = Gc*(1+ (3/8)*hsizeY/ell);
 
 syms lambda_a
-eq2 = Gc_sim == h*mu*(lambda_a - 1/lambda_a)^2;
+eq2 = Gc_e == h*mu*(lambda_a - 1/lambda_a)^2;
 sim_lambda = double(solve(eq2, lambda_a));
 
 sim_delta = h*(sim_lambda(4) - 1)
 
 %%
-Delta = [0, 5.19, 5.2]'; 
-n_steps = [0, 49,49, 50]'; 
+Delta = [0, .518, .519, .52]'; 
+n_steps = [0, 48, 49, 50]'; 
 
 coefs = fit(n_steps, Delta, 'exp2')
 
-a = 0.9;
-b = 0.0;
-c = -6.11
+a = 0.4772;
+b = 0.001927;
+c = -0.4722;
+d = -0.7501;
 
-y = a*exp(b*n_steps)
+x = linspace(0, 50, 50);
+y = a*exp(b*x) + c*exp(d*x);
 
 hold on
 plot(n_steps, Delta, '*')
-plot(n_steps, y)
+plot(x, y, '*')
 
-lambda_0_01 = [0, 5.2]';
-gamma_01 = [0, 0.2, 1, 5, 6.9, 13.7, 19]'; 
-[curve1,gof1] = fit(gamma_01, lambda_0_01,'exp2', fo1)
-a = 0.1426; 
-b = -3.551;
-c = 1.557;
-d = -0.007606;
-x_gamma_01 = linspace(10^-3,100,1E5); 
-y_01 = a*exp(b*x_gamma_01) + c*exp(d*x_gamma_01);
+%%
+Dis = TaylorHoodenergies.e03;
+ElaEnergy = TaylorHoodenergies.e1;
+DisEnergy = TaylorHoodenergies.e00;
+TotEnergy = TaylorHoodenergies.e2;
+
+hold on 
+plot(Dis(1:36), ElaEnergy(1:36), '*')
+plot(Dis(1:36), DisEnergy(1:36), 'LineWidth', 2)
+plot(Dis(1:36), TotEnergy(1:36), 'LineWidth', 2)
+legend("Elastic","Dissipated","Total")
+xlabel("Displacement")
+ylabel("Energy")

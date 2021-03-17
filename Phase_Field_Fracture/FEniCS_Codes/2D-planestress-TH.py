@@ -164,7 +164,7 @@ if MPI.rank(MPI.comm_world) == 0:
     print ("the dimension of mesh: {0:2d}".format(ndim))
 
 # Numerical parameters of the alternate minimization
-maxiteration = 2000
+maxiteration = 4000
 AM_tolerance = 1e-4
 
 #-----------------------------------------------------------------------------
@@ -248,7 +248,6 @@ alpha  = Function(V_alpha)
 dalpha = TrialFunction(V_alpha)
 beta   = TestFunction(V_alpha)
 
-# --------------------------------------------------------------------
 # Dirichlet boundary condition
 # --------------------------------------------------------------------
 u00 = Constant((0.0))
@@ -343,14 +342,14 @@ solver_alpha  = PETScTAOSolver()
 solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
-# loading and initialization of vectors to store time data
+# Loading vector
 load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
 fcn_load = []
 for steps in load_multipliers:
     exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
     fcn_load.append(exp1)
-print(fcn_load)
 
+# initialization of vectors to store data of interest
 energies         = np.zeros((len(load_multipliers), 5))
 iterations       = np.zeros((len(load_multipliers), 2))
 

@@ -85,13 +85,13 @@ parameters.parse()
 userpar = Parameters("user")
 userpar.add("mu", 1)           # Shear Modulus
 userpar.add("kappa", 10e2)      # Bulk Modulus
-userpar.add("Gc", 2.4E6)       # Fracture toughness (2.4E3)
+userpar.add("Gc", 2.4E1)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 5000)
-userpar.add("meshsizeY", 10)
+userpar.add("meshsizeX", 250)
+userpar.add("meshsizeY", 100)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.01)
-userpar.add("load_steps", 4)
+userpar.add("load_max", 0.52)
+userpar.add("load_steps", 50)
 # Parse command-line options
 userpar.parse()
 
@@ -101,7 +101,7 @@ load_max = userpar["load_max"]
 load_steps = userpar["load_steps"]
 
 # Geometry parameters
-L, H = 5.0, 0.01        # Length (x) and height (y-direction)
+L, H = 10, 1.0        # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
@@ -110,19 +110,15 @@ S = userpar["load_steps"]
 # Material model parameters for plane stress
 mu    = userpar["mu"]
 kappa = userpar["kappa"]
-# nu    = userpar["nu"]           # Poisson's Ratio
-# E     = 2.0*(1.0+nu)*mu         # Young's Modulus
-# lmbda = E*nu/((1.0-nu)**2)      # Lame Parameter
-# kappa = (3.0-nu)/(1.0+nu)       # Bulk Modulus
 
 # Fracture toughness and residual stiffness
 Gc    = userpar["Gc"]
 k_ell = userpar["k_ell"]
 
 # Naming parameters for saving output
-modelname = "2D-planestress"
+modelname = "2D-TH-Discrete"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "L_%.0f_H_%.0f_s_%.0f_D_%.2f" % (L, H, load_steps, load_max)
+simulation_params = "L_%.0f_H_%.0f_D_%.1f_S_%.0f" % (L, H, load_max, load_steps)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -131,11 +127,11 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured and refined mesh
-mesh = Mesh("2DShearTestHalf.xml")
+mesh = Mesh("SimpleCrack.xml")
 # mesh = RectangleMesh(Point(-L/2, 0), Point(L/2, H), Nx, Ny)
-# Mesh printout
-geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
-geo_mesh.write(mesh)
+# # Mesh printout
+# geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
+# geo_mesh.write(mesh)
 
 # Obtain number of space dimensions
 mesh.init()
@@ -143,9 +139,6 @@ ndim = mesh.geometry().dim()
 # Structure used for one printout of the statement
 if MPI.rank(MPI.comm_world) == 0:
     print ("Mesh Dimension: {0:2d}".format(ndim))
-
-# Reference value for the loading (imposed displacement)
-ut = 1.0
 
 # Numerical parameters of the alternate minimization scheme
 maxiteration = 2000         # Sets a limit on number of iterations
@@ -155,11 +148,15 @@ AM_tolerance = 1e-4
 # ----------------------------------------------------------------------------
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 1.0, 0.1*hsize)
+        return on_boundary and near(x[1], H/2, 0.1*hsize)
 
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], 0.0, 0.1 *hsize) and between(x[0], (0.0, 2.5))
+        return on_boundary and near(x[1], -H/2, 0.1*hsize)
+
+# class bot_boundary(SubDomain):
+#     def inside(self, x, on_boundary):
+#         return on_boundary and near(x[1], 0.0, 0.1 *hsize) and between(x[0], (0.0, 2.5))
 
 class right_boundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -171,7 +168,7 @@ class left_boundary(SubDomain):
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.01, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
+        return near(x[0], L/2, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
 
 # Convert all boundary classes for visualization
 top_boundary = top_boundary()
@@ -228,12 +225,13 @@ u0 = Expression(["0.0", "0.0"], degree=0)
 u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
 
+# Pin-point
+bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
 # top boundary is subjected to a displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 # bottom boundary has rollers
-bc_u2 = DirichletBC(V_u.sub(0).sub(1), u00, bot_boundary)
-
-bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
+bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
+# bc_u2 = DirichletBC(V_u.sub(0).sub(1), u00, bot_boundary)
 
 # Combined
 bc_u = [bc_u0, bc_u1, bc_u2]
@@ -259,20 +257,21 @@ Ic = tr(C) + F33**2
 # --------------------------------------------------------------------
 # 1st PK stress
 def P(u):
-    return mu*(F - inv(F.T)) - p*J*inv(F.T)
+    return mu*(F - inv(F.T)) - p*inv(F.T)
 
 # Zero body force
 body_force = Constant((0., 0.))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (mu/2.)*(Ic-3.-2.*ln(J))*dx \
-                    - p*(J-1.)*dx - 1./(2.*kappa)*p**2*dx
+                    - p*ln(J)*dx - 1./(2.*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
 # Define the additional weak form eq. for plane stress
 F_u = derivative(elastic_potential, w_p, v_q) \
-     + (F33**2 - 1. - p*J/mu)*v_F33*dx
+      + (mu*(F33 - 1/F33) - p/F33)*v_F33*dx
+     # + (F33**2 - 1. - p*J/mu)*v_F33*dx
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -285,8 +284,13 @@ solver_up.parameters.update(solver_up_parameters)
 
 # loading and initialization of vectors to store time datas
 load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
-# energies       = np.zeros((len(load_multipliers), 5))
-# iterations     = np.zeros((len(load_multipliers), 2))
+# load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
+# fcn_load = []
+# for steps in load_multipliers:
+#     exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
+#     fcn_load.append(exp1)
+
+energies         = np.zeros((len(load_multipliers), 3))
 
 # Split into displacement and pressure
 (u, p, F33) = w_p.split()
@@ -304,10 +308,9 @@ timer0 = time.process_time()
 # Solving at each timestep
 # ----------------------------------------------------------------------------
 for (i_t, t) in enumerate(load_multipliers):
-
     # Update the displacement with each iteration
-    u1.t = t * ut
-    # u2.t = t * ut
+    u1.t = t
+    u2.t = t
 
     if MPI.rank(MPI.comm_world) == 0:
         print("\033[1;32m--- Starting of Time step {0:2d}: t = {1:4f} ---\033[1;m".format(i_t, t))
@@ -333,25 +336,33 @@ for (i_t, t) in enumerate(load_multipliers):
     file_tot.write(PTensor,t)
     file_tot.write(JScalar,t)
 
+    # Post-processing
+    # ----------------------------------------
+    # Calculate the energies
+    elastic_energy_value = assemble(elastic_energy)
+    volume_ratio = assemble(J/(L*H)*dx)
+    # Save number of iterations for the time step
+    energies[i_t] = np.array([t, elastic_energy_value, volume_ratio])
+
+    if MPI.rank(MPI.comm_world) == 0:
+        # Save some global quantities as a function of the time
+        np.savetxt(savedir + '/Taylor-Hood-energies.txt', energies)
+
 # ----------------------------------------------------------------------------
 print("elapsed CPU time: ", (time.process_time() - timer0))
 
-'''
 # Plot energy and stresses
 if MPI.rank(MPI.comm_world) == 0:
     p1, = plt.plot(energies[slice(None), 0], energies[slice(None), 1])
-    p2, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
-    p3, = plt.plot(energies[slice(None), 0], energies[slice(None), 3])
-    plt.legend([p1, p2, p3], ["Elastic", "Dissipated", "Total"], loc="best", frameon=False)
+    plt.legend([p1], ["Elastic"], loc="best", frameon=False)
     plt.xlabel('Displacement')
     plt.ylabel('Energies')
     plt.title('stabilized FEM')
     plt.savefig(savedir + '/stabilized-energies.pdf', transparent=True)
     plt.close()
-    p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 4])
+    p4, = plt.plot(energies[slice(None), 0], energies[slice(None), 2])
     plt.xlabel('Displacement')
     plt.ylabel('Volume ratio')
     plt.title('stabilized FEM')
     plt.savefig(savedir + '/stabilized-volume-ratio.pdf', transparent=True)
     plt.close()
-'''
