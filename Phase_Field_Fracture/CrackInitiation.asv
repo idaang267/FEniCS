@@ -3,7 +3,7 @@ close all
 
 % Initial parameters in order to choose our value of delta to aim for in
 h = 0.5;    % total strip height is 2*h
-meshsizeY = 25;
+meshsizeY = 50;
 mu = 1;     % Shear modulus
 Gc = 1;     % Critical fracture energy 
 ell_multi = 5; 
@@ -18,6 +18,12 @@ eq2 = Gc_e == h*mu*(lambda_a - 1/lambda_a)^2;
 sim_lambda = double(solve(eq2, lambda_a));
 
 sim_delta = h*(sim_lambda(4) - 1)
+
+%%
+h = 0.5;
+mu = 1;
+lambda_a = 1 + 0.511198/h;
+J = h*mu*(lambda_a - 1/lambda_a)^2
 
 %%
 Delta = [0, .518, .519, .52]'; 
