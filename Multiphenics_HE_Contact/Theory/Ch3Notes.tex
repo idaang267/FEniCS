@@ -1,0 +1,401 @@
+\documentclass[12pt,3p]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+ \usepackage[margin=0.5in]{geometry}
+ \usepackage{amsmath}
+ \usepackage{amsfonts} % Math fonts
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+
+\numberwithin{equation}{section}
+\begin{document}
+
+\title{Ch3: Continuum Solid Mechanics and Weak Form}
+\author{Ida Ang}
+\date{\vspace{-5ex}}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Kinematics}
+\textbf{Definitions} \\
+$\mathbf{E_A}$: Orthogonal basis in the reference or Lagrange/Material configuration \\
+$\mathbf{e_i}$: Orthogonal basis in the current or Eulerian/Spatial configuration \\
+X: Reference or Lagrange/Material referring to basis $\mathbf{E_A}$ \\
+x: Current or Eulerian/Spatial referring to basis $\mathbf{e_i}$\\
+$\mathbf{X}$: position of particle X in the reference configuration \\
+d\textbf{X}: material line element $\rightarrow$ d\textbf{x}: spatial line element  \\
+F: Deformation Gradient \\
+J: Jacobian determinant \\
+\textbf{R}: Rotation Tensor, two-feild tensor connecting the reference to the current configuration\\
+\textbf{U}: Right stretch tensor with a basis in the reference configuration \\
+\textbf{V}: Left stretch tensor with a basis in the current configuration \\
+d\textbf{A}: surface element in reference configuration $\rightarrow$ d\textbf{a}: surface element in current configuration \\
+d\textbf{V}: volume element in reference configuration $\rightarrow$ d\textbf{v}: volume element in current configuration \\
+\textbf{u}: Displacement vector \\
+\textbf{H}: Displacement gradient with respect to \textbf{X}
+
+\subsection{Motion and deformation gradient}
+\begin{align}\label{31}
+\begin{split}
+x &= \varphi (\mathbf{X}) \quad \text{Position of particle X in the configuration } \varphi \\
+  &= \varphi_t (X) = \varphi (X, t) \quad \text{temporal series of configurations}
+\end{split}
+\end{align}
+The reference configuration can be defined with the following equation where $\mathbf{X}$ is the position of particle X in this configuration:
+\begin{equation*}
+\mathbf{X} = \varphi_0 (X)
+\end{equation*}
+For practical reasons, we don't need to differentiate between $\mathbf{X}$ and X, simplifying the notation to 
+\begin{align}\label{33}
+\begin{split}
+\mathbf{x} &= \pmb{\varphi} (\mathbf{X}, t) \quad \text{Direct notation} \\
+x_i &= \varphi_i (X_A, t)\quad \text{Indicial notation}
+\end{split}
+\end{align}
+Deformation gradient \textbf{F}:
+\begin{equation}\label{35}
+d\mathbf{x} = \mathbf{F} d\mathbf{X}
+\end{equation}
+The components of the deformation gradient:
+\begin{align}\label{36}
+\begin{split}
+\mathbf{F} &= \pdv{\mathbf{x}}{\mathbf{X}} = \text{Grad} \mathbf{x} = \text{Grad} \pmb{\varphi} (\mathbf{X}, t) \quad \text{Refer to Eq. } \ref{33}\\
+F_{iA} (\mathbf{e_i} \otimes \mathbf{E_A}) &= \pdv{x_i}{X_A} (\mathbf{e_i} \otimes \mathbf{E_A}) = x_{i,A} (\mathbf{e_i} \otimes \mathbf{E_A})
+\end{split}
+\end{align}
+The gradient in Eq. \ref{36} is a linear operator. To preserve the continuous structure during deformation, the mapping has to be one-to-one. \textbf{\textit{In other words, the deformation gradient cannot be singular.}} This is equivalent to: 
+\begin{align}\label{37}
+\begin{split}
+J &= \det \mathbf{F} \neq 0 \quad \text{Non-singularity} \\
+J &> 0 \quad \text{Exclude self-penetration} \\
+\end{split}
+\end{align}
+Since $\mathbf{F}$ is non-singular, its inverse exists:
+\begin{align}\label{38}
+d \mathbf{X} = \mathbf{F}^{-1} d \mathbf{x}
+\end{align}
+Therefore the components of the inverse of the deformation gradient can be written as: 
+\begin{align}\label{39}
+\begin{split}
+\mathbf{F}^{-1} &= \pdv{\mathbf{X}}{\mathbf{x}} \\
+					 &= (F_{iA})^{-1} (\mathbf{E_A} \otimes \mathbf{e_i}) = \bigg( \pdv{x_i}{X_A} \bigg)^{-1} (\mathbf{E_A} \otimes \mathbf{e_i}) = \bigg( \pdv{X_A}{x_i} \bigg) (\mathbf{E_A} \otimes \mathbf{e_i}) 
+\end{split}
+\end{align}
+By polar decomposition theorem:
+\begin{align}\label{310}
+\begin{split}
+\mathbf{F} &= \mathbf{RU} = \mathbf{VR} \\
+F_{iA} &= R_{iB} U_{BA} = V_{ik} R_{kA}
+\end{split}
+\end{align}
+Transformations of area and volume elements can be derived. The equation for the transformation of area is known as Nanson's formula, derived below
+\begin{align*}
+\text{Property of dot products} &= \mathbf{u} \cdot \mathbf{Av} = \mathbf{v} \cdot \mathbf{A}^T \mathbf{u} = \mathbf{A}^T \mathbf{u} \cdot \mathbf{v} \\
+d \mathbf{v} &= (\mathbf{n} da) \cdot \mathbf{N} d \mathbf{X} = d\mathbf{X} \cdot \mathbf{F}^T (\mathbf{n} da) = \mathbf{F}^T (\mathbf{n} da) \cdot d\mathbf{X} \\
+d\mathbf{v} &= d\mathbf{V} \quad \text{Equate to dv in equation above}\\
+\mathbf{F}^T (\mathbf{n} da) \cdot d\mathbf{X} &= J (\mathbf{N} dA) \cdot d\mathbf{X} \quad \text{Rearrange} \\
+0 &= J (\mathbf{N} dA) \cdot d\mathbf{X} - 
+\mathbf{F}^T (\mathbf{n} da) \cdot d\mathbf{X} \\
+0 &= \big[ J (\mathbf{N} dA)- 
+\mathbf{F}^T (\mathbf{n} da) \big] \cdot d\mathbf{X} \quad \text{Line element} \neq 0 \text{; therefore,} \\
+0 &= J (\mathbf{N} dA) - 
+\mathbf{F}^T (\mathbf{n} da) \\
+\mathbf{F}^T (\mathbf{n} da) &= J (\mathbf{N} dA)
+\end{align*}
+Therefore, Nanson's formula can be stated
+\begin{align}\label{311}
+\begin{split}
+\mathbf{n} da &= J \mathbf{F}^{-T} \mathbf{N} dA = J \mathbf{F}^{-T} d\mathbf{A} 
+\end{split}
+\end{align}
+The transformation for volume elements is
+\begin{align}\label{312}
+\begin{split}
+dv = J dV \rightarrow J &= \frac{dv}{dV} \\
+							    &= 1 \quad \text{Incompressible, no change in volume from current to reference }
+\end{split}
+\end{align}
+Displacement can be defined as
+\begin{align}\label{313}
+\begin{split}
+\mathbf{u} (\mathbf{X},t) &= \mathbf{x} - \mathbf{X} \\
+	&= \pmb{\varphi} (\mathbf{X},t) - \mathbf{X}
+\end{split}
+\end{align}
+Relationship between the deformation gradient and displacement:
+\begin{align}\label{314}
+\begin{split}
+\mathbf{x} &= \mathbf{u} + \mathbf{X}  \quad \text{Take gradient of equation} \\
+\pdv{\mathbf{x}}{\mathbf{X}} &= \pdv{\mathbf{u}}{\mathbf{X}} + \pdv{\mathbf{X}}{\mathbf{X}} \\
+\mathbf{F} &= \text{Grad} \mathbf{u} + \mathbf{I} \\
+\mathbf{F} &= \mathbf{H} + \mathbf{I}
+\end{split}
+\end{align}
+
+
+\subsection{Strain measures}
+\textbf{Definitions} \\
+\textbf{C}: Right Cauchy-Green tensor refers to the initial/reference configuration \\
+\textbf{b}: Left Cauchy-Green tensor refers to the current configuration \\
+\textbf{E}: Green-Lagrangian strain tensor (Reference) \\
+\textbf{e}: Almansi strain tensor (Current)\\ \\
+Definition of \textbf{C}:
+\begin{align}\label{315}
+\begin{split}
+\mathbf{C} &= \mathbf{F}^T \mathbf{F} \\
+C_{AB} &= F_{Ai}^T F_{iB} = F_{iA} F_{iB}\\
+				&= \mathbf{U}^T \mathbf{U} = \mathbf{U}^2 
+\end{split}
+\end{align}
+Definition of \textbf{b}:
+\begin{align*}
+\mathbf{b} &= \mathbf{F} \mathbf{F}^T \\
+b_{ik} &= F_{iA} F_{kA}
+\end{align*}
+The Green-Lagrangian strain tensor can be defined as:
+\begin{align}\label{316}
+\begin{split}
+\mathbf{E} &= \frac{1}{2} (\mathbf{F}^T \mathbf{F} - \mathbf{I}) = \frac{1}{2} (\mathbf{C} - \mathbf{I}) \\
+E_{AB} &= \frac{1}{2} (F_{iA} F_{iB} - \delta_{AB})
+\end{split}
+\end{align}
+The Almansi strain tensor is with repsect to the current configuration 
+\begin{align}\label{321}
+\begin{split}
+\mathbf{e} &= \frac{1}{2} (\mathbf{I} - \mathbf{b}^{-1}) \\
+e_{ik} &= \frac{1}{2} (\delta_{ik} - (F_{iA})^{-1} (F_{kA})^-1)
+\end{split}
+\end{align}
+The Almansi strain tensor and the Green-Lagrangian strain tensor can be connected by teh following transformation:
+\begin{equation}\label{322}
+\mathbf{E} = \mathbf{F}^T \mathbf{e} \mathbf{F}
+\end{equation}
+
+\subsection{Transformations of vectors and tensors}
+\textbf{Definitions} \\ 
+Pull back operation: From current to initial/reference configuration \\
+Push forward operation: From initial/reference to current configuration \\ 
+
+The gradient of a scalar field G(\textbf{X}) = g(\textbf{x}), we have 
+\begin{align}\label{323}
+\begin{split}
+\pdv{G}{X_A} &= \pdv{g}{x_i} \pdv{x_i}{X_A} \\
+\text{Grad} G &= \text{grad} g \mathbf{F} \\
+\text{Grad} G &= \mathbf{F}^T \text{grad} g
+\end{split}
+\end{align}
+and,
+\begin{align}\label{324}
+\begin{split}
+\pdv{g}{x_i} &= \pdv{G}{X_A} \pdv{X_A}{x_i} \\
+\text{grad} g &= \text{Grad} G \mathbf{F}^{-1} \\
+\text{grad} g &= \mathbf{F}^{-T}\text{Grad} G
+\end{split}
+\end{align}
+In the same way, for the gradient of a vector field \textbf{W}(\textbf{X}) = \textbf{w} (\textbf{x}), we obtain:
+\begin{align}\label{325}
+\begin{split}
+\text{Grad} \mathbf{W} &= \text{grad} \mathbf{w} \mathbf{F} \\ 
+\text{Grad} \mathbf{W} \mathbf{F}^{-1} &= \text{grad} \mathbf{w}
+\end{split}
+\end{align}
+
+\subsection{Time derivatives}
+Some problems are time or history dependent. \\ \\
+The velocity of a material (\textbf{X}) point in the reference configurations is defined by the material time derivative. 
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+
+\section{Balance Laws}
+\textbf{Definitions}: \\
+$\rho_o$: density in the initial/reference configuration \\
+$\rho$: density in the current configuration \\
+$\pmb{\sigma}$: Cauchy stress tensor \\
+
+\subsection{Balance of mass}
+The balance of mass is given by the following relationship:
+\begin{align}\label{337}
+m = \int_{B} \rho_o dV = \int_{\varphi(B)} \rho dV = const. 
+\end{align}
+We can assume along with Eq. \ref{312}
+\begin{equation}\label{338}
+J = \frac{\rho_o}{\rho} = \frac{dv}{dV}
+\end{equation}
+
+\subsection{Local balance of momentum and moments of momentum}
+Linear momentum balance implies (in direct and indicial notation)
+\begin{align*}
+\frac{D}{Dt} \int_r \mathbf{v} \rho dv &= \int_{s} \mathbf{t} ds + \int_{r} \mathbf{b} \rho dv \\
+\frac{D}{Dt} \int_r v_i \rho dv &= \int_{s} t_i ds + \int_{r} b_i \rho dv
+\end{align*}
+Using balance of mass (Eq. \ref{338}) where $dv = J dV$ and $\rho = \frac{\rho_o}{J}$
+\begin{align*}
+\frac{D}{Dt} \int_{R} V_i \frac{\rho_o}{J} J dV &= \int_{s} t_i ds + \int_{r} b_i \rho dv \\
+\frac{D}{Dt} \int_{R} V_i \rho_o dV &= \int_{s} t_i ds + \int_{r} b_i \rho dv \quad \text{where } \frac{D(V_i)}{Dt} = A_i \\
+\int_{R} A_i \rho_o dV &= \int_{s} t_i ds + \int_{r} b_i \rho dv \quad \text{transform to reference state} \\
+\int_{r} a_i \rho dv &= \int_{s} t_i ds + \int_{r} b_i \rho dv \quad \text{recognize } t_i = \sigma_{ik} n_k \\
+\int_{r} a_i \rho dv &= \int_{s} \sigma_{ik} n_k ds + \int_{r} b_i \rho dv \quad \text{Use divergence theorem} \\
+\int_{r} a_i \rho dv &= \int_{r} \pdv{\sigma_{ik}}{x_k} dv + \int_{r} b_i \rho dv \\
+0 &= \int_{r} \bigg( \pdv{\sigma_{ik}}{x_k} + b_i \rho - a_i \rho  \bigg) dv
+\end{align*}
+Therefore, the local balance of momentum can be written as
+\begin{align}\label{339}
+\begin{split}
+\text{div} \pmb{\sigma} + \rho \bar{\textbf{b}} &= \rho \dot{\textbf{v}} \\
+\text{div} \pmb{\sigma} + \rho \bar{\textbf{b}} &= \rho \textbf{a} \\
+\pdv{\sigma_{ik}}{x_i} + \rho \bar{b_k} &= \rho \bar{a_i} \quad \text{Quasi-static problems ignore the inertial term} \\
+\pdv{\sigma_{ik}}{x_i} + \rho \bar{b_k} &= 0 \quad \text{For small structures, neglect body forces} \\
+\pdv{\sigma_{ik}}{x_i} &= 0 
+\end{split}
+\end{align}
+Furthermore, we have Cauchy's Theorem
+\begin{align}\label{340}
+\begin{split}
+\textbf{t} &= \pmb{\sigma}^T \textbf{n} \\
+t_i &= \sigma_{ik} n_i
+\end{split}
+\end{align}
+The local balance of angular momentum proves the symmetry of the Cauchy stress tensor
+\begin{align}
+\begin{split}
+\pmb{\sigma} &= \pmb{\sigma}^T \\
+\sigma_{ik} &= \sigma_{ki}
+\end{split}
+\end{align}
+
+\subsection{First law of thermodynamics}
+
+\subsection{Transformation to the initial configuration, different stress tensors}
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+
+
+
+\section{Weak Form of Balance of Momentum, Variational Principles}
+\textbf{Definitions} \\
+$\pmb{\eta}$: Virtual displacement or test function \\
+$\mathbf{P}$: First Piola-Kirchoff stress tensor \\
+$\mathbf{S}$: Second Piola-Kirchoff stress tensor \\
+\textbf{E}: Green Lagrangian strain tensor \\
+\textbf{C}: Right Cauchy-Green tensor \\
+Grad $\pmb{\eta}$: The virtual variation of the deformation gradient, $\delta$ \textbf{F} \\
+
+\subsection{Weak Form of Balance of Momentum in the Initial Configuration}
+Local equilibrium equation
+\begin{equation}
+\text{Div} \mathbf{P} + \rho_o \mathbf{\bar{b}} = \rho_o \mathbf{\dot{v}}
+\end{equation}
+Convert to the weak form by multiplying by a test function, $\pmb{\eta}$. REQUIRES EDIT
+\begin{align}\label{356}
+\begin{split}
+\pdv{P_{iA}}{X_A} \eta_i + \rho_o \bar{b}_i \eta_i &= \rho_o \dot{v}_i \eta_i \quad \text{Integrate over domain} \\
+\int_{\mathcal{B}} \pdv{\mathbf{P}}{X} \pmb{\eta} dV + \int_{\mathcal{B}} \rho_o \mathbf{\bar{b}} \pmb{\eta} dV &= \int_{\mathcal{B}} \rho_o \mathbf{\dot{v}} \pmb{\eta} dV \quad \text{Integration by Parts} \\
+\int_{\mathcal{B}} (\mathbf{P} \pmb{\eta})_{,X} dV - \int_{\mathcal{B}}\mathbf{P} \pdv{\pmb{\eta}}{X} dV + \int_{\mathcal{B}} \rho_o \mathbf{\bar{b}} \pmb{\eta} dV &= \int_{\mathcal{B}} \rho_o \mathbf{\dot{v}} \pmb{\eta} dV \quad \text{Divergence theorem} \\
+\int_{\delta \mathcal{B}} \mathbf{P} \mathbf{N} \pmb{\eta} dA - \int_{\mathcal{B}}\mathbf{P} \pdv{\pmb{\eta}}{X} dV + \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \pmb{\eta} dV &= 0 \quad \text{Traction} \\
+\int_{\delta \mathcal{B}} \mathbf{\bar{t}} \pmb{\eta} dA - \int_{\mathcal{B}}\mathbf{P} \pdv{\pmb{\eta}}{X} dV + \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \pmb{\eta} dV &= 0 \quad \text{Rearrange} \\
+\int_{\mathcal{B}} \mathbf{P} \pdv{\pmb{\eta}}{X} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \pmb{\eta} dA &= 0 \quad \text{Direct notation} \\
+\int_{\mathcal{B}} \mathbf{P} \cdot \text{Grad} \pmb{\eta} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0
+\end{split}
+\end{align}
+We can exchange the first PK stress tensor with the second PK stress tensor:
+\begin{align*}
+\begin{split}
+\int_{\mathcal{B}} \mathbf{P} \cdot \text{Grad} \pmb{\eta} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \quad \text{where } \mathbf{P = FS} \\
+\int_{\mathcal{B}} \mathbf{FS} \cdot \text{Grad} \pmb{\eta} dV - "" - "" &= 0 \\
+\int_{\mathcal{B}} \mathbf{S} \cdot \text{Grad} \pmb{\eta} \mathbf{F} dV - "" - "" &= 0 \\
+\int_{\mathcal{B}} \mathbf{S} \cdot \mathbf{F}^T \text{Grad} \pmb{\eta} dV - "" - "" &= 0 \\
+\int_{\mathcal{B}} \mathbf{S} \cdot \frac{1}{2} (\mathbf{F}^T \text{Grad} \pmb{\eta} + \text{Grad}^T \pmb{\eta} \mathbf{F}) dV - "" - "" &= 0 \\
+\int_{\mathcal{B}} \mathbf{S} \cdot \delta \mathbf{E} dV + \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0
+\end{split}
+\end{align*}
+where we know the following relationship:
+\begin{align}
+\begin{split}
+\delta \mathbf{E} &= \frac{1}{2} (\mathbf{F}^T \text{Grad} \pmb{\eta} + \text{Grad}^T \pmb{\eta} \mathbf{F}) \\
+			&= \frac{1}{2} (\mathbf{F}^T \delta \mathbf{F} + \delta \mathbf{F}^T \mathbf{F})
+\end{split}
+\end{align}
+This makes use of the symmetry of \textbf{S}, so that the antisymmetric part of $\mathbf{F}^T \text{Grad} \pmb{\eta} $ disappears in the scalar product. This can be rewritten in direct and indicial notation: 
+\begin{align}\label{359}
+\begin{split}
+G(\pmb{\varphi}, \pmb{\eta}) &= \underbrace{\int_{\mathcal{B}} \mathbf{S} \cdot \delta \mathbf{E} dV}_\text{Virtual internal work} + \underbrace{\int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA}_\text{Virtual external work} = 0 \\
+G(\pmb{\varphi}, \pmb{\eta}) &= \int_{\mathcal{B}} S_{AB} \delta E_{AB} dV + \int_{\mathcal{B}} \rho_o (\bar{b}_A - \dot{v}_A) \eta_A dV - \int_{\delta \mathcal{B}} \bar{t}_A \eta_A dA = 0
+\end{split}
+\end{align}
+
+\subsection{Spatial Form of the Weak Formulation}
+\textbf{Definitions} \\ 
+Push-forward operation: from Reference/Initial (X) to Current (x) \\
+Pull-forward operation: from Current (x) to Reference/Initial (X) \\ \\
+Starting in the reference configuration, we can use several definitions to \textit{push-forward} into the current configuration: 
+\begin{align*}
+\int_{\mathcal{B}} \mathbf{P} \cdot \text{Grad} \pmb{\eta} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \\
+\int_{\mathcal{B}} J \pmb{\sigma} \mathbf{F}^{-T} \cdot \text{Grad} \pmb{\eta} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \\
+\int_{\mathcal{B}} J \pmb{\sigma} \cdot \text{Grad} \pmb{\eta} \mathbf{F}^{-1} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \\
+\int_{\mathcal{B}} J \pmb{\sigma} \cdot \text{grad} \pmb{\eta} dV - \int_{\mathcal{B}} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dV - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \quad \text{where } J = \frac{dv}{dV} \\
+\int_{\varphi(\mathcal{B})} \pmb{\sigma} \cdot \text{grad} \pmb{\eta} dv - \int_{\varphi(\mathcal{B})} \rho_o (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} \frac{dv}{J} - \int_{\delta \mathcal{B}} \mathbf{\bar{t}} \cdot \pmb{\eta} dA &= 0 \quad \text{where } \rho_o = \rho J \\
+\int_{\varphi(\mathcal{B})} \pmb{\sigma} \cdot \text{grad} \pmb{\eta} dv - \int_{\varphi(\mathcal{B})} \rho (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dv - \int_{\varphi (\delta \mathcal{B})} \mathbf{\bar{t}} \cdot \pmb{\eta} da &= 0
+\end{align*}
+where symmetry is applied to the traction term to transform the final term into the current configuration. This leaves the following relationship analogous to Eq. \ref{359} except in the current configuration. 
+\begin{equation}\label{363}
+g(\pmb{\varphi}, \pmb{\eta}) = \int_{\varphi(\mathcal{B})} \pmb{\sigma} \cdot \text{grad} \pmb{\eta} dv - \int_{\varphi(\mathcal{B})} \rho (\mathbf{\bar{b}} - \mathbf{\dot{v}}) \cdot \pmb{\eta} dv - \int_{\varphi (\delta \mathcal{B})} \mathbf{\bar{t}} \cdot \pmb{\eta} da = 0
+\end{equation}
+
+\subsection{Minimum of Total Potential Energy}
+\textbf{Definitions} \\
+W: Strain energy function stored within the body  \\ \\
+The classical minimum principle of the total elastic potential can be formulated. One has to consider the potential energy of the conservative (path-independent) forces applied. 
+\begin{align}\label{364}
+\begin{split}
+\Pi (\pmb{\varphi}) = \int_{B} [ W (\mathbf{C}) - \rho_o \bar{\mathbf{b}} \cdot \pmb{\varphi}] dV - \int_{\delta B_\sigma} \mathbf{\bar{t}} \cdot \pmb{\varphi} dA \Rightarrow MIN
+\end{split}
+\end{align}
+The minimum can be computed as a variation of Eq. \ref{364}
+\begin{align}\label{365}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+\end{split}
+\end{align}
+
+\end{document}

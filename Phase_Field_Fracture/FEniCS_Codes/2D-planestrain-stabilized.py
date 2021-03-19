@@ -289,7 +289,8 @@ external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Compute directional derivative about w_p in the direction of v (Gradient)
-F_u = derivative(elastic_potential, w_p, v_q) #\ - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
+F_u = derivative(elastic_potential, w_p, v_q)
+    - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
 # Compute directional derivative about alpha in the direction of dalpha (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
