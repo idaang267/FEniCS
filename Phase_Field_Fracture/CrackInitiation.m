@@ -1,29 +1,29 @@
+clear all
+close all
+
 % Initial parameters in order to choose our value of delta to aim for in
-h = 0.5;    % total strip height is 2*h
+h = 0.25;    % total strip height is 2*h
+meshsizeY = 25/2;
 mu = 1;     % Shear modulus
 Gc = 1;     % Critical fracture energy 
-
-% Unknown stretch 
-syms lambda_a
-eq = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
-th_lambda = double(solve(eq, lambda_a));
-
-% Unknown delta to prescribe 
-th_delta = h*(th_lambda(4) - 1)
+ell_multi = 5; 
 
 % Calculate the effective Gc 
-meshsizeY = 25;
 hsizeY = h/meshsizeY; 
-ell_multi = 5; 
 ell = ell_multi*hsizeY;
-Gc_e = 1;
-Gc_sim = Gc_e/((1+ (3/8)*hsizeY/ell));
+Gc_e = Gc*(1+ (3/8)*hsizeY/ell);
 
 syms lambda_a
-eq2 = Gc_sim == h*mu*(lambda_a - 1/lambda_a)^2;
+eq2 = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
 sim_lambda = double(solve(eq2, lambda_a));
 
 sim_delta = h*(sim_lambda(4) - 1)
+
+%%
+h = 0.5/2;
+mu = 1;
+lambda_a = 1 + 0.48/h;
+J = h*mu*(lambda_a - 1/lambda_a)^2
 
 %%
 Delta = [0, .518, .519, .52]'; 

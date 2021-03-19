@@ -18,6 +18,6 @@ CircleCrack.geo
 HalfCircleCrack.geo
   Half circle defined
 SimpleCrack.geo
-  Embedded crack
+  Left hand side discrete crack for tension tests
 tension_test.geo
-  Rectangle with slit on left hand side for discrete tests
+  Rectangle with slit in center for discrete tests

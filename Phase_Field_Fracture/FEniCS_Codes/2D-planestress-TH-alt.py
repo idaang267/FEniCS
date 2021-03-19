@@ -114,7 +114,7 @@ userpar.add("meshsizeX", 500)
 userpar.add("meshsizeY", 50)
 userpar.add("load_min",0.)
 userpar.add("load_max", 0.52)
-userpar.add("load_steps", 30)
+userpar.add("load_steps", 50)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -164,7 +164,7 @@ if MPI.rank(MPI.comm_world) == 0:
     print ("the dimension of mesh: {0:2d}".format(ndim))
 
 # Numerical parameters of the alternate minimization
-maxiteration = 2000
+maxiteration = 4000
 AM_tolerance = 1e-4
 
 #-----------------------------------------------------------------------------
@@ -344,7 +344,15 @@ solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
 # loading and initialization of vectors to store time datas
-load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+# load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+# Loading vector modeled after an exponential function
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
+fcn_load = []
+for steps in load_multipliers:
+    exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
+    fcn_load.append(exp1)
+
+# initialization of vectors to store data of interest
 energies         = np.zeros((len(load_multipliers), 5))
 iterations       = np.zeros((len(load_multipliers), 2))
 
@@ -363,7 +371,7 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(load_multipliers):
+for (i_t, t) in enumerate(fcn_load):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
