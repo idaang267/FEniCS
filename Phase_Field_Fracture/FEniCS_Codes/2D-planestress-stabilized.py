@@ -56,8 +56,8 @@ solver_up_parameters  = {"nonlinear_solver": "snes",
                                          "absolute_tolerance": 1e-10,
                                          "relative_tolerance": 1e-10,
                                          "solution_tolerance": 1e-10,
-                                         "report": True,
-                                         "error_on_nonconvergence": False}}
+                                         "report": False,
+                                         "error_on_nonconvergence": True}}
 
 # Parameters of the PETSc/Tao solver used for the alpha-problem
 tao_solver_parameters = {"maximum_iterations": 100,
@@ -112,11 +112,11 @@ userpar.add("mu", 1)          # Shear modulus
 userpar.add("kappa",10e2)
 userpar.add("Gc", 1)       # Fracture toughness (2.4E3)
 userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 500)
-userpar.add("meshsizeY", 50)
+userpar.add("meshsizeX", 750)
+userpar.add("meshsizeY", 125)
 userpar.add("load_min", 0.)
-userpar.add("load_max", 0.52)
-userpar.add("load_steps", 50)
+userpar.add("load_max", 0.55)
+userpar.add("load_steps", 150)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -124,7 +124,7 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H = 10, 1           # Length (x) and height (y-direction)
+L, H = 6.0, 1.0           # Length (x) and height (y-direction)
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
 hsize = float(H/Ny)    # Geometry based definition for regularization
@@ -144,7 +144,7 @@ ell = Constant(ell_multi*hsize)
 # Naming parameters for saving output
 modelname = "2D-Stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Nx_%.0f_Ny_%.0f_S_%.0f_ellx_%.0f" % (Nx, Ny, S, ell_multi)
+simulation_params = "Alt-L_%.0f_H_%.0f_S_%.0f_ellx_%.0f_hsize_%.3f" % (L, H, S, ell_multi, hsize)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -200,7 +200,7 @@ class top_boundary(SubDomain):
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], L/2, 0.1*hsize) and near(x[1], 0.0, 0.1*hsize)
+        return near(x[0], L/2, hsize) and near(x[1], 0.0, hsize)
 
 # Convert all boundary classes for visualization
 bot_boundary = bot_boundary()
@@ -268,11 +268,11 @@ u1 = Expression("t", t= 0.0, degree=0)
 u2 = Expression("-t", t= 0.0, degree=0)
 
 # bc - u (imposed displacement)
-bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point, method="pointwise")
+bc_u0 = DirichletBC(V_u.sub(0), u0, pin_point)
 # Top/bottom boundaries have displacement in the y direction
 bc_u1 = DirichletBC(V_u.sub(0).sub(1), u1, top_boundary)
 bc_u2 = DirichletBC(V_u.sub(0).sub(1), u2, bot_boundary)
-
+# Combine
 bc_u = [bc_u0, bc_u1, bc_u2]
 
 # bc - alpha (zero damage)
@@ -300,7 +300,6 @@ Ic = tr(C) + (F33)**2
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
-
 # Nominal stress tensor
 def P(u, alpha):
     return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*inv(F.T)
@@ -350,8 +349,8 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Set the lower and upper bound of the damage variable (0-1)
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-2.5 & near(x[1], 0.0, 0.1*hsize) ? 1.0 : 0.0", \
-                       hsize = hsize, degree=0), V_alpha)
+alpha_lb = interpolate(Expression("x[0]>=-L/2 & x[0]<=0.0 & near(x[1], 0.0, 0.1*hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, L=L, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
 # Set up the solvers
@@ -363,7 +362,7 @@ solver_alpha.parameters.update(tao_solver_parameters)
 load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
 fcn_load = []
 for steps in load_multipliers:
-    exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
+    exp1 = 0.1389*exp(0.009173*steps) - 0.1389*exp(-0.06888*steps)
     fcn_load.append(exp1)
 
 # initialization of vectors to store data of interest

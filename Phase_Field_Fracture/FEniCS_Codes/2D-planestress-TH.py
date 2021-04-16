@@ -107,13 +107,13 @@ class InitialConditions(UserExpression):
 parameters.parse()
 userpar = Parameters("user")
 userpar.add("mu",1)           # Shear modulus
-userpar.add("kappa",10e2)     # Bulk modulus
-userpar.add("Gc",1)       # fracture toughness
+userpar.add("kappa",1e5)      # Bulk modulus
+userpar.add("Gc",1)           # fracture toughness
 userpar.add("k_ell",5.e-5)    # residual stiffness
-userpar.add("meshsizeX", 500)
-userpar.add("meshsizeY", 50)
+userpar.add("meshsizeX", 600)
+userpar.add("meshsizeY", 100)
 userpar.add("load_min",0.)
-userpar.add("load_max", 0.52)
+userpar.add("load_max", 0.55)
 userpar.add("load_steps", 50)
 userpar.add("ell_multi", 5)
 # Parse command-line options
@@ -122,10 +122,10 @@ userpar.parse()
 # Constants
 # ----------------------------------------------------------------------------
 # Geometry paramaters
-L, H  = 10, 1
+L, H  = 6.0, 1.0
 Nx   = userpar["meshsizeX"]
 Ny   = userpar["meshsizeY"]
-hsize = float(H/Ny)    # Geometry based definition for regularization
+hsize = 0.01 #float(H/Ny)    # Geometry based definition for regularization
 S = userpar["load_steps"]
 
 # Material parameters
@@ -151,8 +151,8 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation
-mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
-#mesh = Mesh("2DShearTestRef.xml")
+# mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
+mesh = Mesh("2DShearTest3Ref.xml")
 # geo_mesh  = XDMFFile(MPI.comm_world, savedir+meshname)
 # geo_mesh.write(mesh)
 
@@ -189,7 +189,7 @@ class top_boundary(SubDomain):
 
 class pin_point(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.5, hsize) and near(x[1], 0.0, hsize)
+        return near(x[0], L/2, hsize) and near(x[1], 0.0, hsize)
 
 # Convert all boundary classes for visualization
 bot_boundary = bot_boundary()
@@ -333,8 +333,8 @@ E_alpha_alpha = derivative(E_alpha, alpha, dalpha)
 
 # Lower and upper bound, set to 0 and 1 respectively
 # alpha_lb = interpolate(Expression("0.", degree=0), V_alpha)
-alpha_lb = interpolate(Expression("x[0]>=-5.0 & x[0]<=-2.5 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
-                       hsize = hsize, degree=0), V_alpha)
+alpha_lb = interpolate(Expression("x[0]>=-L/2 & x[0]<=0.0 & near(x[1], 0.0, 0.1 * hsize) ? 1.0 : 0.0", \
+                       hsize = hsize, L=L, degree=0), V_alpha)
 alpha_ub = interpolate(Expression("1.", degree=0), V_alpha)
 
 # Set up the solvers
@@ -343,11 +343,13 @@ solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters,True) # uncomment to see available parameters
 
 # Loading vector
-load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
-fcn_load = []
-for steps in load_multipliers:
-    exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
-    fcn_load.append(exp1)
+load_multipliers = np.linspace(userpar["load_min"], userpar["load_max"], userpar["load_steps"])
+
+# load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
+# fcn_load = []
+# for steps in load_multipliers:
+#     exp1 = 0.4772*exp(0.001927*steps) - 0.4722*exp(-0.7501*steps)
+#     fcn_load.append(exp1)
 
 # initialization of vectors to store data of interest
 energies         = np.zeros((len(load_multipliers), 5))
@@ -368,7 +370,7 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(fcn_load):
+for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
