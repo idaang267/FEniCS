@@ -26,17 +26,17 @@ lambda_a = 1 + 0.48/h;
 J = h*mu*(lambda_a - 1/lambda_a)^2
 
 %%
-Delta = [0, .518, .519, .52]'; 
-n_steps = [0, 48, 49, 50]'; 
+Delta = [0, 0.01, .548, .549, .55]'; 
+n_steps = [0, 1, 197, 198, 200]'; 
 
 coefs = fit(n_steps, Delta, 'exp2')
 
-a = 0.4772;
-b = 0.001927;
-c = -0.4722;
-d = -0.7501;
+a = coefs.a;
+b = coefs.b;
+c = coefs.c;
+d = coefs.d;
 
-x = linspace(0, 50, 50);
+x = linspace(0, 200, 200);
 y = a*exp(b*x) + c*exp(d*x);
 
 hold on
