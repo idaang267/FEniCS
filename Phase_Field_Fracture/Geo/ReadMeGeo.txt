@@ -5,8 +5,12 @@ Read me for .geo codes
 2DRectangle.geo
   Only four points defined
 2DShearTest3Ref.geo
-  Full shear test for plane stress
+  Full shear test for plane stress for phase field formulations
   Contains three sections where the middle section is refined in a regularized manner
+2DShearTestRefDis.geo
+  Full discrete shear test for plane problems
+  Contains three main sections where the middle section is refined
+  Middle section consists of four planes 
 2DShearTestHalf.geo
   Half shear test for plane stress
   Has no refined section
