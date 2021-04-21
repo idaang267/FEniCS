@@ -1,5 +1,7 @@
 Read me for .geo codes
 
+2D-Trapezoidal.geo
+  Inspired by Geelen 2018 paper for stable crack propagation
 2DRectangle.geo
   Only four points defined
 2DShearTest3Ref.geo
