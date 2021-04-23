@@ -1,8 +1,10 @@
 Read me for .geo codes
 
-edge_crack.geo
-  From Bin from prior project can observe wrinkling 
+3DEdgeCrack.geo
+  From Bin from prior project can observe wrinkling
   Uniaxial loading of 3D mesh with edge crack to study crack nucleation
+3DEdgeCrackV.geo
+  My own version of Bin's geo file 
 2D-Trapezoidal.geo
   Inspired by Geelen 2018 paper for stable crack propagation
 3D-Trapezoidal.geo
