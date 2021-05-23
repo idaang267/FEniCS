@@ -95,10 +95,10 @@ Surface(38) = {38}; Surface(39) = {39}; Surface(40) = {40}; Surface(41) = {41};
 // Connector Lines within surfaces
 Line(31) = {8,18}; Line(32) = {9,19}; Line(33) = {10,20}; Line(34) = {11,21};
 // Place lines within surface
-Line {31} In Surface {30};
-Line {32} In Surface {33};
-Line {33} In Surface {36};
-Line {34} In Surface {37};
+Line{31} In Surface{30};
+Line{32} In Surface{33};
+Line{33} In Surface{36};
+Line{34} In Surface{37};
 
 // Inner Plug Lines to add into surface
 Circle(35) = {11,22,8}; Circle(36) = {8,22,10};
@@ -107,43 +107,11 @@ Circle(37) = {10,22,9}; Circle(38) = {9,22,11};
 Circle(39) = {21,23,18}; Circle(40) = {18,23,20};
 Circle(41) = {20,23,19}; Circle(42) = {19,23,21};
 
-Curve {35} In Surface {15};
-Curve {36} In Surface {11};
-Curve {37} In Surface {14};
-Curve {38} In Surface {18};
-Curve {39} In Surface {23};
-Curve {40} In Surface {19};
-Curve {41} In Surface {22};
-Curve {42} In Surface {26};
-
-
-Surface(27) = {27}; Surface(28) = {28}; Surface(29) = {29};
-
-Surface(42) = {42};
-Surface(43) = {43}; Surface(44) = {44}; Surface(45) = {45}; Surface(46) = {46};
-Surface(47) = {47}; Surface(48) = {48}; Surface(49) = {49}; Surface(50) = {50};
-Surface(51) = {51}; Surface(52) = {52}; Surface(53) = {53}; Surface(54) = {54};
-
-// Surface loops for plug
-Surface Loop(101) = {11, 23, 28, 24, 39}; Surface Loop(102) = {12, 24, 29, 25, 40};
-Surface Loop(103) = {13, 25, 30, 26, 41}; Surface Loop(104) = {14, 26, 27, 23, 42};
-// Surface loops for top hemisphere
-Surface Loop(105) = {15,31,52,37,28,43}; Surface Loop(106) = {16,32,52,36,44};
-Surface Loop(107) = {17,33,36,53,45}; Surface Loop(108) = {18,34,53,37,29,46};
-// Surface loops for bottom hemisphere
-Surface Loop(109) = {19,31,51,38,27,47}; Surface Loop(110) = {20,32,51,35,48};
-Surface Loop(111) = {21,33,35,54,49}; Surface Loop(112) = {22,34,54,38,30,50};
-
-// Conversion to volume
-Volume(1001) = {101}; Volume(1002) = {102}; Volume(1003) = {103}; Volume(1004) = {104};
-Volume(1005) = {105}; Volume(1006) = {106}; Volume(1007) = {107}; Volume(1008) = {108};
-Volume(1009) = {109}; Volume(1010) = {110}; Volume(1011) = {111}; Volume(1012) = {112};
-
-Physical Surface(1) = {11,12,13,14};
-Physical Surface(2) = {15,16,17,18,19,20,21,22};
-Physical Surface(3) = {23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38};
-Physical Surface(4) = {39,40,41,42,43,44,45,46,47,48,49,50};
-Physical Surface(5) = {51,52,53,54};
-
-Physical Volume(2001) = {1001,1002,1003,1004};
-Physical Volume(2002) = {1005,1006,1007,1008,1009,1010,1011,1012};
+Line{35} In Surface{15};
+Line{36} In Surface{11};
+Line{37} In Surface{14};
+Line{38} In Surface{18};
+Line{39} In Surface{23};
+Line{40} In Surface{19};
+Line{41} In Surface{22};
+Line{42} In Surface{26};
