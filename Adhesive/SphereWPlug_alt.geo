@@ -72,7 +72,6 @@ Line Loop(21) = {15,-23,-18}; Line Loop(22) = {16,-19,23};
 // Sphere lower outer surface
 Line Loop(23) = {13,-21,-20}; Line Loop(24) = {14,-17,21};
 Line Loop(25) = {15,24,17}; Line Loop(26) = {16,20,-24};
-
 // Connections following the xz plane
 Line Loop(30) = {28,13,-25,-1}; Line Loop(31) = {25,14,-26,-2};
 Line Loop(32) = {26,15,-27,-3}; Line Loop(33) = {27,16,-28,-4};
@@ -93,13 +92,8 @@ Surface(34) = {34}; Surface(35) = {35}; Surface(36) = {36}; Surface(37) = {37};
 Surface(38) = {38}; Surface(39) = {39}; Surface(40) = {40}; Surface(41) = {41};
 
 // Connector Lines within surfaces
-Line(31) = {8,18}; Line(32) = {9,19}; Line(33) = {10,20}; Line(34) = {11,21};
-// Place lines within surface
-Line{31} In Surface{30};
-Line{32} In Surface{33};
-Line{33} In Surface{36};
-Line{34} In Surface{37};
-
+Line(31) = {8,18}; Line(32) = {9,19};
+Line(33) = {10,20}; Line(34) = {11,21};
 // Inner Plug Lines to add into surface
 Circle(35) = {11,22,8}; Circle(36) = {8,22,10};
 Circle(37) = {10,22,9}; Circle(38) = {9,22,11};
@@ -107,11 +101,23 @@ Circle(37) = {10,22,9}; Circle(38) = {9,22,11};
 Circle(39) = {21,23,18}; Circle(40) = {18,23,20};
 Circle(41) = {20,23,19}; Circle(42) = {19,23,21};
 
-Line{35} In Surface{15};
-Line{36} In Surface{11};
-Line{37} In Surface{14};
-Line{38} In Surface{18};
-Line{39} In Surface{23};
-Line{40} In Surface{19};
-Line{41} In Surface{22};
-Line{42} In Surface{26};
+// Inside Points
+Point{11} In Surface{15}; Point{8} In Surface{15};
+Point{8} In Surface{11}; Point{10} In Surface{11};
+Point{10} In Surface{14}; Point{9} In Surface{14};
+Point{9} In Surface{18}; Point{11} In Surface{18};
+// Outside Points
+Point{21} In Surface{23}; Point{18} In Surface{23};
+Point{18} In Surface{19}; Point{20} In Surface{19};
+Point{20} In Surface{22}; Point{19} In Surface{22};
+Point{19} In Surface{26}; Point{21} In Surface{26};
+
+//
+Line Loop(105) = {35,31,-39,-34};
+Surface(105) = {105};
+
+// Bottom volume of sphere
+Surface Loop(101) = {15, 37, 30, 38, 23};
+Volume(1001) = {101};
+
+Surface{105} In Volume{1001};

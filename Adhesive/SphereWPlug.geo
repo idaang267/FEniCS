@@ -1,8 +1,8 @@
 // Define hollow sphere with thickness and circular plug region with different
 // material properties
 
-Mesh.Algorithm = 8;
-Mesh.RecombinationAlgorithm = 2;
+// Mesh.Algorithm = 8;
+// Mesh.RecombinationAlgorithm = 2;
 
 res = 0.4;  // Mesh Resolution
 R = 7.1; // Sphere Radius
