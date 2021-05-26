@@ -62,8 +62,7 @@ Deformation Gradient
 \begin{equation}\label{EqDefGrad}
 \mathbf{F}=\mathbf{I}+\nabla\otimes\bm{u}
 \end{equation}
-where $J=\det \mathbf{F}$ and $\mathbf{C}=\mathbf{F}^T\mathbf{F}$.
-
+where $J=\det \mathbf{F}$ and $\mathbf{C}=\mathbf{F}^T\mathbf{F}$. \\ \\
 The strain energy function $\mathcal{W}(\mathbf{F})$ is defined per unit reference volume such that the first PK and second PK
 \begin{subequations}\label{EqPK}
 \begin{align}
@@ -71,24 +70,20 @@ The strain energy function $\mathcal{W}(\mathbf{F})$ is defined per unit referen
 \mathbf{S} &= 2 \frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{C}}
 \end{align}
 \end{subequations}
-where $\mathbf{P}=\mathbf{F}\mathbf{S}$. 
-
-%===============================
-%===============================
-\subsection{Phase-Field Fracture Model}
+where $\mathbf{P}=\mathbf{F}\mathbf{S}$. \\ \\
 Non-modified strain energy function is the compressible Neo-Hookean:
 \begin{align}\label{StrainEnergyNH}
 \mathcal{W}(\mathbf{F}) = \frac{\mu}{2} (I_1 - 3 - 2 \ln J)
 \end{align}
-For incompressible hyperelastic materials, the strain energy function  is defined as
+For incompressible hyperelastic materials, the strain energy function  is defined using the Lagrangian formulation 
 \begin{equation}\label{EqEnergyIncompressible}
 \widetilde{\mathcal{W}}(\mathbf{F}) = \mathcal{W}(\mathbf{F}) + p\left(J-1\right),
 \end{equation}
-We instead consider a damage dependent relaxation of the incompressibility constraint and the phase-field couples to the strain energy through the modified function 
-\begin{equation}\label{EqEnergyRelaxed}
-\widetilde{\mathcal{W}}(\mathbf{F},\alpha) = a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{1}{2}\kappa\left(J-1\right)^2
+If we consider the perturbed lagrangian formulation 
+\begin{equation}\label{EqPLagrangian}
+\widetilde{\mathcal{W}}(\mathbf{F}) = \mathcal{W}(\mathbf{F}) + p\left(J-1\right) - \frac{p^2}{2 \kappa}, 
 \end{equation}
-where the decreasing stiffness modulation function is $a (\alpha)$ and $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume
+Decreasing stiffness modulation function is $a (\alpha)$ and $w(\alpha)$ is an increasing function representing the specific energy dissipation per unit of volume
 \begin{equation}\label{EqStiffMod}
 a (\alpha) = (1 - \alpha)^2 \quad w(\alpha) = \alpha
 \end{equation}
@@ -96,42 +91,23 @@ In the code, we have the following definition
 \begin{align*}
 b (\alpha) = (1 - \alpha)^3 = \sqrt{a^3(\alpha)}
 \end{align*}
-To circumvent numerical difficulties, we resort to the classical mixed formulation and introduce the pressure-like field 
-\begin{align}\label{eq_pressure}
-\begin{split}
-p &= -\sqrt{a^3(\alpha)}\kappa\left(J-1\right) \\ 
-p &= - b(\alpha) \kappa \left(J-1\right) 
-\end{split}
-\end{align}
-as an independent variable along with the displacement field. \\ \\
-Following the code, we have the following energy functional of the energy problem
-\begin{align*}
-\widetilde{W} (\mathbf{F}, \alpha) &= (a(\alpha) + k_\ell) \mathcal{W} (\mathbf{F}) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa} \\
-\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa}
-\end{align*}
-The first Piola-Kirchhoff stress tensor is given: 
-\begin{align}\label{eq_firstPK}
-\begin{split}
-\mathbf{P} &= \frac{\partial \widetilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
-		 &= \frac{\partial}{\partial \mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
-		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
-		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
-		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} \quad \text{substituting in pressure equation} \\
-\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b(\alpha) p J \mathbf{F}^{-T} 
-\end{split}
-\end{align}
-
+The normalization constant is defined as: 
+\begin{align}\label{NormConst} % normalization constant.
+c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
+\end{align} 
 %===============================
-\subsubsection{Derivation from Bin2020 Paper}
+\subsection{Derivation from 2020 Li and Bouklas Paper}
 Here, unlike Eq. 21 from Bin2020, we drop $\lambda_b$ which is not a consideration in this formulation
 \begin{align}
 \mathcal{E}_{\ell}(\boldsymbol{u}, \alpha) = \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}, \alpha) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega 
 \end{align}
-The normalization constant is defined as: 
-\begin{align}\label{NormConst} % normalization constant.
-c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
+We want to enforce the following relationship for pressure with a Lagrange multiplier
+\begin{align}\label{eq_pressure}
+\begin{split}
+p &= - \sqrt{a^3 (\alpha)} \kappa \left(J-1\right) 
+\end{split}
 \end{align}
-Starting from Eq. 25 in the 2020 Li and Bouklas paper where $\kappa$ is the bulk modulus 
+Giving us Eq. 25 in the 2020 Li and Bouklas paper where $\kappa$ is the bulk modulus 
 \begin{equation}
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \Lambda, \alpha\right) = \mathcal{E}_{\ell} (\boldsymbol{u}, \alpha ) + \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega +\int_{\Omega} \Lambda(p+\sqrt{a^{3}(\alpha)} \kappa (J-1)) d \Omega
 \end{equation}
@@ -161,6 +137,28 @@ The prior equation includes the full weak form, unless we want to consider linea
 - \frac{\varpi h^2}{2\mu} \sqrt{a^3(\alpha)} \sum_{e=1}^{n_{el}}\int_{\Omega^{e}} J \mathbf{C}^{-1} : \big( \nabla p \cdot \nabla q \big) \,dV = 0 
 \end{align*}
 
+\subsection{Summary}
+Therefore the modified strain energy functional 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \mathcal{W} (\mathbf{F}) + a^3 (\alpha)\kappa (J-1)^2 - \frac{p^2}{2 \kappa} \\
+\widetilde{W} (\mathbf{F}, \alpha) &= a(\alpha) \mathcal{W} (\mathbf{F}) - \sqrt{a^3 (\alpha)} p (J-1) - \frac{p^2}{2 \kappa} 
+\end{align*}
+Following the code, we have a small number for numerical purposes 
+\begin{align*}
+\widetilde{W} (\mathbf{F}, \alpha) &= \big( a(\alpha) + k_\ell) \frac{\mu}{2} (I_c - 3 - 2 \ln J) - b(\alpha) p (J-1) - \frac{p^2}{2 \kappa}
+\end{align*}
+The first Piola-Kirchhoff stress tensor is given: 
+\begin{align}\label{eq_firstPK}
+\begin{split}
+\mathbf{P} &= \frac{\partial \widetilde{\mathcal{W}}(\mathbf{F},\alpha)}{\partial \mathbf{F}} \\
+		 &= \frac{\partial}{\partial \mathbf{F}} \bigg[ a(\alpha)\mathcal{W}(\mathbf{F}) + a^3(\alpha) \frac{1}{2}\kappa\left(J-1\right)^2 \bigg] \\
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha) \frac{1}{2} \kappa \frac{\partial (J-1)^2}{\partial \mathbf{F}}  \\
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa\left(J-1\right)\frac{\partial J}{\partial \mathbf{F}} \quad \text{where } \frac{\partial J}{\partial \mathbf{F}} = J \mathbf{F}^{-T} \\
+		 &= a(\alpha)\frac{\partial \mathcal{W}(\mathbf{F})}{\partial \mathbf{F}} + a^3(\alpha)\kappa (J-1) J \mathbf{F}^{-T} \quad \text{substituting in pressure equation} \\
+\mathbf{P} &= a (\alpha) \mu (\mathbf{F} - \mathbf{F}^{-T}) - b(\alpha) p J \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+
 %===============================
 %===============================
 \subsection{Changes for 2D Plane-Stress Models}
@@ -170,11 +168,11 @@ Recalling the 1st PK stress in Eq. \ref{eq_firstPK}.
 \end{align*}
 In a plane-stress case, the $\mathbf{P_{33}}$ component is zero:
 \begin{align*}
-\mathbf{P}_{33} = a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} &= 0 
+{P}_{33} = a (\alpha) \mu ({F}_{33} - {F}^{-1}_{33}) - b (\alpha) p J {F}^{-1}_{33} &= 0 
 \end{align*}
 This can be multiplied by its associated test function to obtain the weak form 
 \begin{align*}
-\int_{\Omega} \bigg(a (\alpha) \mu (\mathbf{F}_{33} - \mathbf{F}^{-1}_{33}) - b (\alpha) p J \mathbf{F}^{-1}_{33} \bigg) v_{F_{33}} dV &= 0
+\int_{\Omega} \bigg(a (\alpha) \mu ({F}_{33} - {F}^{-1}_{33}) - b (\alpha) p J {F}^{-1}_{33} \bigg) v_{F_{33}} dV &= 0
 \end{align*}
 In the FEniCS code, we expand the solution space to include displacement, pressure, and a component of the deformation gradient $\mathbf{F_{33}}$. Therefore, we include a change to the invariants of the deformation tensors: 
 \begin{lstlisting}
@@ -246,7 +244,6 @@ Taking the third component to be zero
 P_{33} &= a(\alpha) \mu (F_{33} - F_{33}^{-1}) = 0 
 \end{align*}
 
-\newpage
 
 %===============================
 %===============================
@@ -517,6 +514,7 @@ the passive part of the strain energy is
 \widetilde{W}_\text{pas}\left(\mathbf{F},\alpha\right) = \frac{\mu}{2}\sum_{i=1}^{3}H(1-\lambda_i)\left(\lambda_i^2-1-2\ln\lambda_i\right) + H(1-J)\frac{1}{2}\kappa\left(J-1\right)^2,
 \end{equation}
 
+\newpage
 
 %===============================
 %===============================
