@@ -11,8 +11,7 @@ Working with the server
   Transferring from personal laptop to workstation
     scp -r name.py ida@192.168.1.157:/home/ida/Desktop/
 
-nohup mpirun -np # python3 __.py --par1 # --par2 #
-> _.log 2> _.err < /dev/null &
+nohup mpirun -np # python3 __.py --par1 # --par2 # > _.log 2> _.err < /dev/null &
 
 sftp idaang@128.84.52.141
 lls

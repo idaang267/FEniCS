@@ -51,7 +51,7 @@ Original 3D Formulations
     BoxMesh
     (Displacement + Pressure) + (Damage) + Stabilization Formulation
     Considers the decomposition of energy into active and passive terms
-  3D-traction-Taylor-Hood-Hybrid.py
+  3D-Taylor-Hood-Hybrid.py
     BoxMesh
     (Displacement + Pressure) + (Damage) Formulation
     Bin's version of the code above
