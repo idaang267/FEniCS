@@ -257,24 +257,59 @@ W(I_1, I_2) &= \frac{\mu}{2} \bigg( \lambda_A^2 + \frac{1}{\lambda_A^2} - 2 \big
 W(I_1, I_2) &= \frac{\mu}{2} \bigg( \lambda_A - \frac{1}{\lambda_A} \bigg)^2
 \end{align*}
 The J-integral for a pure shear strip geometry can be calculated as:
-\begin{align*}
+\begin{align}\label{EqJAnalytical}
+\begin{split}
 J &= 2 h_0 W(I_1, I_2) \\
 J &= h_0 \mu \bigg( \lambda_A - \frac{1}{\lambda_A} \bigg)^2
-\end{align*}
+\end{split}
+\end{align}
 where for the stretch:
-\begin{align*}
+\begin{align}\label{EqStretch}
 \lambda_A = 1 + \frac{\Delta}{h_0}
-\end{align*}
+\end{align}
 where the total height of the strip is $2h_0$ and $\Delta$ is the loading \\ \\
-Theoretically the criticial fracture energy is equivalent to the energy release rate  
+Theoretically, the critical condition for crack initiation is where the fracture energy is equivalent to the energy release rate  
 \begin{align*}
 G_c = J 
 \end{align*}
-In order to obtain the critical stretch of a particular specimen in Krishnan 2008, we can equate our dissipated energy or critical fracture energy density
+Determining whether the length of the strip is long enough:
+\begin{enumerate}
+\item Choose height of strip, $h_0$, shear modulus, $\mu$, and critical fracture energy $G_c$
+\item Use Matlab to calculate the critical stretch $\lambda_c$
 \begin{align*}
-\int_{\Gamma} G_c \, d \mathbf{S} = \frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega
+G_c &= h_0 \mu \bigg( \lambda_c - \frac{1}{\lambda_c} \bigg)^2
 \end{align*}
+\item Calculate the critical displacement $\Delta_c$ using eq. \ref{EqStretch}
+\begin{align*}
+\Delta_c = h_0 (\lambda_c - 1)
+\end{align*}
+\item Run two simulations using 2D-planestress-TH-BL.py
 
+	\begin{enumerate}
+	\item Assign a displacement slightly below the predicted $\Delta_c$
+	\item Change P3 point to either $2hsize$ before or after the crack center to calculate an energy max and energy min
+	\item Calculate J numerical 
+	\begin{align*}
+	J_n = - \frac{E_{max} - E_{min}}{4 hsize}
+	\end{align*}
+	\item Calculate percentage error with J analytical from Eq \eqref{EqJAnalytical}
+	\begin{align*}
+	\% Error = \bigg( \frac{J_a - J_n}{J_a} \bigg) 100 \%
+	\end{align*}
+	\end{enumerate}
+\end{enumerate}
+Note that there is an effective critical energy release rate
+\begin{align}
+G_c^e = G_c \bigg( 1 + \frac{3 hsize}{8 \ell}  \bigg)
+\end{align}
+where hsize is the element size and $\ell$ is the width of the phase-field 
+
+Once a length is determined, we can then run both a phase field and discrete trial and determine where the crack initiaties
+\begin{enumerate}
+\item The strip has a length of 6 and a total width of 1.0 where $h_0 = 0.5$
+\item hsize = 0.002, $\ell = 0.01$
+\item Used an exponential function to ramp the displacement in order to obtain a close agreement
+\end{enumerate}
 
 %===============================
 %===============================

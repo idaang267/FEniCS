@@ -1,0 +1,12 @@
+
+
+Displacement = double(stabilizedenergies.e00);
+ElasticEnergy = double(stabilizedenergies.e16);
+SurfaceEnergy = double(stabilizedenergies.e1);
+TotalEnergy = ElasticEnergy + SurfaceEnergy; 
+
+hold on 
+h1 = plot(Displacement(1:end-2),ElasticEnergy(1:end-2), 'LineWidth', 2.5)
+h2 = plot(Displacement(1:end-2),SurfaceEnergy(1:end-2), 'LineWidth', 2.5)
+h3 = plot(Displacement(1:end-2),TotalEnergy(1:end-2), 'LineWidth', 2.5)
+leg = legend([b, c],"Fitted Curve: " + legend_06, "Raw Data")
