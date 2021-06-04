@@ -1,7 +1,7 @@
 
 
 Displacement = double(stabilizedenergies.e00);
-ElasticEnergy = double(stabilizedenergies.e16);
+ElasticEnergy = double(stabilizedenergies.e15);
 SurfaceEnergy = double(stabilizedenergies.e1);
 TotalEnergy = ElasticEnergy + SurfaceEnergy; 
 
@@ -15,6 +15,7 @@ ylabel("Energies")
 
 xlim([0,Displacement(end-2)])
 set(gca,'fontsize',15)
+xlim([0,3]);
 
-saveas(gcf, 'Fig2C.eps', 'epsc')
-saveas(gcf, "Fig2C.fig")
+saveas(gcf, 'Fig3C.eps', 'epsc')
+saveas(gcf, "Fig3C.fig")
