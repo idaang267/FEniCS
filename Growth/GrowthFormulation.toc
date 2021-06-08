@@ -1,0 +1,13 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}neo-Hookean Model}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}Compressible}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Incompressible}{3}{subsection.1.2}
+\contentsline {section}{\numberline {2}Incompressible formulation based on Alawiye paper}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Weak Form}{4}{subsection.2.1}
+\contentsline {section}{\numberline {3}Formulation based on Ambrosi and Mollika Paper}{6}{section.3}
+\contentsline {subsection}{\numberline {3.1}Strain Energy Density and Stress Equations}{6}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Stress Calculation}{6}{subsection.3.2}
+\contentsline {subsubsection}{\numberline {3.2.1}Cauchy Stress Tensor}{7}{subsubsection.3.2.1}
+\contentsline {subsubsection}{\numberline {3.2.2}First Piola-Kirchoff Stress Tensor}{8}{subsubsection.3.2.2}
+\contentsline {subsection}{\numberline {3.3}Summary}{8}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Weak Form}{8}{subsection.3.4}
