@@ -1,0 +1,5 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Definitions}{2}{section.1}
+\contentsline {section}{\numberline {2}Compressible Cases}{2}{section.2}
+\contentsline {section}{\numberline {3}Incompressible Cases}{3}{section.3}
+\contentsline {section}{\numberline {4}Summary}{4}{section.4}
