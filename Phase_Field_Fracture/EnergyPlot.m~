@@ -68,9 +68,9 @@ xlim([0 .55])
 %%
 figure
 hold on 
-h4 = plot(Disp_Dis,EE_Dis, 'Color', [0 0.4470 0.7410], 'LineWidth', 3)
-h5 = plot(Disp_Dis,DE_Dis, 'Color', [0.8500 0.3250 0.0980],'LineWidth', 3)
-h6 = plot(Disp_Dis,Tot_Dis, 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 3)
+h4 = plot(Disp_Dis,EE_Dis, 'Color', [0 0.4470 0.7410],'LineStyle', '-.', 'LineWidth', 3)
+h5 = plot(Disp_Dis,DE_Dis, 'Color', [0.8500 0.3250 0.0980], 'LineStyle', '-','LineWidth', 3)
+h6 = plot(Disp_Dis,Tot_Dis, 'Color', [0.4940 0.1840 0.5560], 'LineStyle', '-.', 'LineWidth', 3)
 plot(x,y, 'k:', 'LineWidth', 2.5)
 
 xlabel("Displacement")
