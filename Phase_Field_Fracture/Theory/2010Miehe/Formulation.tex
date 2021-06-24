@@ -1,0 +1,299 @@
+\documentclass[12pt,3p]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+ \usepackage[margin=0.5in]{geometry}
+ \usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\setcounter{tocdepth}{4} 
+\setcounter{secnumdepth}{4}
+
+\numberwithin{equation}{section}
+\begin{document}
+
+\title{Notes on Miehe 2010 \\
+	\large{Updated on \_}}
+\author{Ida Ang}
+\date{\vspace{-5ex}}
+\maketitle
+
+\tableofcontents
+\newpage
+
+%====================
+%====================
+%====================
+\section{Definitions}
+Young's Modulus: E \\
+Poisson's Ratio: $\nu$ \\
+Shear Modulus or first Lamé Parameter: $\mu$ 
+\begin{equation}
+\mu = \frac{E}{2 (1 + \nu)} \quad 
+\end{equation}
+Second Lamé Parameter: $\lambda$ 
+\begin{equation}\label{EqLame}
+\lambda = \frac{E \nu}{(1+ \nu) (1 - 2 \nu)} 
+\end{equation}
+Bulk Modulus: $\kappa$ \\ 
+\begin{equation}\label{EqBulk}
+\kappa = \lambda + \frac{2}{3} \mu 
+\end{equation}
+Invariants of strain tensor $\boldsymbol{\varepsilon}$
+\begin{equation}
+\begin{array}{l}
+E_{1}=\varepsilon_{i i}=\operatorname{tr} \boldsymbol{\varepsilon} \\
+E_{2}=\varepsilon_{i j} \varepsilon_{i j}=\operatorname{tr} \boldsymbol{\varepsilon}^{2} \\
+E_{3}=\varepsilon_{i j} \varepsilon_{j k} \varepsilon_{k i}=\operatorname{tr} \varepsilon^{3}
+\end{array}
+\end{equation}
+The derivative of the invariants with respect to the strain tensor: 
+\begin{equation}
+\begin{array}{ll}
+\partial E_{1} / \partial \varepsilon_{i j}=\delta_{i j} & \partial E_{1} / \partial \boldsymbol{\varepsilon}=\mathrm{I} \\
+\partial E_{2} / \partial \varepsilon_{i j}=2 \varepsilon_{i j} & \partial E_{2} / \partial \boldsymbol{\varepsilon}=2 \boldsymbol{\varepsilon} \\
+\partial E_{3} / \partial \varepsilon_{i j}=3 \varepsilon_{i k} \varepsilon_{k j} & \partial E_{3} / \partial \boldsymbol{\varepsilon}=3 \boldsymbol{\varepsilon}^{2}
+\end{array}
+\end{equation}
+Deformation 
+\begin{align}
+\mathbf{F} &= \nabla \mathbf{u} + \mathbf{I} \\
+\mathbf{F} &= \begin{bmatrix}
+			\lambda_1 & 0 & 0 \\
+			0 & \lambda_2 & 0 \\
+			0 & 0 & \lambda_3 
+		\end{bmatrix}
+\end{align}
+Invariants of deformation gradient 
+\begin{align}
+\begin{split}
+I_{1} &= \operatorname{tr} \mathbf{F} = \lambda_1 + \lambda_2 + \lambda_3 \\
+I_{2} &= \frac{1}{2} \big[ ( \operatorname{tr} \mathbf{F} )^2 - \operatorname{tr} (\mathbf{F}^2) \big] \\
+I_{3} &= \operatorname{det} \mathbf{F} = \lambda_1 \lambda_2 \lambda_3 
+\end{split}
+\end{align}
+Strain 
+\begin{align}
+\boldsymbol{\varepsilon} &= \frac{1}{2} (\nabla \mathbf{u} + \nabla^T \mathbf{u}) \\
+				      &= \frac{1}{2} \big[ \mathbf{F} - \mathbf{I} + \mathbf{F}^T - \mathbf{I} \big] \\
+\boldsymbol{\varepsilon} &= \frac{1}{2} (\mathbf{F} + \mathbf{F}^T ) - \mathbf{I} 
+\end{align}
+which can also be written as: 
+\begin{align}
+\boldsymbol{\varepsilon} &= \frac{1}{2} (\mathbf{F} + \mathbf{F}^T ) - \mathbf{I} \\
+\boldsymbol{\varepsilon} &= \begin{bmatrix}
+				      	    \lambda_1 - 1& 0 & 0 \\
+					    0 & \lambda_2 - 1& 0 \\
+					    0 & 0 & \lambda_3 -1
+				      	   \end{bmatrix}
+\end{align}
+Therefore we can write certain invariant in terms of stretches 
+\begin{align}
+\begin{split}
+E_{1} &=\operatorname{tr} \boldsymbol{\varepsilon} \\
+	 &= \lambda_1 + \lambda_2 + \lambda_3 -3 \\
+E_{1} &= \lambda_i - 3
+\end{split}
+\end{align}
+\begin{align}
+\begin{split}
+E_{2} &= \operatorname{tr} \boldsymbol{\varepsilon}^{2} \\
+	 &= (\lambda_1 - 1)^2 + (\lambda_2 - 1)^2 + (\lambda_3 - 1)^2 \\
+	 &= \lambda_1^2 + \lambda_2^2 + \lambda_3^2 - 2 (\lambda_1 + \lambda_2 + \lambda_3) + 3 \\
+E_{2} &= \lambda_i^2 - 2 \lambda_i + 3
+\end{split}
+\end{align}
+This one is an invariant relationship 
+\begin{align}
+\begin{split}
+E_1^2 &= \big( \operatorname{tr} \boldsymbol{\varepsilon} \big)^2 \\
+	   &= ( \lambda_1 + \lambda_2 + \lambda_3 -3 ) ( \lambda_1 + \lambda_2 + \lambda_3 -3 ) \\
+	   &= \lambda_1^2 + \lambda_2^2 + \lambda_3^2 
+	   + 2 (\lambda_1 \lambda_2 + \lambda_1 \lambda_3 + \lambda_2 \lambda_3 ) 
+	   - 3 (\lambda_1 + \lambda_2 + \lambda_3 ) + 9 \\
+E_1^2 &= \lambda_i^2 + \frac{J}{\lambda_i} - 3 \lambda_i + 9
+\end{split}
+\end{align}
+Right Cauchy-Green (CG) definition
+\begin{align}
+\mathbf{C} = \mathbf{F}^T \mathbf{F}
+\end{align}
+Invariants of right CG
+\begin{align}
+\begin{split}
+I^\mathbf{C}_{1} &= \operatorname{tr} \mathbf{C} = \lambda_1^2 + \lambda_2^2 + \lambda_3^2\\
+I^\mathbf{C}_{2} &= \frac{1}{2} \big[ ( \operatorname{tr} \mathbf{C} )^2 - \operatorname{tr} (\mathbf{C}^2) \big] \\
+I^\mathbf{C}_{3} &= \operatorname{det} \mathbf{C} = \lambda_1^2 \lambda_2^2 \lambda_3^2
+\end{split}
+\end{align}
+Lastly we have the following useful identites
+\begin{align}\label{EqProof1}
+\begin{split}
+\frac{\partial I_1^{\mathbf{C}}}{\partial \mathbf{F}} &= 2 \mathbf{F} \\
+\frac{\partial I_3}{\partial \mathbf{F}} &= I_3 \mathbf{F}^{-T}
+\end{split}
+\end{align}
+% \noindent\rule{19cm}{0.5pt} % Straight line across
+
+%====================
+%====================
+\subsection{Stresses}
+Pull-back operation
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma} &= \frac{1}{J} \frac{\partial W}{\partial \mathbf{F}} \mathbf{F}^T  \\
+\boldsymbol{\sigma} &= \frac{1}{J} \mathbf{P} \mathbf{F}^T \rightarrow \mathbf{P} = J \boldsymbol{\sigma} \mathbf{F}^{T}
+\end{split}
+\end{align}
+where for convenience we are using W instead of $\psi_0$, which is Miehe's notation
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma} &= \frac{\partial \psi_{0}}{\partial \boldsymbol{\varepsilon}} \\
+				&= \frac{\partial \psi_{0}}{\partial E_1} \frac{\partial E_1}{\partial \boldsymbol{\varepsilon}}
+				+ \frac{\partial \psi_{0}}{\partial E_2 } \frac{\partial E_2 }{\partial \boldsymbol{\varepsilon}}
+				+ \frac{\partial \psi_{0}}{\partial E_3 } \frac{\partial E_3 }{\partial \boldsymbol{\varepsilon}} \\
+\boldsymbol{\sigma} &= \frac{\partial \psi_{0}}{\partial E_1} \mathrm{I} 
+				+ 2 \frac{\partial \psi_{0}}{\partial E_2 } \boldsymbol{\varepsilon}
+				+ 3 \frac{\partial \psi_{0}}{\partial E_3 } \boldsymbol{\varepsilon}^{2}
+\end{split}
+\end{align}
+and the nominal stress is defined as 
+\begin{align}
+\begin{split}
+\mathbf{P} &= \frac{\partial W}{\partial \mathbf{F}} \\
+		 &= \frac{\partial W}{\partial I_1^\mathbf{C}} \frac{\partial I_1^\mathbf{C}}{\partial \mathbf{F}} + \frac{\partial W}{\partial I_3} \frac{\partial I_3}{\partial \mathbf{F}} \\
+\mathbf{P} &= 2 \frac{\partial W}{\partial I_1^\mathbf{C}} \mathbf{F} + I_3 \frac{\partial W}{\partial I_3} \mathbf{F}^{-T}
+\end{split}
+\end{align}
+
+
+%====================
+%====================
+%====================
+\section{Isotropic elasticity}
+Standard free energy
+\begin{align}
+\begin{split}
+\psi_{0}(\boldsymbol{\varepsilon}) &= \frac{\lambda}{2} \operatorname{tr}^{2}[\boldsymbol{\varepsilon}] +\mu \operatorname{tr}\left[\boldsymbol{\varepsilon}^{2}\right] \\
+\psi_{0}(\boldsymbol{\varepsilon}) &= \frac{\lambda}{2} E_1^2 + \mu E_2
+\end{split}
+\end{align}
+Obtain stress 
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma_0} &= \frac{\partial \psi_{0}}{\partial E_1} \mathrm{I} 
+				+ 2 \frac{\partial \psi_{0}}{\partial E_2 } \boldsymbol{\varepsilon} \\
+				&= \lambda E_1 \mathrm{I} + 2 \mu \boldsymbol{\varepsilon} \\
+\boldsymbol{\sigma_0} &= \lambda \big( \operatorname{tr} \boldsymbol{\varepsilon} \big) \mathrm{I} + 2 \mu \boldsymbol{\varepsilon}
+\end{split}
+\end{align}
+Additive decomposition form of stored energy 
+\begin{equation}
+\psi(\boldsymbol{\varepsilon}, d)=[g(d)+k] \psi_{0}^{+}(\boldsymbol{\varepsilon})+\psi_{0}^{-}(\boldsymbol{\varepsilon})
+\end{equation}
+The stress associated with this form 
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma} &=\partial_{\boldsymbol{\varepsilon}} \psi \\
+				&=\left[(1-d)^{2}+k\right] \frac{\partial \Psi_{0}^{+}(\boldsymbol{\varepsilon})}{\partial \boldsymbol{\varepsilon}}+\frac{\partial \Psi_{0}^{-}(\boldsymbol{\varepsilon})}{\partial \boldsymbol{\varepsilon}} \\
+\boldsymbol{\sigma} &=\left[(1-d)^{2}+k\right] \boldsymbol{\sigma}_{0}^{+}-\boldsymbol{\sigma}_{0}^{-}
+\end{split}
+\end{align}
+where 
+\begin{align}
+g(d) = (1-d)^2
+\end{align}
+
+
+%====================
+%====================
+%====================
+\section{Hyperelasticity}
+\subsection{Compressible neo-Hookean: Case I}
+Strain energy function 
+\begin{align}
+W(\mathbf{F}) &= \frac{\mu}{2} (I_1^{\mathbf{C}} - 3 - 2 \ln I_3) + \frac{\kappa}{2} (I_3 - 1)^2 
+\end{align}
+Calculation of the 1st PK
+\begin{align}
+\begin{split}
+\mathbf{P} &= 2 \frac{\partial W}{\partial I_1^\mathbf{C}} \mathbf{F} + I_3 \frac{\partial W}{\partial I_3} \mathbf{F}^{-T} \\
+		&= 2 \frac{\mu}{2} \mathbf{F} + I_3 \bigg[ \mu \frac{1}{I_3} + \frac{\kappa}{2} 2 (I_3 -1 ) \bigg]  \mathbf{F}^{-T} \\
+		&= \mu \mathbf{F} + \mu \mathbf{F}^{-T} + \kappa I_3 (I_3 - 1) \mathbf{F}^{-T} \\
+\mathbf{P} &= \mu (\mathbf{F} + \mathbf{F}^{-T}) + \kappa I_3 (I_3 - 1) \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+Therefore, we can also calculate the Cauchy Stress
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma} &= \frac{1}{J} \mathbf{P} \mathbf{F}^T\\
+				&= \frac{1}{I_3} \bigg[ \mu (\mathbf{F} + \mathbf{F}^{-T}) + \kappa I_3 (I_3 - 1) \mathbf{F}^{-T} \bigg] \mathbf{F}^T \\
+				&= \frac{1}{I_3} \mu (\mathbf{F} \mathbf{F}^T + \mathbf{F}^{-T} \mathbf{F}^T ) + \kappa (I_3 - 1) \mathbf{F}^{-T} \mathbf{F}^T \\
+\boldsymbol{\sigma} &= \frac{\mu}{I_3} (\mathbf{b} + \mathbf{I}) + \kappa (I_3 - 1)\mathbf{I} 
+\end{split}
+\end{align}
+
+%====================
+%===================
+\subsection{Incompressible neo-Hookean: Case I }
+\begin{align}
+W(\mathbf{F}) = \frac{\mu}{2} (I_1^{\mathbf{C}}  - 3)  + \text{p} (I_3-1)
+\end{align}
+Calculation of the 1st PK
+\begin{align}
+\begin{split}
+\mathbf{P} &= 2 \frac{\partial W}{\partial I_1^\mathbf{C}} \mathbf{F} + I_3 \frac{\partial W}{\partial I_3} \mathbf{F}^{-T} \\
+		&= 2 \frac{\mu}{2} \mathbf{F} + I_3 p \mathbf{F}^{-T} \\
+\mathbf{P} &= \mu \mathbf{F} + p I_3 \mathbf{F}^{-T}
+\end{split}
+\end{align}
+Therefore, we can also calculate the Cauchy Stress
+\begin{align}
+\begin{split}
+\boldsymbol{\sigma} &= \frac{1}{I_3} \big[  \mu \mathbf{F} + p I_3 \mathbf{F}^{-T} \big] \mathbf{F}^T \\
+				&= \frac{1}{I_3} \big[  \mu \mathbf{b} + p I_3 \mathbf{I} \big] \\
+\boldsymbol{\sigma} &= \frac{\mu}{I_3} \mathbf{b} + p \mathbf{I} 
+\end{split}
+\end{align}
+If $ \det \mathbf{F} = 1$, then 
+\begin{align}
+\boldsymbol{\sigma} &= \mu\mathbf{b} + p \mathbf{I} 
+\end{align}
+%====================
+%====================
+%====================
+\subsection{Summary}
+Compressible neo-Hookean, case 1
+\begin{align}
+\begin{split}
+W(\mathbf{F}) &= \frac{\mu}{2} (I_1^{\mathbf{C}} - 3 - 2 \ln I_3) + \frac{\kappa}{2} (I_3 - 1)^2 \\
+\mathbf{P} &= \mu ( \mathbf{F} - \mathbf{F}^{-T}) + \kappa I_3 (I_3 - 1) \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+Compressible neo-Hookean, case 2
+\begin{align}
+\begin{split}
+W(\mathbf{F}) &= \frac{\mu}{2} (I_1^{\mathbf{C}} - 3 - 2 \ln I_3) + \frac{\lambda}{2} (\ln I_3)^2 \\
+\mathbf{P} &= \mu ( \mathbf{F} - \mathbf{F}^{-T}) + \lambda I_3 (\ln I_3) \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+Incompressible neo-Hookean, case 1
+\begin{align}
+\begin{split}
+W(\mathbf{F}) &= \frac{\mu}{2} (I_1^{\mathbf{C}}  - 3)  + \text{p} (I_3-1) \\
+\mathbf{P} &= \mu \mathbf{F} + p I_3 \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+Incompressible neo-Hookean, case 2 
+\begin{align}
+\begin{split}
+W(\mathbf{F}) &= \frac{\mu}{2} (I_1^{\mathbf{C}}  - 3 - 2 \ln I_3 )  + \text{p} (I_3-1) \\
+\mathbf{P} &= \mu ( \mathbf{F} - \mathbf{F}^{-T}) + p I_3 \mathbf{F}^{-T} 
+\end{split}
+\end{align}
+
+
+\end{document}

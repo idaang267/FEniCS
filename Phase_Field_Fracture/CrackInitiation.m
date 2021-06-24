@@ -8,12 +8,12 @@ Gc = 1;     % Critical fracture energy
 
 % Calculate the effective Gc 
 ell_multi = 5; 
-hsize = 0.02; 
+hsize = 0.002; 
 ell = ell_multi*hsize;
 Gc_e = Gc*(1+ (3/8)*hsize/ell);
 
 syms lambda_a
-eq2 = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
+eq2 = Gc_e == h*mu*(lambda_a - 1/lambda_a)^2;
 sim_lambda = double(solve(eq2, lambda_a));
 
 sim_delta = h*(sim_lambda(4) - 1)
