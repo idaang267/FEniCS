@@ -33,7 +33,7 @@ DE_Dis = DEnergiesS2.DissipatedEnergy1;
 Tot_Dis = DEnergiesS2.TotalEnergy1;
 
 y = linspace(0,7,100);
-x = 0.4866*ones(1,100);
+x = 0.5454*ones(1,100);
 
 hold on 
 h1 = plot(Disp_PF,EE_PF,'Color', [0 0.4470 0.7410],  'LineWidth', 3)
@@ -60,10 +60,10 @@ h3 = plot(Disp_PF,Tot_PF, 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 3)
 plot(x,y, 'k:', 'LineWidth', 2.5)
 
 xlabel("Displacement")
-ylabel("Energies")
+ylabel("Energy")
 leg = legend([h1, h2, h3],"Elastic", "Dissipated", "Total")
 set(gca,'fontsize',20)
-xlim([0 .55])
+xlim([0 .6])
 
 %%
 figure
@@ -74,8 +74,8 @@ h6 = plot(Disp_Dis,Tot_Dis, 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 3)
 plot(x,y, 'k:', 'LineWidth', 2.5)
 
 xlabel("Displacement")
-ylabel("Energies")
+ylabel("Energy")
 leg = legend([h4, h5, h6],"Elastic", "Dissipated", "Total")
 set(gca,'fontsize',20)
-xlim([0 .55])
+xlim([0 .6])
 

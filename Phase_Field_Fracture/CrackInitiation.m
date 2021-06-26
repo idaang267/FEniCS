@@ -10,7 +10,7 @@ Gc = 1;     % Critical fracture energy
 ell_multi = 5; 
 hsize = 0.002; 
 ell = ell_multi*hsize;
-Gc_e = Gc*(1+ (3/8)*hsize/ell);
+Gc_e = Gc*(1+ (3/2)*hsize/ell);
 
 syms lambda_a
 eq2 = Gc_e == h*mu*(lambda_a - 1/lambda_a)^2;
