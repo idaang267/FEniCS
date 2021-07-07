@@ -16,6 +16,22 @@ ylabel("Modulation Functions")
 ax = gca; 
 ax.FontSize = 25;
 
+%% 
+alpha = linspace(0,1,100);
+
+a = (1-alpha).^2;
+a3 = (1-alpha).^6;
+
+figure(1)
+hold on 
+h1 = plot(alpha, a, 'LineWidth', 2.5)
+h2 = plot(alpha, a3, 'LineWidth', 2.5)
+legend([h1, h2], "a(\alpha)", "a^6(\alpha)")
+xlabel("Damage")
+ylabel("Modulation Functions")
+
+ax = gca; 
+ax.FontSize = 25;
 %% New 
 % undamaged (0) to damaged (1)
 alpha = linspace(0,1,100);
