@@ -10,7 +10,7 @@ hold on
 h1 = plot(alpha, a, 'LineWidth', 2.5)
 h2 = plot(alpha, b, 'LineWidth', 2.5)
 legend([h1, h2], "a(\alpha)", "a^3(\alpha)")
-xlabel("Damage")
+xlabel("Damage (\alpha)")
 ylabel("Modulation Functions")
 
 ax = gca; 

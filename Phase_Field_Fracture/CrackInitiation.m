@@ -8,7 +8,7 @@ Gc = 1;     % Critical fracture energy
 
 % Calculate the effective Gc 
 ell_multi = 5; 
-hsize = 0.002; 
+hsize = 0.005; 
 ell = ell_multi*hsize;
 Gc_e = Gc*(1+ (3/2)*hsize/ell);
 
