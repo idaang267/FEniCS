@@ -95,6 +95,13 @@ The normalization constant is defined as:
 \begin{align}\label{NormConst} % normalization constant.
 c_w=\int_0^1\sqrt{w(\alpha)}d\alpha
 \end{align} 
+For presention
+\begin{align}\label{PF_strain_energy1}
+\begin{split}
+\widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha) \, \mathcal{W}(\mathbf{F}) + a^3(\alpha)\frac{\kappa}{2} \left(J-1\right)^2, \\
+\widetilde{\mathcal{W}}(\mathbf{F},\alpha) &= a(\alpha) \, \frac{\mu}{2} (I_1 - 3 - 2 \ln J) + a^3(\alpha)\frac{\kappa}{2}\left(J-1\right)^2, 
+\end{split}
+\end{align}
 %===============================
 \subsection{Derivation from 2020 Li and Bouklas Paper}
 Here, unlike Eq. 21 from Bin2020, we drop $\lambda_b$ which is not a consideration in this formulation
@@ -560,33 +567,52 @@ The total potential energy functional:
 \mathcal{E}_{\ell}\left(\boldsymbol{u}, p, \alpha\right) &= \int_{\Omega} a(\alpha) \mathcal{W}(\mathbf{F}) d \Omega+\frac{G_{c}}{c_{w}} \int_{\Omega} \bigg(\frac{w(\alpha)}{\ell}+\ell\|\nabla \alpha\|^{2} \bigg) d \Omega- \int_{\Omega} \frac{p^{2}}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^{3}(\alpha)} p(J-1) d \Omega 
 \end{split}
 \end{align*}
-The Gateaux derivative with respect to $(\bm{u},\alpha)$ in direction $(\bm{v}, \beta)$ under the irreversibility condition $\dot{\alpha}\ge0$.
+The Gateaux derivative with respect to $(\bm{u},p,\alpha)$ in direction $(\bm{v}, q, \beta)$ under the irreversibility condition $\dot{\alpha}\ge0$.
 \begin{equation}
-d\mathcal{E}_\ell \left(\bm{u}, \alpha; \bm{v}, \beta\right) \ge 0.
+d\mathcal{E}_\ell \left(\bm{u}, p, \alpha; \bm{v}, q, \beta \right) \ge 0.
 \end{equation}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 Calculation of the Gateaux derivative
 \begin{align*}
 \begin{split}
-d\mathcal{E}_\ell (\bm{u}, \bm{v}) (\alpha, \beta) &= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
-	&= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} + \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, \alpha + \delta \beta) \big\rvert_{\delta = 0}
+d\mathcal{E}_\ell (\bm{u}, \bm{v}) (p, q) (\alpha, \beta) &= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, p + \delta q, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
+d\mathcal{E}_\ell (\bm{u}, \bm{v}) (p, q) (\alpha, \beta) 
+	&= \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
+	+ \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, p + \delta q, \alpha) \big\rvert_{\delta = 0} 
+	+ \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, \alpha + \delta \beta) \big\rvert_{\delta = 0}
 \end{split}
 \end{align*}
 Starting with the first term: 
 \begin{align*}
-\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
-	&= \frac{d}{d \delta} \bigg[ \int_\Omega  \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)\,  d\Omega - \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot (\bm{u} + \delta \bm{v}) \, dA \bigg] \bigg\rvert_{\delta = 0}\\
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, p,  \alpha) \big\rvert_{\delta = 0} 
+	&= \frac{d}{d \delta} \bigg[ \int_\Omega  \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)\,  d\Omega - \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot (\bm{u} + \delta \bm{v}) \, dA \bigg] \bigg\rvert_{\delta = 0} \\
 	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \frac{d(\bm{u} + \delta \bm{v})}{d \delta} \, dA \bigg] \bigg\rvert_{\delta = 0} \quad \text{chain rule} \\
 	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}),\alpha)}{d (\mathbf{I} + \nabla (\bm{u} + \delta \bm{v})} \frac{d (\mathbf{I} + \nabla (\bm{u} + \delta \bm{v}))}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \frac{d(\bm{u} + \delta \bm{v})}{d \delta} \, dA \bigg] \bigg\rvert_{\delta = 0}\\
 	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v}, \alpha)}{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})} \frac{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})}{d \delta} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \bigg] \bigg\rvert_{\delta = 0}\\
 	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v}, \alpha)}{d (\mathbf{I} + \nabla \bm{u} + \delta \nabla \bm{v})} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \bigg] \bigg\rvert_{\delta = 0} \\
-	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u}, \alpha)}{d (\mathbf{I} + \nabla \bm{u})} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA \\
-\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
-	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \mathbf{F}} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA 
+	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{I} + \nabla \bm{u}, \alpha)}{d (\mathbf{I} + \nabla \bm{u})} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA 
 \end{align*}
+First equation
+\begin{equation}\label{Eq:WeakForm1}
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u} + \delta \bm{v}, \alpha) \big\rvert_{\delta = 0} 
+	= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \mathbf{F}} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA 
+\end{equation}
 Second term: 
 \begin{align*}
-& \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, p + \delta q, \alpha) \big\rvert_{\delta = 0} 
+	&= \frac{\partial}{\partial \delta} \bigg[ - \int_{\Omega} \frac{(p+ \delta q)^2}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^3 (\alpha)} (p + \delta q ) (J-1) d \Omega \bigg] \\
+	&= \bigg[ - \int_{\Omega} \frac{1}{2 \kappa} \frac{d (p+ \delta q)^2}{d \delta}d \Omega - \int_{\Omega} \sqrt{a^3 (\alpha)} \frac{d(p + \delta q )}{d \delta} (J-1) d \Omega \bigg] \bigg\rvert_{\delta = 0} \\
+	&= \bigg[ - \int_{\Omega} \frac{2 (p+ \delta q) q}{2 \kappa} d \Omega - \int_{\Omega} \sqrt{a^3 (\alpha)} q (J-1) d \Omega \bigg] \bigg\rvert_{\delta = 0} \\
+	&= - \int_{\Omega} \frac{p}{\kappa} q \, d \Omega - \int_{\Omega} \sqrt{a^3 (\alpha)} q (J-1) d \Omega 
+\end{align*}
+Second equation 
+\begin{equation}\label{Eq:WeakForm2}
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, p + \delta q, \alpha) \big\rvert_{\delta = 0} 
+= \int_{\Omega} \bigg( - \frac{p}{\kappa} - \sqrt{a^3 (\alpha)} q (J-1) \bigg) q \, d \Omega 
+\end{equation}
+Third term: 
+\begin{align*}
+& \frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, p, \alpha + \delta \beta) \big\rvert_{\delta = 0} \\
 	&= \frac{d}{d \delta} \bigg[ \int_\Omega  \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)\,  d\Omega +\frac{\mathcal{G}_c}{c_w}\int_\Omega \left(\frac{w(\alpha + \delta \beta)}{\ell} + \ell \Vert \nabla (\alpha + \delta \beta)  \Vert^2\right) dV \bigg] \bigg\rvert_{\delta = 0} \\
 	&= \bigg[ \int_\Omega  \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)}{d \delta} \,  d\Omega + \frac{\mathcal{G}_c}{c_w} \frac{d}{d \delta} \int_\Omega \left(\frac{w(\alpha + \delta \beta)}{\ell} + \ell \Vert \nabla (\alpha + \delta \beta)  \Vert^2\right) dV \bigg] \bigg\rvert_{\delta = 0} \\
 	&= \bigg[ \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha + \delta \beta)}{d (\alpha + \delta \beta)} \frac{d (\alpha + \delta \beta)}{d \delta} \, d\Omega + \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha + \delta \beta)}{d \delta} \, dV+ \frac{\mathcal{G}_c}{c_w} \ell \int_{\Omega} \frac{\Vert \nabla (\alpha + \delta \beta)  \Vert^2}{d \delta} \, dV \bigg] \bigg\rvert_{\delta = 0} \\
@@ -595,14 +621,12 @@ Second term:
 	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega +  \frac{\mathcal{G}_c}{c_w} \frac{1}{\ell} \int_\Omega \frac{d w(\alpha)}{d \alpha} \beta \, dV + 2 \ell \frac{\mathcal{G}_c}{c_w} \int_{\Omega} \nabla \alpha \cdot \nabla \beta \, dV \\
 	&= \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg[ \frac{d w(\alpha)}{d \alpha} \beta + 2 \ell^2 (\nabla \alpha \cdot \nabla \beta) \bigg] \, dV 
 \end{align*}
+Giving the final equation
+\begin{equation}\label{Eq:WeakForm3}
+\frac{d}{d \delta} \mathcal{E}_\ell (\bm{u}, p, \alpha + \delta \beta) \big\rvert_{\delta = 0} = \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} \beta \, d\Omega + \frac{\mathcal{G}_c}{c_w \ell} \int_\Omega \bigg[ \frac{d w(\alpha)}{d \alpha} \beta + 2 \ell^2 (\nabla \alpha \cdot \nabla \beta) \bigg] \, dV 
+\end{equation}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
-First, consider Eq. \ref{eq_pressure}
-\begin{align*}
-p &= -\sqrt{a^3(\alpha)} \kappa (J - 1) \\
-\frac{p}{\kappa} &= -\sqrt{a^3(\alpha)} (J - 1) \\
-0 &= - \sqrt{a^3(\alpha)} (J - 1) - \frac{p}{\kappa} 
-\end{align*}
-Multiplying this by test function $q$ and integrating over volume, we obtain an equation that can be combined with the equations from the Gateaux Derivative. 
+Therefore we can obtain the weak form by combining Eq. \ref{Eq:WeakForm1}, \ref{Eq:WeakForm2}, and \ref{Eq:WeakForm3}
 \begin{subequations}\label{WeakForm}
 \begin{align}
 \int_\Omega \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \mathbf{F}} \nabla \bm{v} \, d\Omega -  \int_{\partial_N\Omega} {\tilde{\bm{g}}}_0 \cdot \bm{v} \, dA &= 0 \\
@@ -641,19 +665,19 @@ Derivation of the KKT condition equations where $\nabla \beta \cdot \nabla \alph
 \end{align*}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
 Grouping terms, we obtain
-\begin{subequations}
 \begin{align}
-\frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) &\geq 0 \quad \text{in} \quad \Omega \\
-\dot{\alpha} \geq 0 \quad \text{in} \quad \Omega \\
-\dot{\alpha} \bigg[ \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{d w(\alpha)}{d \alpha}  - 2 \ell^2 \Delta \alpha\bigg) \bigg] &\geq 0 \quad \text{in} \quad \Omega \\
+\begin{split}
+\dot{\alpha} &\geq 0 \quad \text{in} \quad \Omega_0, \\
+\frac{d \widetilde{\mathcal{W}}(\mathbf{F}, p, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{\partial w(\alpha)}{\partial \alpha}  - \ell^2 \Delta \alpha\bigg) &\geq 0 \quad \text{in} \quad \Omega_0, \\
+\dot{\alpha} \bigg[ \frac{d \widetilde{\mathcal{W}}(\mathbf{F}, p, \alpha)}{d \alpha} + \frac{\mathcal{G}_c}{c_w \ell}  \bigg( \frac{\partial w(\alpha)}{\partial \alpha}  - \ell^2 \Delta \alpha\bigg) \bigg] &= 0 \quad \text{in} \quad \Omega_0,
+\end{split}
 \end{align}
-\end{subequations}
-Lastly, we have the following, (Neumann?)
+Lastly, we have the following boundary conditions 
 \begin{equation}
-\frac{\partial \alpha}{\partial \mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \frac{\partial \alpha}{\partial \mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega
+\frac{\partial \alpha}{\partial \mathbf{n}} \geq 0 \quad \text{and} \quad \dot{\alpha} \frac{\partial \alpha}{\partial \mathbf{n}} = 0 \quad \text{on} \quad \partial \Omega_0
 \end{equation}
 \noindent\rule{\linewidth}{0.5pt} % Straight line across 
-Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(\varpi h^2)/(2\mu)\mathbf{F}^{-T}\nabla q$
+Multiply Eq. \ref{Eqm} with weighting function $\bm{v}+(I h^2)/(2\mu)\mathbf{F}^{-T}\nabla q$
 \begin{align*}
 \int_{\Omega} \text{Div} \mathbf{P} \cdot \bigg[ \bm{v} + \frac{\varpi h^2}{2\mu} \mathbf{F}^{-T}\nabla q \bigg] \, dV &= 0 \\
 \int_{\Omega} \text{Div} \mathbf{P} \cdot \bm{v} \, dV + \int_{\Omega} \text{Div} \mathbf{P} \cdot \bigg[ \frac{\varpi h^2}{2\mu} \mathbf{F}^{-T}\nabla q \bigg] \, dV &= 0 \\

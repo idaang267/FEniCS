@@ -1,5 +1,5 @@
 %%
-Delta = [0, .528, .529, .53]'; 
+Delta = [0, .548, .549, .55]'; 
 n_steps = [0, 298, 299, 300]'; 
 
 coefs = fit(n_steps, Delta, 'exp2')
