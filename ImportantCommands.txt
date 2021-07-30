@@ -13,19 +13,24 @@ Working with the server
 
 nohup mpirun -np # python3 __.py --par1 # --par2 # > _.log 2> _.err < /dev/null &
 
-sftp idaang@128.84.52.141
-lls
-lcd Desktop/
-get file.*
-put file.*
+Connecting to Personal laptop from workstation
+  On same network
+    On personal laptop type ifconfig | grep inet to find IP address
+    sftp idaang@xx.xx.x.xxx
+    Navigate using lls, lcd etc
+    Put file from workstation to laptop using
+      put directory_name/
+      put file.* or *.txt
+    Get file from laptop using
+      get file.*
 
 Connecting to personal workstation
   If on the same network
     ssh idaang@cornell.local
   Alternatively
-    ssh ida@192.168.1.157
+    ssh ida@xxx.xxx.x.xxx
 Connecting to personal laptop
-  ssh idaang@192.168.1.157
+  ssh idaang@xxx.xxx.x.xxx
   Transfer to Desktop
     scp -r name.ext idaang@192.168.1.157:/Users/idaang/Desktop/
 
