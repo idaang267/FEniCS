@@ -58,6 +58,11 @@ $c_w$ is a normalization constant
 %===============================
 %===============================
 \section{Hyperelastic Phase-Field Fracture Models}
+The total energy function is made up of the bulk integral, the elastic energy stored in the cracked solid, and the surface integral, representing Griffith's fracture energy
+\begin{align}
+\mathcal{E}(\boldsymbol{u}, \Gamma) &= \mathcal{E}_{d}(\boldsymbol{u}, \Gamma)+\mathcal{E}_{s} (\Gamma) \\
+\mathcal{E}(\boldsymbol{u}, \Gamma) &= \int_{\Omega_0} \mathcal{W} ( \mathbf{F} (\mathbf{u}) )dV + \int_{\Gamma} \mathcal{G}_c d \mathbf{x}
+\end{align}
 Deformation Gradient 
 \begin{equation}\label{EqDefGrad}
 \mathbf{F}=\mathbf{I}+\nabla\otimes\bm{u}

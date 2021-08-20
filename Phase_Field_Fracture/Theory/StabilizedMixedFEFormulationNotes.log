@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.11.23)  21 JUL 2021 14:03
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.11.23)  14 AUG 2021 20:47
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -487,85 +487,85 @@ Underfull \hbox (badness 10000) in paragraph at lines 26--37
 
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 64--68
-
- []
-
 [1
 
 {/usr/local/texlive/2018/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 71--75
+Underfull \hbox (badness 10000) in paragraph at lines 69--73
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 76--80
 
  []
 
 [2] [3]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 186.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 191.
 
  (/usr/local/texlive/2018/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 186.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 191.
  [4]
 [5]
-Underfull \hbox (badness 10000) in paragraph at lines 276--279
+Underfull \hbox (badness 10000) in paragraph at lines 281--284
 
  []
 
 [6] [7]
-Underfull \hbox (badness 10000) in paragraph at lines 379--382
+Underfull \hbox (badness 10000) in paragraph at lines 384--387
 
  []
 
 [8] [9] [10] [11]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 527.
+(hyperref)                removing `math shift' on input line 532.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\lambda' on input line 527.
+(hyperref)                removing `\lambda' on input line 532.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `subscript' on input line 527.
+(hyperref)                removing `subscript' on input line 532.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 527.
+(hyperref)                removing `math shift' on input line 532.
 
 
 Package natbib Warning: Citation `smith1961eigenvalues' on page 12 undefined on
- input line 534.
+ input line 539.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 540--542
+Underfull \hbox (badness 10000) in paragraph at lines 545--547
 
  []
 
 [12]
-Overfull \hbox (29.20683pt too wide) detected at line 594
+Overfull \hbox (29.20683pt too wide) detected at line 599
 []
  []
 
 [13]
-Overfull \hbox (33.30783pt too wide) detected at line 623
+Overfull \hbox (33.30783pt too wide) detected at line 628
 []
  []
 
 [14]
-Overfull \hbox (3.21385pt too wide) detected at line 691
+Overfull \hbox (3.21385pt too wide) detected at line 696
 []
  []
 
 [15]
-Underfull \hbox (badness 10000) in paragraph at lines 691--694
+Underfull \hbox (badness 10000) in paragraph at lines 696--699
 
  []
 
 
-Overfull \hbox (73.73157pt too wide) detected at line 707
+Overfull \hbox (73.73157pt too wide) detected at line 712
 []
  []
 
@@ -573,21 +573,21 @@ Overfull \hbox (73.73157pt too wide) detected at line 707
 
 Package natbib Warning: There were undefined citations.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 835.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 840.
 [18]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 835.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 840.
  (./StabilizedMixedFEFormulationNotes.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 835.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 835.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 840.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 840.
 Package rerunfilecheck Info: File `StabilizedMixedFEFormulationNotes.out' has n
 ot changed.
 (rerunfilecheck)             Checksum: 8FD956B5565E71A12BB0851218361CE1;1234.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 835.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 840.
  ) 
 Here is how much of TeX's memory you used:
- 9992 strings out of 492639
- 142974 string characters out of 6129301
- 277842 words of memory out of 5000000
+ 9994 strings out of 492639
+ 143000 string characters out of 6129301
+ 277844 words of memory out of 5000000
  13667 multiletter control sequences out of 15000+600000
  14849 words of font info for 52 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -605,11 +605,11 @@ al/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local
 xlive/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texli
 ve/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texliv
 e/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on StabilizedMixedFEFormulationNotes.pdf (18 pages, 203096 bytes
+Output written on StabilizedMixedFEFormulationNotes.pdf (18 pages, 204404 bytes
 ).
 PDF statistics:
- 300 PDF objects out of 1000 (max. 8388607)
- 264 compressed objects within 3 object streams
- 101 named destinations out of 1000 (max. 500000)
+ 303 PDF objects out of 1000 (max. 8388607)
+ 267 compressed objects within 3 object streams
+ 103 named destinations out of 1000 (max. 500000)
  129 words of extra memory for PDF output out of 10000 (max. 10000000)
 
