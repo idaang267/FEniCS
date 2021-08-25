@@ -100,11 +100,78 @@ h(x,z) &= - h_o + \frac{1}{2 R}(x^2 + z^2) \quad \text{about origin} \\
 h(x, z) &= - h_o + \frac{1}{2 R}\big[ (x - 0.5)^2 + (z-0.5)^2 \big] \quad \text{about point } (0.5, 0.5)
 \end{split}
 \end{align}
+where the gap is defined as 
+\begin{align*}
+g_N = u_N - h
+\end{align*}
+Where there are several cases 
+\begin{equation}
+\begin{aligned}
+g_N & \geq 0 \\
+p_N & \leq 0 \quad \text { on } \Gamma_{c} \\
+p_N g_N &=0
+\end{aligned}
+\end{equation}
+The definition of the MacKauley bracket:
+\begin{align}\label{MacKauley}
+\begin{split}
+<x> &= \frac{x + |x|}{2} \\
+<x> &= 
+\begin{dcases}
+    0 \text{ for } x \leq 0, \\
+    x \text{ for } x > 0
+\end{dcases}
+\end{split}
+\end{align}
 
-\subsection{Augmented Lagrange Methods: Wriggers}
+\subsection{Penalty Approach}
+Adding a penalty term to the energy, $\Pi$.
+\begin{align}\label{631}
+\begin{split}
+\Pi_N^P = \frac{1}{2} \int_{\Gamma_c} k_{pen} (g_{N})^2 dA \quad \text{where } k_{pen} > 0 
+\end{split}
+\end{align}
+Take the variation of Eq. \ref{631}, this holds for pure stick. This is the addition to the weak form: 
+\begin{align*}
+C_N^P &= k_{pen} \int_{\Gamma_c} \big( g_{N} \delta g_{N} \big) dA \\
+C_N^P &=  k_{pen} \int_{\Gamma_c} \big( g_{N} \delta u_{N} \big) dA
+\end{align*}
+
+
+\subsubsection{Incorporating into weak form}
+\begin{align*}
+k_{pen} \int_{\partial \Omega_0} g_N\delta u_N \, dS +\int_{\Omega_0} \mathbf{P} : \text{Grad}(\pmb{\delta} \mathbf{u} ) \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+ \int_{\Omega_0} \left(C-C^{t}\right) \delta \mu d V-\int_{\Omega_0} \mathbf{J} \cdot \frac{\delta \mu}{\delta X} \Delta t d V - \int_{\partial \Omega_0} i \delta \mu \Delta t d S-\int_{\Omega_0} r \delta \mu \Delta t d V &=0 
+ \end{align*}
+
+
+\subsection{Lagrange Multiplier Method}
+Lagrange multiplier to add constraints: 
+\begin{align*}
+\begin{split}
+\Pi_N^{L} = \int_{\Gamma_c} \lambda_N g_{N} dA 
+\end{split}
+\end{align*}
+Take the variation
+\begin{align*}
+C_N^L &= \int_{\Gamma_c} \big( \delta \lambda_N g_N + \lambda_N \delta g_N \big) dA \\
+C_N^L &=  \int_{\Gamma_c} \big( g_N \delta \lambda_N + \lambda_N \delta u_N \big) dA
+\end{align*}
+
+\subsubsection{Incorporating into weak form}
+\begin{align*}
+\int_{\partial \Omega_0} \lambda_N \delta u_N \, dS +\int_{\Omega_0} \mathbf{P} : \text{Grad}(\pmb{\delta} \mathbf{u} ) \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+ \int_{\Omega_0} \left(C-C^{t}\right) \delta \mu d V-\int_{\Omega_0} \mathbf{J} \cdot \frac{\delta \mu}{\delta X} \Delta t d V - \int_{\partial \Omega_0} i \delta \mu \Delta t d S-\int_{\Omega_0} r \delta \mu \Delta t d V &=0 \\
+ \int_{\partial \Omega_0} g_N \delta \lambda_N dS &= 0 
+ \end{align*}
+
+
+\subsection{Augmented Lagrange Approach}
+
+\subsubsection{Augmented Lagrange Methods: Wriggers}
 We introduce the following augmented lagrangian term.
 \begin{align*}
-\hat{\lambda}_N = \lambda_N + \epsilon_N g_N
+\hat{\lambda}_N = \lambda_N + k_{pen} g_N
 \end{align*}
 Possible contact cases
 \begin{equation}
@@ -149,10 +216,10 @@ C_{N}^{AL} &=
 \end{dcases}
 \end{align}
 
-\subsection{Augmented Lagrange: Contact Methods in Finite Element Simulations}
+\subsubsection{Augmented Lagrange: Contact Methods in Finite Element Simulations}
 Defined with the Mackauley bracket where p = $\epsilon_N$
 \begin{align*}
-\Pi = \frac{1}{2 k_{pen}} < - (\lambda_N + k_{pen} g_N) >^2
+\Pi_{N}^{AL} = \frac{1}{2 k_{pen}} < - (\lambda_N + k_{pen} g_N) >^2
 \end{align*}
 If we take the variation of this equation:
 \begin{align*}
@@ -160,28 +227,47 @@ C_N &= \frac{2}{2 k_{pen}} <- (\lambda_N + k_{pen} g_N)> \delta \lambda_N + \fra
 C_N &= \frac{1}{k_{pen}} <- (\lambda_N + k_{pen} g_N)> \delta \lambda_N + <-(\lambda_N + k_{pen} g_N) > \delta g_N
 \end{align*}
 
-\subsection{Addition into weak form}
+\subsubsection{Addition into weak form}
 The formulation that works is the source which utilizes the Mackauley bracket, with a removal of the Mackauley bracket of the first term. Note that this is the same as placing the Mackauley bracket around $\hat{\lambda}_N$ in the Wriggers formulation: 
 \begin{align*}
 C_N &= \frac{1}{k_{pen}} \big[- (\lambda_N + k_{pen} g_N) \big] \delta \lambda_N + <-(\lambda_N + k_{pen} g_N) > \delta g_N \\
 C_N &= - \frac{1}{k_{pen}} \lambda_N \delta \lambda_N + g_N \delta \lambda_N + <-(\lambda_N + k_{pen} g_N) > \delta g_N \quad \text{define } g_N = u - h(x, z) \\
-C_N &= - \frac{1}{k_{pen}} \lambda_N \delta \lambda_N + ( u - h ) \delta \lambda_N + < - \hat{\lambda} > \delta u_N \\
 C_N &= - \frac{1}{k_{pen}} \lambda_N \delta \lambda_N + g_N \delta \lambda_N + < - \hat{\lambda} > \delta u_N 
 \end{align*}
 The addition of the lagrange multiplier augments the solution space and increases the number of equations in the weak form by 1 equation. 
 \begin{align*}
- \int_{\partial \Omega_o} < - \hat{\lambda} > \delta u_N \, dS +\int_{\Omega_o} \mathbf{P} : \text{Grad}(\pmb{\delta} \mathbf{u} ) \, dV - \int_{\Omega_o} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_o} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\\int_{V}\left(C-C^{t}\right) \delta \mu d V-\int_{V} \mathbf{J} \cdot \frac{\delta \mu}{\delta X} \Delta t d V-\int_{S} i \delta \mu \Delta t d S-\int_{V} r \delta \mu \Delta t d V &=0 \\
-- \frac{1}{k_{pen}} \int_{\partial \Omega_o} \lambda \delta \lambda \, dS +  \int_{\partial \Omega_o}  g_N \delta \lambda \, dS &= 0 
+ \int_{\partial \Omega_0} < - \hat{\lambda}_N > \delta u_N \, dS +\int_{\Omega_0} \mathbf{P} : \text{Grad}(\pmb{\delta} \mathbf{u} ) \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+ \int_{\Omega_0} \left(C-C^{t}\right) \delta \mu d V-\int_{\Omega_0} \mathbf{J} \cdot \frac{\delta \mu}{\delta X} \Delta t d V - \int_{\partial \Omega_0} i \delta \mu \Delta t d S-\int_{\Omega_0} r \delta \mu \Delta t d V &=0 \\
+- \frac{1}{k_{pen}} \int_{\partial \Omega_o} \lambda_N \delta \lambda_N \, dS +  \int_{\partial \Omega_o}  g_N \delta \lambda_N \, dS &= 0 
 \end{align*}
 Without fluid diffusion
 \begin{align*}
  \int_{\partial \Omega_o} < - \hat{\lambda} > \pmb{\delta} \mathbf{u} \, dS +\int_{\Omega_o} \mathbf{P} : \text{Grad}(\pmb{\delta} \mathbf{u} ) \, dV - \int_{\Omega_o} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_o} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
 - \frac{1}{k_{pen}} \int_{\partial \Omega_o} \lambda \delta \lambda \, dS +  \int_{\partial \Omega_o}  g_N \delta \lambda \, dS &= 0 
 \end{align*}
-where 
+
+\subsubsection{Question}
+Without 
+\begin{align*}
+\int_{\Omega_0} \mathbf{P} : \pmb{\nabla}_X \, \pmb{\delta} \mathbf{u}  \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+\int_{\Omega_0} \left(C-C^{t}\right) \delta \mu \, d V - \int_{\Omega_0} \mathbf{J} \cdot \nabla_X \, \delta \mu \, \Delta t \, dV - \int_{\partial \Omega_0} i \, \delta \mu \, \Delta t \, d S - \int_{\Omega_0} r \, \delta \mu \, \Delta t \, dV &=0 
+\end{align*}
+We introduce the following augmented lagrangian term.
 \begin{align*}
 \hat{\lambda}_N &= \lambda_N + k_{pen} g_N \\
-g_N &= u_N - h
+g_N &=  h - u_N
+\end{align*}
+First
+\begin{align*}
+ \int_{\partial \Omega_0} < \hat{\lambda}_N > \delta u_N \, dS -  \int_{\partial \Omega_0} \hat{\lambda}_N  \delta u_N \, dS + \int_{\Omega_0} \mathbf{P} : \pmb{\nabla}_X \, \pmb{\delta} \mathbf{u}  \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+\int_{\Omega_0} \left(C-C^{t}\right) \delta \mu \, d V - \int_{\Omega_0} \mathbf{J} \cdot \nabla_X \, \delta \mu \, \Delta t \, dV - \int_{\partial \Omega_0} i \, \delta \mu \, \Delta t \, d S - \int_{\Omega_0} r \, \delta \mu \, \Delta t \, dV &=0 \\
+- \frac{1}{k_{pen}} \int_{\partial \Omega_o} \lambda_N \delta \lambda \, dS +  \int_{\partial \Omega_o}  g_N \delta \lambda \, dS &= 0 
+\end{align*}
+Note that this is the full expression
+\begin{align*}
+ \int_{\partial \Omega_0} < \hat{\lambda}_N > \delta u_N \, dS -  \int_{\partial \Omega_0} \hat{\lambda}_N  \delta u_N \, dS + \int_{\Omega_0} \mathbf{P} : \pmb{\nabla}_X \, \pmb{\delta} \mathbf{u}  \, dV - \int_{\Omega_0} \mathbf{B} \cdot \pmb{\delta} \mathbf{u} \, dV - \int_{\partial \Omega_0} \mathbf{T} \cdot \pmb{\delta} \mathbf{u} \, dS  &= 0 \\
+- k_{s1} \int_{\Omega_0}\big(  \nabla_X (\mu - \mu^t ) \cdot \nabla_X \, \delta \mu \big) d V +\int_{\Omega_0} \left(C-C^{t}\right) \delta \mu \, d V - \int_{\Omega_0} \mathbf{J} \cdot \nabla_X \, \delta \mu \, \Delta t \, dV - \int_{\partial \Omega_0} i \, \delta \mu \, \Delta t \, d S - \int_{\Omega_0} r \, \delta \mu \, \Delta t \, dV &=0 \\
+-  k_{s2} \int_{\Omega_0} \big(  \nabla_X (\lambda_N - \lambda_N^t ) \cdot \nabla_X \delta \lambda \big) d V - \frac{1}{k_{pen}} \int_{\partial \Omega_o} \lambda_N \delta \lambda \, dS +  \int_{\partial \Omega_o}  g_N \delta \lambda \, dS &= 0 
 \end{align*}
 
 
