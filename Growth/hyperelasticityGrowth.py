@@ -205,7 +205,7 @@ de = userpar["de"]
 surface_energy_density = de*Jsurf
 surface_energy = surface_energy_density*ds(1)
 F2 = derivative(surface_energy, up, v)
-WF = F1 + F2
+WF = F1 #+ F2
 
 # Compute Jacobian of F
 Jacobian = derivative(WF, up, du)
