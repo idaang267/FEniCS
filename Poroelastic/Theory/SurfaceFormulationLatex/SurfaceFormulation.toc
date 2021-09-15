@@ -1,0 +1,32 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Reformulation}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}Kinematics and energies of continua with boundaries}{2}{subsection.1.1}
+\contentsline {subsubsection}{\numberline {1.1.1}Neo-Hookean type boundary potential}{2}{subsubsection.1.1.1}
+\contentsline {subsubsection}{\numberline {1.1.2}Surface tension boundary potential}{2}{subsubsection.1.1.2}
+\contentsline {subsection}{\numberline {1.2}Equilibrium Equations (Strong Forms)}{3}{subsection.1.2}
+\contentsline {subsubsection}{\numberline {1.2.1}Mechanical Equilibrium}{3}{subsubsection.1.2.1}
+\contentsline {subsubsection}{\numberline {1.2.2}Mass Conservation}{3}{subsubsection.1.2.2}
+\contentsline {subsection}{\numberline {1.3}Weak Forms}{4}{subsection.1.3}
+\contentsline {subsection}{\numberline {1.4}Free Energy}{4}{subsection.1.4}
+\contentsline {subsection}{\numberline {1.5}Kinetic Law}{5}{subsection.1.5}
+\contentsline {section}{\numberline {2}Formulation}{7}{section.2}
+\contentsline {subsection}{\numberline {2.1}Equilibrium Equations (Strong Forms)}{7}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Weak Forms}{7}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}Mechanical Equilibrium}{7}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}Mass Conservation}{8}{subsubsection.2.2.2}
+\contentsline {subsection}{\numberline {2.3}Free Energy}{8}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Kinetic Law}{9}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.5}Strain Energy Density}{10}{subsection.2.5}
+\contentsline {subsection}{\numberline {2.6}Nominal Stress and Concentration}{11}{subsection.2.6}
+\contentsline {subsubsection}{\numberline {2.6.1}Nominal Stress}{11}{subsubsection.2.6.1}
+\contentsline {subsubsection}{\numberline {2.6.2}Concentration}{12}{subsubsection.2.6.2}
+\contentsline {subsection}{\numberline {2.7}Weak Forms and Time Integration}{12}{subsection.2.7}
+\contentsline {section}{\numberline {3}Normalization}{13}{section.3}
+\contentsline {subsection}{\numberline {3.1}Normalization of Weak Forms}{13}{subsection.3.1}
+\contentsline {subsubsection}{\numberline {3.1.1}Mechanical Equilibrium}{13}{subsubsection.3.1.1}
+\contentsline {subsubsection}{\numberline {3.1.2}Mass Conservation}{14}{subsubsection.3.1.2}
+\contentsline {section}{\numberline {4}Initial Conditions}{15}{section.4}
+\contentsline {subsection}{\numberline {4.1}Initial Condition for Chemical Potential without Surface Tension}{15}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Initial Condition for Chemical Potential with Surface Tension}{15}{subsection.4.2}
+\contentsline {section}{\numberline {5}Length-Scales}{17}{section.5}
+\contentsline {subsection}{\numberline {5.1}Elastocapillary Length Scale}{17}{subsection.5.1}
