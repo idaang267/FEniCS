@@ -1,0 +1,21 @@
+\BOOKMARK [1][-]{section.1}{Definitions}{}% 1
+\BOOKMARK [1][-]{section.2}{Variational Formulation of Isotropic Damage Models}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Constitutive Assumptions}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Energy Functional}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{First-order Optimality Conditions: Evolution, Eq'm, and Damage}{section.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Proof of Equations 10 and 11}{subsection.2.3}% 6
+\BOOKMARK [3][-]{subsubsection.2.3.2}{Calculations for the partials}{subsection.2.3}% 7
+\BOOKMARK [2][-]{subsection.2.4}{Strain Hardening and Stress Softening}{section.2}% 8
+\BOOKMARK [2][-]{subsection.2.5}{Approximation of Variational Brittle Fracture}{section.2}% 9
+\BOOKMARK [1][-]{section.3}{Application to the 1D Tension Test}{}% 10
+\BOOKMARK [2][-]{subsection.3.1}{The 1D Problem}{section.3}% 11
+\BOOKMARK [2][-]{subsection.3.2}{Homogeneous Solutions}{section.3}% 12
+\BOOKMARK [3][-]{subsubsection.3.2.1}{Elastic Phase}{subsection.3.2}% 13
+\BOOKMARK [3][-]{subsubsection.3.2.2}{Damaging Phase}{subsection.3.2}% 14
+\BOOKMARK [3][-]{subsubsection.3.2.3}{Example 1: A model with an Elastic Phase}{subsection.3.2}% 15
+\BOOKMARK [3][-]{subsubsection.3.2.4}{Example 2: A Model without an elastic Phase}{subsection.3.2}% 16
+\BOOKMARK [3][-]{subsubsection.3.2.5}{Comparison of Results}{subsection.3.2}% 17
+\BOOKMARK [2][-]{subsection.3.3}{Localized Solutions}{section.3}% 18
+\BOOKMARK [3][-]{subsubsection.3.3.1}{Optimal Damage Profile}{subsection.3.3}% 19
+\BOOKMARK [1][-]{section.4}{Appendix}{}% 20
+\BOOKMARK [2][-]{subsection.4.1}{Gateaux Derivative}{section.4}% 21
