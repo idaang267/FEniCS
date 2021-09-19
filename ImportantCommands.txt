@@ -61,14 +61,14 @@ Git Commands
   git add .
   git commit -am "message"
   git push origin master
+  git push origin HEAD:main
 
 Git Clone Repo
   sudo apt install git
   Login into Github
   By the code button, copy the link
   git clone https://github.com/idaang267/etc.git
-  Type in username and password
-    Dk1odK@ge
+  Type in username and Token
 
 Install GMSH
   sudo apt install gmsh
