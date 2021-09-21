@@ -99,10 +99,9 @@ userpar.add("mu", 0.2)         # Shear Modulus
 userpar.add("kappa", 200)      # Bulk Modulus
 userpar.add("Gc", 1)           # fracture toughness
 userpar.add("k_ell", 5.e-5)    # residual stiffness
-userpar.add("meshsize", 75)
 userpar.add("load_min", 0.00)
-userpar.add("load_max", 3)
-userpar.add("load_steps", 300)
+userpar.add("load_max", 3.5)
+userpar.add("load_steps", 400)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -110,9 +109,8 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-W, H, T = 1.0, 1.5, 0.016
-N       = userpar["meshsize"]
-hsize   = 0.008         # Element size float(L/N)
+W, H, T = 1.0, 1.5, 0.02
+hsize   = 0.01         # Element size float(L/N)
 
 # Material parameters
 mu    = userpar["mu"]
@@ -134,7 +132,7 @@ AM_tolerance = 1e-4
 # Naming parameters for saving output
 modelname = "3D-Stabilized"
 meshname  = modelname+"-mesh.xdmf"
-simulation_params = "H4_W_%.1f_H_%.1f_T_%.3f_h_%.3f_d_%.2f_S_%.0f" % (W, H, T, hsize, userpar["load_max"],S)
+simulation_params = "Form3_W_%.1f_H_%.1f_T_%.3f_h_%.3f_d_%.2f_S_%.0f" % (W, H, T, hsize, userpar["load_max"],S)
 savedir   = "output/"+modelname+"/"+simulation_params+"/"
 
 # For parallel processing - write one directory
@@ -212,6 +210,9 @@ def a(alpha):
     return (1.0-alpha)**2
 
 def b(alpha):
+    return (1.0-alpha)**6
+
+def b_sq(alpha):
     return (1.0-alpha)**3
 
 # Space and function, trial, and test definitions
@@ -296,14 +297,15 @@ lmbda3s = d_par + 2.*e_par*cos(h_par + 6.*pi/3.)
 # --------------------------------------------------------------------
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
+    return a(alpha)*mu*(F - inv(F.T)) - b_sq(alpha)*p*J*inv(F.T)
 
 # Define the Heaviside step function: H(x) = 1, x>= 0; H(x) = 0, x< 0;
 def Heaviside(x):
     return conditional(ge(x, 0.), 1., 0.)
 
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
-elastic_energy  = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.*ln(J))*dx - b(alpha)*p*(J-1)*dx - 1./(2.*kappa)*p**2*dx
+elastic_energy  = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.*ln(J))*dx \
+                - b_sq(alpha)*p*(J-1)*dx - 1./(2.*kappa)*p**2*dx
 elastic_energy2 = (a(alpha)+k_ell)*(mu/2.0)*(lmbda1s+lmbda2s+lmbda3s-3.-2.*ln(lmbda1s*lmbda2s*lmbda3s))*dx \
                   - b(alpha)*p*(J-1)*dx-1./(2.*kappa)*p**2*dx
 
@@ -321,7 +323,7 @@ W_act = (a(alpha)+k_ell)*Heaviside(sqrt(lmbda1s)-1.)*(mu/2.)*(lmbda1s-1.-2*ln(sq
 W_pas = (mu/2.)*Heaviside(1.-sqrt(lmbda1s))*(lmbda1s-1.-ln(sqrt(lmbda1s)))*dx \
       + (mu/2.)*Heaviside(1.-sqrt(lmbda2s))*(lmbda2s-1.-ln(sqrt(lmbda2s)))*dx \
       + (mu/2.)*Heaviside(1.-sqrt(lmbda3s))*(lmbda3s-1.-ln(sqrt(lmbda3s)))*dx \
-      + b(alpha)*Heaviside(1.-J)*(kappa/2)*(J-1.)**2*dx
+      + Heaviside(1.-J)*(kappa/2)*(J-1.)**2*dx
 
 # Non-dimension non-negative stability parameter
 varpi_ = 1.0
@@ -329,9 +331,11 @@ varpi_ = 1.0
 varpi = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
-    - varpi*b(alpha)*J*inner(inv(C),outer(b(alpha)*grad(p),grad(q)))*dx \
-    - varpi*b(alpha)*J*inner(inv(C),outer(grad(b(alpha))*p,grad(q)))*dx\
-    + varpi*b(alpha)*inner(mu*(F-inv(F.T))*grad(a(alpha)),inv(F.T)*grad(q))*dx
+    - varpi*b_sq(alpha)*J*inner(inv(C),outer(b_sq(alpha)*grad(p),grad(q)))*dx
+    # - varpi*b_sq(alpha)*J*inner(inv(C),outer(grad(b_sq(alpha))*p,grad(q)))*dx \
+    # + varpi*b_sq(alpha)*inner(mu*(F-inv(F.T))*grad(a(alpha)),inv(F.T)*grad(q))*dx
+
+    # - varpi*b_sq(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
 
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)

@@ -23,6 +23,7 @@ from ufl import rank
 
 import argparse
 import math
+from math import hypot
 import os
 import shutil
 import sympy
@@ -56,18 +57,18 @@ solver_up_parameters  = {"nonlinear_solver": "snes",
                                          "absolute_tolerance": 1e-10,
                                          "relative_tolerance": 1e-10,
                                          "solution_tolerance": 1e-10,
-                                         "report": False,
+                                         "report": True,
                                          "error_on_nonconvergence": True}}
 
 # Parameters of the PETSc/Tao solver used for the alpha-problem
 tao_solver_parameters = {"maximum_iterations": 100,
-                         "report": False,
                          "line_search": "more-thuente",
                          "linear_solver": "cg",
                          "preconditioner" : "hypre_amg",
                          "method": "tron",
                          "gradient_absolute_tol": 1e-8,
                          "gradient_relative_tol": 1e-8,
+                         "report": False,
                          "error_on_nonconvergence": True}
 
 # Variational problem for the damage problem (non-linear - use variational inequality solvers in PETSc)
@@ -94,7 +95,7 @@ class DamageProblem(OptimisationProblem):
         for bc in self.bc_alpha:
             bc.apply(A)
 
-# Initial condition (IC) class
+# Initial condition (IC) class, necessary for 2D formulations
 class InitialConditions(UserExpression):
     def eval(self, values, x):
         # Displacement u0 = (values[0], values[1])
@@ -108,15 +109,13 @@ class InitialConditions(UserExpression):
 # Set the user parameters
 parameters.parse()
 userpar = Parameters("user")
-userpar.add("mu", 1)          # Shear modulus
-userpar.add("kappa",10e2)
-userpar.add("Gc", 1)       # Fracture toughness (2.4E3)
-userpar.add("k_ell", 5.e-5)    # Residual stiffness
-userpar.add("meshsizeX", 750)
-userpar.add("meshsizeY", 125)
-userpar.add("load_min", 0.)
+userpar.add("mu", 1)            # Shear modulus
+userpar.add("kappa",1000)       # Bulk modulus
+userpar.add("Gc", 1)            # Fracture toughness (2.4E3)
+userpar.add("k_ell", 5.e-5)     # Residual stiffness
+userpar.add("load_min", 0.0)
 userpar.add("load_max", 0.55)
-userpar.add("load_steps", 150)
+userpar.add("load_steps", 200)
 userpar.add("ell_multi", 5)
 # Parse command-line options
 userpar.parse()
@@ -124,11 +123,17 @@ userpar.parse()
 # Constants: some parsed from user parameters
 # ----------------------------------------------------------------------------
 # Geometry parameters
-L, H = 6.0, 1.0           # Length (x) and height (y-direction)
-Nx   = userpar["meshsizeX"]
-Ny   = userpar["meshsizeY"]
-hsize = float(H/Ny)    # Geometry based definition for regularization
-S = userpar["load_steps"]
+L, H = 6.0, 1.0
+# L, H = 8.0, 9.5           # Length (x) and height (y-direction)
+# r_d = 5
+# y_c = (r_d*r_d - L/2*L/2)**(1/2) + H/2
+# center = Point(0, y_c)
+
+# hsize = float(H/Ny)    # Geometry based definition for regularization
+hsize = 0.005
+load_min = userpar["load_min"]
+load_max = userpar["load_max"]
+load_steps = userpar["load_steps"]
 
 # Material model parameters
 mu    = userpar["mu"]           # Shear modulus
@@ -144,7 +149,7 @@ ell = Constant(ell_multi*hsize)
 # Naming parameters for saving output
 modelname = "2D-Stabilized"
 meshname  = modelname + "-mesh.xdmf"
-simulation_params = "Alt-L_%.0f_H_%.0f_S_%.0f_ellx_%.0f_hsize_%.3f" % (L, H, S, ell_multi, hsize)
+simulation_params = "Form2_L_%.0f_H_%.0f_S_%.0f_ellx_%.0f_hsize_%.3f" % (L, H, load_steps, ell_multi, hsize)
 savedir   = "output/" + modelname + "/" + simulation_params + "/"
 
 # For parallel processing - write one directory
@@ -153,10 +158,11 @@ if MPI.rank(MPI.comm_world) == 0:
         shutil.rmtree(savedir)
 
 # Mesh generation of structured mesh
-mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
+# mesh = RectangleMesh(Point(-L/2, -H/2), Point(L/2, H/2), Nx, Ny)
 # Mesh generation of structured and refined mesh
-# mesh = Mesh("2DShearTest3Ref.xml")
-# Mesh rpintout
+mesh = Mesh("2DShearTest3Ref.xml")
+# mesh = Mesh("2DTrapezoidal.xml")
+# Mesh printout
 # geo_mesh = XDMFFile(MPI.comm_world, savedir + meshname)
 # geo_mesh.write(mesh)
 
@@ -170,9 +176,6 @@ if MPI.rank(MPI.comm_world) == 0:
 # Characteristic element length - used for stabilization
 h = CellDiameter(mesh)
 
-# Reference value for the loading (imposed displacement)
-ut = 1.0
-
 # Numerical parameters of the alternate minimization scheme
 maxiteration = 4000         # Sets a limit on number of iterations
 AM_tolerance = 1e-4
@@ -185,14 +188,41 @@ tc = 2.*sqrt(-p0/3.0)*cos(1./3.*acos(3.0*q0/2.0/p0*sqrt(-3.0/p0)))-1.0
 
 if MPI.rank(MPI.comm_world) == 0:
   print("The critical loading: [{}]".format(tc))
-  # print("The lmbda/mu: {0:4e}".format(lmbda/mu))
+  print("The kappa/mu: {0:4e}".format(kappa/mu))
   print("The mu/Gc: {0:4e}".format(mu/Gc))
 
 # Define boundary sets for boundary conditions
 # ----------------------------------------------------------------------------
+# class bot_boundary(SubDomain):
+#     def inside(self, x, on_boundary):
+#         if on_boundary and x[1] < -H/4:
+#             if near(x[0], -L/2, 0.01*hsize) and between(x[1], (-H/2 + hsize, H/2 - hsize)):
+#                 return False
+#             elif near(x[0], L/2, 0.01*hsize) and between(x[1], (-H/2 + hsize, H/2 - hsize)):
+#                 return False
+#             else:
+#                 return True
+#
+# class top_boundary(SubDomain):
+#     def inside(self, x, on_boundary):
+#         if on_boundary and x[1] > H/4:
+#             if near(x[0], -L/2, 0.01*hsize) and between(x[1], (-H/2 + hsize, H/2 - hsize)):
+#                 return False
+#             elif near(x[0], L/2, 0.01*hsize) and between(x[1], (-H/2 + hsize, H/2 - hsize)):
+#                 return False
+#             else:
+#                 return True
+#
+# class pin_point(SubDomain):
+#     def inside(self, x, on_boundary):
+#         if near(x[0], L/2, 1.01*hsize) and near(x[1], 0.0, 1.01*hsize):
+#             return True
+#         if near(x[0], -L/2, 1.01*hsize) and near(x[1], 0.0, 1.01*hsize):
+#             return True
+
 class bot_boundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and near(x[1], -H/2, hsize) #and between(x[0], (0.0, 2.5))
+        return on_boundary and near(x[1], -H/2, hsize)
 
 class top_boundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -213,7 +243,7 @@ points = MeshFunction("size_t", mesh, mesh.topology().dim() - 2)
 # show lines of interest
 lines.set_all(0)
 bot_boundary.mark(lines, 1)
-top_boundary.mark(lines, 1)
+top_boundary.mark(lines, 2)
 file_results = XDMFFile(savedir + "/" + "lines.xdmf")
 file_results.write(lines)
 
@@ -231,6 +261,9 @@ def a(alpha):
     return (1.0-alpha)**2
 
 def b(alpha):
+    return (1.0-alpha)**6
+
+def b_sq(alpha):
     return (1.0-alpha)**3
 
 # Variational formulation
@@ -295,14 +328,14 @@ F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
-J = det(F)*(F33)
 Ic = tr(C) + (F33)**2
+J = det(F)*(F33)
 
 # Define the energy functional of the elasticity problem
 # --------------------------------------------------------------------
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*inv(F.T)
+    return a(alpha)*mu*(F - inv(F.T)) - b_sq(alpha)*p*J*inv(F.T)
 
 # Zero body force
 body_force = Constant((0., 0.))
@@ -312,15 +345,19 @@ varpi_ = 1.0
 varpi  = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Elastic energy, additional terms enforce material incompressibility and regularizes the Lagrange Multiplier
 elastic_energy    = (a(alpha)+k_ell)*(mu/2.0)*(Ic-3.0-2.0*ln(J))*dx \
-                    - b(alpha)*p*ln(J)*dx - 1/(2*kappa)*p**2*dx
+                    - b_sq(alpha)*p*(J-1.)*dx - 1/(2*kappa)*p**2*dx
 external_work     = dot(body_force, u)*dx
 elastic_potential = elastic_energy - external_work
 
 # Define the stabilization term and the additional weak form eq.
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
-      - varpi*b(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx \
-      + (mu*(F33 - 1/F33) - (1-alpha)*p/F33)*v_F33*dx
+    + (a(alpha)*mu*(F33 - 1/F33) - b(alpha)*p*J/F33)*v_F33*dx \
+    - varpi*b_sq(alpha)*J*inner(inv(C),outer(b_sq(alpha)*grad(p),grad(q)))*dx \
+    - varpi*b_sq(alpha)*J*inner(inv(C),outer(grad(b_sq(alpha))*p,grad(q)))*dx \
+    + varpi*b_sq(alpha)*inner(mu*(F-inv(F.T))*grad(a(alpha)),inv(F.T)*grad(q))*dx
+    # - varpi*b_sq(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
+
 # Compute directional derivative about w_p in the direction of u_p (Hessian)
 J_u = derivative(F_u, w_p, u_p)
 
@@ -359,17 +396,18 @@ solver_alpha.parameters.update(tao_solver_parameters)
 # info(solver_alpha.parameters, True) # uncomment to see available parameters
 
 # Loading vector modeled after an exponential function
-load_multipliers = np.linspace(userpar["load_min"], userpar["load_steps"], userpar["load_steps"])
-fcn_load = []
-for steps in load_multipliers:
-    exp1 = 0.1389*exp(0.009173*steps) - 0.1389*exp(-0.06888*steps)
-    fcn_load.append(exp1)
+load_multipliers = np.linspace(load_min, load_max, load_steps)
+# fcn_load = np.linspace(load_min, load_steps, load_steps)
+# load_multipliers = []
+# for steps in fcn_load:
+#     exp1 = 0.3304*exp(0.00189*steps) - 0.3304*exp(-0.1505*steps)
+#     load_multipliers.append(exp1)
 
 # initialization of vectors to store data of interest
-energies         = np.zeros((len(load_multipliers), 5))
-iterations       = np.zeros((len(load_multipliers), 2))
+energies   = np.zeros((len(load_multipliers), 5))
+iterations = np.zeros((len(load_multipliers), 2))
 
-# Split into displacement and pressure
+# Split into displacement, pressure, and F33
 (u, p, F33) = w_p.split()
 # Data file name
 file_tot = XDMFFile(MPI.comm_world, savedir + "/results.xdmf")
@@ -384,7 +422,7 @@ timer0 = time.process_time()
 
 # Solving at each timestep
 # ----------------------------------------------------------------------------
-for (i_t, t) in enumerate(fcn_load):
+for (i_t, t) in enumerate(load_multipliers):
     # Update the displacement with each iteration
     u1.t = t
     u2.t = t
