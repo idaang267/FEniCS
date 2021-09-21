@@ -317,13 +317,15 @@ elastic_potential = elastic_energy - external_work
 W_act = (a(alpha)+k_ell)*Heaviside(sqrt(lmbda1s)-1.)*(mu/2.)*(lmbda1s-1.-2*ln(sqrt(lmbda1s)))*dx \
       + (a(alpha)+k_ell)*Heaviside(sqrt(lmbda2s)-1.)*(mu/2.)*(lmbda2s-1.-2*ln(sqrt(lmbda2s)))*dx \
       + (a(alpha)+k_ell)*Heaviside(sqrt(lmbda3s)-1.)*(mu/2.)*(lmbda3s-1.-2*ln(sqrt(lmbda3s)))*dx \
-      + b(alpha)*Heaviside(J-1.)*(kappa/2)*(J-1.)**2*dx
+      + Heaviside(J-1.)*(b_sq(alpha)*p*(J-1.)+p**2/(2*kappa))
+      # + b(alpha)*Heaviside(J-1.)*(kappa/2)*(J-1.)**2*dx
 
 # Elastic energy decomposition into passive
 W_pas = (mu/2.)*Heaviside(1.-sqrt(lmbda1s))*(lmbda1s-1.-ln(sqrt(lmbda1s)))*dx \
       + (mu/2.)*Heaviside(1.-sqrt(lmbda2s))*(lmbda2s-1.-ln(sqrt(lmbda2s)))*dx \
       + (mu/2.)*Heaviside(1.-sqrt(lmbda3s))*(lmbda3s-1.-ln(sqrt(lmbda3s)))*dx \
-      + Heaviside(1.-J)*(kappa/2)*(J-1.)**2*dx
+      + Heaviside(1.-J)*(p*(J-1.)+p**2/(2*kappa))
+      # + Heaviside(1.-J)*(kappa/2)*(J-1.)**2*dx
 
 # Non-dimension non-negative stability parameter
 varpi_ = 1.0
@@ -332,9 +334,8 @@ varpi = project(varpi_*h**2/(2.0*mu), FunctionSpace(mesh,'DG',0))
 # Compute directional derivative about w_p in the direction of v (Gradient)
 F_u = derivative(elastic_potential, w_p, v_q) \
     - varpi*b_sq(alpha)*J*inner(inv(C),outer(b_sq(alpha)*grad(p),grad(q)))*dx
-    # - varpi*b_sq(alpha)*J*inner(inv(C),outer(grad(b_sq(alpha))*p,grad(q)))*dx \
-    # + varpi*b_sq(alpha)*inner(mu*(F-inv(F.T))*grad(a(alpha)),inv(F.T)*grad(q))*dx
-
+    - varpi*b_sq(alpha)*J*inner(inv(C),outer(grad(b_sq(alpha))*p,grad(q)))*dx \
+    + varpi*b_sq(alpha)*inner(mu*(F-inv(F.T))*grad(a(alpha)),inv(F.T)*grad(q))*dx
     # - varpi*b_sq(alpha)*J*inner(inv(C), outer(grad(p),grad(q)))*dx
 
 # Compute directional derivative about w_p in the direction of u_p (Hessian)

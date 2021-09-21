@@ -13,7 +13,11 @@ ell = ell_multi*hsize;
 Gc_e = Gc*(1+ (3/2)*hsize/ell);
 
 syms lambda_a
+eq1 = Gc == h*mu*(lambda_a - 1/lambda_a)^2;
 eq2 = Gc_e == h*mu*(lambda_a - 1/lambda_a)^2;
-sim_lambda = double(solve(eq2, lambda_a));
+
+sim_lambda = double(solve(eq1, lambda_a));
+sim_lambda_e = double(solve(eq2, lambda_a));
 
 sim_delta = h*(sim_lambda(4) - 1)
+sim_delta_e = h*(sim_lambda_e(4) - 1)

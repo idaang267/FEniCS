@@ -335,7 +335,7 @@ J = det(F)*(F33)
 # --------------------------------------------------------------------
 # Nominal stress tensor
 def P(u, alpha):
-    return a(alpha)*mu*(F - inv(F.T)) - b_sq(alpha)*p*J*inv(F.T)
+    return a(alpha)*mu*(F - inv(F.T)) - b(alpha)*p*J*inv(F.T)
 
 # Zero body force
 body_force = Constant((0., 0.))
