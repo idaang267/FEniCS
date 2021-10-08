@@ -107,7 +107,6 @@ mu = Constant(E/(2*(1 + nu)))
 def P(u):
     return mu*F + p*J*inv(F.T)
 
-
 # Specify the quadrature degree for efficiency
 F = (inner(P(u), grad(v_u)) + inner(J-1., v_p))*dx(metadata={"quadrature_degree": 4}) \
     - dot(B, v_u)*dx - dot(T, v_u)*ds
