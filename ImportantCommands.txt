@@ -62,6 +62,10 @@ Git Commands
   git commit -am "message"
   git push origin main
 
+  For some cases
+    git pull origin master
+    git push origin master 
+
 Git Clone Repo
   sudo apt install git
   Login into Github
