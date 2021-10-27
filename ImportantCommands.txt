@@ -57,11 +57,14 @@ Dropbox
     start dropbox
 
 Git Commands
-  git pull origin master
+  git pull origin main
   git add .
   git commit -am "message"
-  git push origin master
-  git push origin HEAD:main
+  git push origin main
+
+  For some cases
+    git pull origin master
+    git push origin master 
 
 Git Clone Repo
   sudo apt install git
