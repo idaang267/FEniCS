@@ -1,0 +1,194 @@
+\documentclass[12pt,3p]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+
+\usepackage[round,numbers]{natbib}
+\usepackage[colorlinks = false]{hyperref}
+
+\begin{document}
+
+\title{FEniCS: Hyperelasticity \\
+	\large{From documented demonstration number 9 from Dolfin version 1.4.0}}
+\author{Ida Ang (Edited July 17, 2019)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\section{Potential Energy Minimization}
+An alternative approach to solving static problems is to consider the minimization of potential energy.
+\[ \min_{u \in V} \Pi \]
+where V is a suitable function space that satisfies the boundary conditions on u.\\ \\ 
+The total potential energy is given by the sum of the internal and external energy: 
+\begin{align}\label{PotEnergy}
+\begin{split}
+\Pi &= \Pi_{int} + \Pi_{ext} \\
+\Pi &= \underbrace{\int_{\Omega} \psi(u) dx}_{\Pi_{int}} \underbrace{- \int_{\Omega} B \cdot u dx - \int_{\partial \Omega} T \cdot u ds}_{ \Pi_{ext}}
+\end{split}
+\end{align}
+where $\psi$ is the elastic stored energy density, B is body force (per unit reference volume) and T is a traction force (per unit reference area). \\ \\ 
+Minimization of the potential energy corresponds to the directional derivative of $\Pi$ being zero for all possible variations of u: 
+\begin{equation} \label{dirDer}
+L(u;v) = D_v \Pi = \frac{d \Pi (u + \epsilon v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0} = 0 \indent \forall v \in V
+\end{equation}
+Note, minimizing $\Pi$ is equivalent to solving the balance of momentum problem.
+If we use Newton's method, we also want to find the Jacobian of Eq. \ref{dirDer}
+\begin{equation} \label{JacDirDer}
+a(u;du,v) = D_{du} L = \frac{dL(u+ \epsilon du; v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0}
+\end{equation}
+
+
+\section{FEniCS Implementation}
+\subsection{Domain and Boundary Conditions}
+The domain is a unit cube where x is right and y is upwards
+\[ \Omega = (0,1) \times (0,1) \times (0,1)\] 
+Create a unit cube with 25 (24 + 1) vertices in one direction and 17 (16 + 1) vertices in the other two directions: \\
+{\fontfamily{qcr}\selectfont
+mesh = UnitCubeMesh(24, 16, 16) \\ \\
+}
+Define a function space with continuous piecewise linear vector polynomials \\ 
+{\fontfamily{qcr}\selectfont
+V = VectorFunctionSpace(mesh, "Lagrange", 1) \\ \\
+}
+\textbf{Boundary Conditions} \\
+Use the following definitions for the boundary conditions, where we have left and right Dirichlet boundary conditions and one Neumann boundary condition: \\ \\
+\textbf{Dirichlet}:
+\[ \Gamma_{D_0} = 0 \times (0,1) \times (0,1) \]
+\[ \Gamma_{D_1} = 1 \times (0,1) \times (0,1) \]
+{\fontfamily{qcr}\selectfont
+left =  CompiledSubDomain("near(x[0], side) \&\& on\_boundary", side = 0.0) \\
+right = CompiledSubDomain("near(x[0], side) \&\& on\_boundary", side = 1.0) \\ \\
+}
+On $\Gamma_{D_0}$, we can define a displacement function to be applied to the right boundary.
+\[ u = \bigg[ 0, \frac{1}{2} \bigg(\frac{1}{2} + (y-\frac{1}{2}) \cos \frac{\pi}{3} - (z-\frac{1}{2}) \sin \frac{\pi}{3} - y \bigg), \frac{1}{2} \bigg( \frac{1}{2} + (y-\frac{1}{2}) \sin \frac{\pi}{3} - (z-\frac{1}{2}) \cos \frac{\pi}{3} - x \bigg) \bigg] \]
+This function gives a twist to the right side of the cube, which is why y and z are specified and x is zero: \\
+{\fontfamily{qcr}\selectfont
+r = Expression(("scale*0.0", \\ 
+\indent "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])", \\
+\indent "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"), \\ 
+\indent scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3, degree=2) \\ \\
+}
+Note the way we can declare aspects of the expression at the end in the form: \\
+{\fontfamily{qcr}\selectfont 
+Expression("x+y", x = \#, y = \#, degree = \#) \\ \\
+} 
+On $\Gamma_{D_1}$, we fix the left side with no displacement: \\
+{\fontfamily{qcr}\selectfont
+c = Constant((0.0, 0.0, 0.0)) \\ \\
+}
+Combine the left and right boundary conditions with the correct expressions in {\fontfamily{qcr}\selectfont bcs } \\ 
+{\fontfamily{qcr}\selectfont
+bcl = DirichletBC(V, c, left) \\
+bcr = DirichletBC(V, r, right) \\
+bcs = [bcl, bcr] \\ \\ 
+}
+\textbf{Neumann}: \\
+On $\Gamma_N = \frac{\partial \Omega}{\Gamma_D}$, define traction. Define body forces in the y direction \\
+{\fontfamily{qcr}\selectfont
+T  = Constant((0.1,  0.0, 0.0)) \\ \\
+}
+Define body forces in the y-direction (downwards) \\
+{\fontfamily{qcr}\selectfont
+B  = Constant((0.0,  -0.5, 0.0))  \\ \\
+}
+
+\subsection{Kinematics}
+Define u as the displacement from a previous iteration. Next, find the length of the displacement vector and use that to define the identity tensor. \\
+{\fontfamily{qcr}\selectfont
+u  = Function(V) \\
+d = len(u)          \\
+I = Identity(d)     \\ \\ 
+}
+Define Eq. \ref{Deformation} and \ref{CauchyGreen}, the deformation tensor and the right Cauchy-Green Tensor. 
+\begin{equation}\label{Deformation}
+F = I + \nabla u
+\end{equation}
+Right Cauchy-Green Tensor:
+\begin{equation}\label{CauchyGreen}
+C = F^T F
+\end{equation}
+Note: {\fontfamily{qcr}\selectfont Identity} and {\fontfamily{qcr}\selectfont grad} are inbuilt functions. \\
+{\fontfamily{qcr}\selectfont
+F = I + grad(u)    \\
+C = F.T*F 
+}
+
+\subsection{Model}
+An example of a hyperelastic model is the compressible neo-Hookean model:
+\begin{equation}\label{neoHookeanHyper}
+\psi = \frac{\mu}{2} (I_c - 3 - 2 \ln J ) + \frac{\lambda}{2} \ln (J^2)
+\end{equation}
+where the invariants are described 
+\begin{equation}\label{invariants}
+J = \det(F) \quad I_c = \trace(C)
+\end{equation}
+and the Lamé coefficients are: 
+\begin{equation}\label{lame}
+\mu = \frac{E}{2 (1 + \nu)} \quad \lambda = \frac{E \nu}{(1+ \nu) (1 - 2 \nu)} 
+\end{equation}
+and Eq. \ref{neoHookeanHyper} can be written in terms of the Young's modulus, E, and Poisson's ratio $\nu$ and the Lamé coefficients: \\ \\
+{\fontfamily{qcr}\selectfont
+E, nu = 10.0, 0.3 \\ \\
+}
+We can define Eq. \ref{lame}A, $\mu$, as a constant not an expression because $\nu$ is defined in the code: \\
+{\fontfamily{qcr}\selectfont
+mu = Constant(E/(2*(1 + nu))) \\ \\ 
+}
+In a similar manner, Eq. \ref{lame}B, can be defined as a constant because $\nu$ and E are defined in the code. Note that {\fontfamily{qcr}\selectfont lambda} is a reserved word so we name the variable{\fontfamily{qcr}\selectfont lmbda } \\
+{\fontfamily{qcr}\selectfont
+lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu)))  \\ \\ 
+}
+Define the invariants Eq. \ref{invariants} where {\fontfamily{qcr}\selectfont tr} and {\fontfamily{qcr}\selectfont det} are inbuilt functions: \\
+{\fontfamily{qcr}\selectfont
+J  = det(F) \\
+Ic = tr(C) \\ \\ 
+}
+Write Eq. \ref{neoHookeanHyper} and \ref{PotEnergy}  \\
+{\fontfamily{qcr}\selectfont
+psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2 \\ 
+Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds 
+}
+
+\subsection{Directional Derivatives}
+Define the incremental displacement as a trial function and v as a test function: \\
+{\fontfamily{qcr}\selectfont
+du = TrialFunction(V) \\          
+v  = TestFunction(V) \\ \\
+}
+Directional derivatives are computed of $\Pi$ (Eq. \ref{dirDer}) and L (Eq. \ref{JacDirDer}) \\ 
+The first directional derivative is analogous to the linear form.
+\begin{equation*}
+L(u;v) = D_v \Pi = \frac{d \Pi (u + \epsilon v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0} = 0 
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+F = derivative(Pi, u, v) \\ \\
+}
+The second directional derivative is analogous to the bilinear form. 
+\begin{equation*}
+a(u;du,v) = D_{du} L = \frac{dL(u+ \epsilon du; v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0}
+\end{equation*}
+{\fontfamily{qcr}\selectfont
+J = derivative(F, u, du) 
+}
+
+\subsection{Results}
+In the first term of the solve function, we want Eq. \ref{dirDer} to equal 0 to minimize the potential energy of the problem. We are solving for {\fontfamily{qcr}\selectfont u}, the unknown displacement. {\fontfamily{qcr}\selectfont bcs} are the boundary conditions. In the fourth term, we are equating the directional derivative of F to the determinant of F (J = det(F)). \\
+{\fontfamily{qcr}\selectfont
+solve(F == 0, u, bcs, J=J) \\ \\ 
+}
+Save results \\
+{\fontfamily{qcr}\selectfont
+file = File("displacement.pvd"); \\
+file << u; \\ \\
+}
+Don't use the {\fontfamily{qcr}\selectfont interactive} command to plot the results. Instead import {\fontfamily{qcr}\selectfont matplotlib.pyplot} as {\fontfamily{qcr}\selectfont plt} \\
+{\fontfamily{qcr}\selectfont
+plot(u) \\
+plt.show() \\
+}
+
+\end{document}

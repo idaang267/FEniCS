@@ -2,6 +2,7 @@ Working with the server
   Login
     ssh idaang@128.84.52.141
     password: 1234
+    ssh ida@192.168.1.163
   Logout
     exit
   Transferring file to server from any computer (if you are within the
@@ -64,7 +65,7 @@ Git Commands
 
   For some cases
     git pull origin master
-    git push origin master 
+    git push origin master
 
 Git Clone Repo
   sudo apt install git
