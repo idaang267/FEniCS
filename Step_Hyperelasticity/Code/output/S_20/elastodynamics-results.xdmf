@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="mesh" GridType="Uniform">
+        <Topology NumberOfElements="18000" TopologyType="Tetrahedron" NodesPerElement="4">
+          <DataItem Dimensions="18000 4" NumberType="UInt" Format="HDF">elastodynamics-results.h5:/Mesh/0/mesh/topology</DataItem>
+        </Topology>
+        <Geometry GeometryType="XYZ">
+          <DataItem Dimensions="4026 3" Format="HDF">elastodynamics-results.h5:/Mesh/0/mesh/geometry</DataItem>
+        </Geometry>
+        <Time Value="1.000000000000000e-01" />
+        <Attribute Name="Displacement" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="4026 3" Format="HDF">elastodynamics-results.h5:/VisualisationVector/0</DataItem>
+        </Attribute>
+        <Attribute Name="sigma" AttributeType="Tensor" Center="Cell">
+          <DataItem Dimensions="18000 9" Format="HDF">elastodynamics-results.h5:/VisualisationVector/1</DataItem>
+        </Attribute>
+        <Attribute Name="Velocity" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="4026 3" Format="HDF">elastodynamics-results.h5:/VisualisationVector/2</DataItem>
+        </Attribute>
+        <Attribute Name="Acceleration" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="4026 3" Format="HDF">elastodynamics-results.h5:/VisualisationVector/3</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+  </Domain>
+</Xdmf>

@@ -66,7 +66,8 @@ def right(x, on_boundary):
 # Control the number of loop iterations through user parameters
 parameters.parse()
 user_par = Parameters("user")
-user_par.add("T", 4.0)
+user_par.add("p0", 1.0)
+user_par.add("T", 3.0)
 user_par.add("Nsteps", 50)      # Displacement step number
 user_par.parse()
 
@@ -87,8 +88,11 @@ beta    = Constant((gamma+0.5)**2/4.)
 T   = user_par["T"]      # Final time of the interval
 Nsteps = user_par["Nsteps"]    # Number of time steps
 dt = Constant(T/Nsteps)     # compute associated time interval between two steps
-p0 = 1.
+p0 = user_par["p0"]
 cutoff_Tc = T/2
+# Define the loading of JIT-compiled expression depending on t using conditional syntax
+p = Expression(("0", "t <= tc ? p0*t/tc : 0", "0"), t=0, tc=cutoff_Tc, p0=p0, degree=0)
+
 # Definitions of constants from hyperelasticity demo
 B = Constant((0.0, 0.0, 0.0))  # Body force per unit volume
 
@@ -160,18 +164,18 @@ def P(u):
 def avg(x_old, x_new, alpha):
     return alpha*x_old + (1-alpha)*x_new
 
-# Define the loading of JIT-compiled expression depending on t using conditional syntax
-p = Expression(("0", "t <= tc ? p0*t/tc : 0", "0"), t=0, tc=cutoff_Tc, p0=p0, degree=0)
+psi = (mu/2)*(Ic - 3 - 2*ln(J))
+Pi = psi*dx
 
 # a = 1/(2*beta)*((u - u0 - v0*dt)/(0.5*dt*dt) - (1-2*beta)*a0)
-a_new = (du-u_old-dt*v_old)/(beta*dt**2) - (1-2*beta)/(2*beta)*a_old
+a_new = (u-u_old-dt*v_old)/(beta*dt**2) - (1-2*beta)/(2*beta)*a_old
 # Update formula for velocity: v = dt * ((1-gamma)*a0 + gamma*a) + v0
 v_new = v_old + dt*((1-gamma)*a_old + gamma*a_new)
 
 # Specify the quadrature degree for efficiency
-WF = inner(P(avg(u_old, u, alpha_f)), grad(v))*dx - dot(B, v)*dx \
-    - dot(p, v)*dss(3) #+ inner(avg(a_old, a_new, alpha_m), v)*dx
-    #+ derivative(avg(v_old, v_new, alpha_m), u, v)
+WF = inner(P(avg(u_old, u, alpha_f)), grad(v))*dx - dot(B, v)*dx - dot(p, v)*dss(3) \
+   + alpha_f*dot(a_old, v)*dx + (1-alpha_f)*dot(a_new, v)*dx
+
 # Directional derivative
 J_o = derivative(WF, u, du)
 
@@ -185,7 +189,6 @@ solver.parameters.update(snes_solver_parameters)
 # Loading parameter (list of values of surface tension for the simulations)
 time = np.linspace(0, T, Nsteps+1)      # Time-stepping
 u_tip = np.zeros((Nsteps+1,))           # Displacement at tip of sample
-energies = np.zeros((Nsteps+1, 3))      # Energies
 
 # Save results to an .xdmf file since we have multiple fields
 # Save results to an .xdmf file since we have multiple fields
@@ -238,10 +241,6 @@ for (i, dt) in enumerate(np.diff(time)):
 
     # Record tip displacement and compute energies
     u_tip[i+1] = u(1., 0.05, 0.)[1]
-    E_elas = assemble(inner(P(u_old), grad(u_old))*dx)
-    E_kin = assemble(0.5*inner(v_old, v_old)*dx)
-    E_tot = E_elas + E_kin
-    energies[i+1, :] = np.array([E_elas, E_kin, E_tot])
 
 # Plot tip displacement evolution
 plt.figure()
@@ -250,15 +249,4 @@ plt.xlabel("Time")
 plt.ylabel("Tip displacement")
 plt.ylim(-0.5, 0.5)
 plt.savefig(savedir + "/DisplacementEvolution.pdf", transparent=True)
-plt.close()
-
-
-# Plot energies evolution
-plt.figure()
-plt.plot(time, energies)
-plt.legend(("elastic", "kinetic", "damping", "total"))
-plt.xlabel("Time")
-plt.ylabel("Energies")
-# plt.ylim(0, 0.1)
-plt.savefig(savedir + "/EnergyEvolution.pdf", transparent=True)
 plt.close()
