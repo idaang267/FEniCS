@@ -169,24 +169,24 @@ cython_debug/
 bin/
 lib64
 pyvenv.cfg
+*.DS_Store
 
 
 # ### Plotting component of .gitignore
 # *.pdf
 # *.jpg
 # *.svg
-*.DS_Store
 
 ### TeX component of .gitignore
 
 ## Core latex/pdflatex auxiliary files:
-# *.aux
+*.aux
+*.log
+*.out
+*.toc
 # *.lof
-# *.log
 # *.lot
 # *.fls
-# *.out
-# *.toc
 # *.fmt
 # *.fot
 # *.cb
