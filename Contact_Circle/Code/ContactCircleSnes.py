@@ -5,6 +5,7 @@
 
 # Copyright (C) 2012 Corrado Maurini
 # Modified by Corrado Maurini 2013
+# Modified by Ida Ang 2023
 
 # Import Modules
 from dolfin import *
@@ -52,7 +53,8 @@ B = Expression(("0.0", "BodyInc"), BodyInc = 0.0, degree = 0 )
 Body = np.linspace(0, -1, 50)
 
 # Read pre-made mesh with format .xml
-mesh = Mesh("Mesh/CircleXY.xml")
+Dir = "../Results/SNES/"
+mesh = Mesh("../Mesh/CircleXY.xml")
 
 # Marking subdomains, lines or points
 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
@@ -62,12 +64,12 @@ points     = MeshFunction("size_t", mesh, mesh.topology().dim()-2)
 # Mark for visualization in Paraview
 lines.set_all(0)
 AllBound.mark(lines, 1)
-file = XDMFFile("../Results/Lines.xdmf")
+file = XDMFFile(Dir + "Lines.xdmf")
 file.write(lines)
 
 points.set_all(0)
 MidPoint.mark(points, 1)
-file = XDMFFile("../Results/Points.xdmf")
+file = XDMFFile(Dir + "Points.xdmf")
 file.write(points)
 
 # Create function spaces
@@ -112,7 +114,7 @@ def psi(u):
     return (mu/2)*(Ic - 2 - 2*ln(J)) + (lmbda/2)*(ln(J))**2
 
 def P(u):
-    return mu*(F - inv(F.T)) + lmbda*(ln(J))*inv(F.T)
+    return mu*(F - inv(F.T)) + lmbda*(ln(J))*J*inv(F.T)
 
 # Total potential energy
 Pi = psi(u)*dx - dot(B, u)*dx
@@ -136,7 +138,7 @@ solver.parameters.update(snes_solver_parameters)
 info(solver.parameters, False)
 
 # Save solution in XDMF format
-file = XDMFFile("../Results/Results.xdmf")
+file = XDMFFile(Dir + "/Results.xdmf")
 file.parameters["rewrite_function_mesh"] = False
 file.parameters["functions_share_mesh"]  = True     # Allows saving of multiple functions
 file.parameters["flush_output"]          = True     # Saves the file in case of interruption
