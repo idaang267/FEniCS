@@ -1,0 +1,181 @@
+\documentclass[12pt,3p]{article}
+\usepackage[margin=0.75in]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{physics}
+\usepackage{pstricks}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{moreverb}
+\usepackage{physics}
+\usepackage{epsfig}
+\usepackage{epstopdf} %This line makes .eps into .pdf
+\usepackage{bm}
+\usepackage{natbib}
+
+\usepackage[round,numbers]{natbib}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=false, %set true if you want colored links
+    linktoc=all,      %set to all if you want both sections and subsections linked
+    % linkcolor=blue,  %choose some color if you want links to stand out
+}
+
+\begin{document}
+
+\title{\Large{Contact Mechanics Problem: Hyperelastic Circle Constrained by Box} \vspace{-2ex}}
+\author{Ida Ang (Edited \today)}
+\date{\vspace{-5ex}}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Problem Definition}
+\vspace{-2ex}
+This is a personal document on a contact mechanics problem (currently undocumented demonstration) using the Scalable Nonlinear Equations Solvers (SNES) and Portable, Extensible Toolkit for Scientific Computation (PETSc)'s Toolkit for Advance Optimization (TAO) solvers coded by Corrado Maurini and updated by Tianyi Li (2014). Their version can still be found online, but this version contains my personal modifications and notes. This problem is very similar to documented demonstration \#7 hyperelasticity which uses potential energy minimization, an alternative approach to solving static problems.
+
+This example considers a hyperelastic circle under body forces in a box, where $2R = L$ if R is the radius of the circle and L is the length of one dimension of the box. Contact occurs as the circle drops in the box and is in contact with the bottom ($X_1 = -1$) and sides of the cube ($X_2 = -1, 1$). Additionally, changes were made to 1) increment the body force applied, 2) visualize multiple fields on the same mesh, and 3) modify the original box constraint to leave a gap on the bottom. Notation along the lines of Holzapfel is used, (ie bolded vectors and tensors). 
+
+\subsection{Potential Energy Minimization}
+
+Minimization of the energy functional,
+\[ \min_{u \in V} \Pi \]
+where V is a suitable function space that satisfies the boundary conditions on the displacement $\mathbf{u}$. The total potential energy, $\Pi$, is given by the sum of the internal and external energy: 
+\begin{align}\label{totPotEnergy}
+\begin{split}
+\Pi &= \Pi_{int} + \Pi_{ext} \\
+	&= \bigg( \int_{\Omega} \psi(\mathbf{u}) dx \bigg) 
+	+ \bigg( - \int_{\Omega} \mathbf{B} \cdot \mathbf{u} \, dx 
+	- \int_{\partial \Omega} \mathbf{T} \cdot \mathbf{u} \, ds \bigg) 
+\end{split}
+\end{align}
+where $\psi$ is the elastic stored energy density, $\mathbf{B}$ is the body force per unit reference volume and $\mathbf{T}$ is a traction force per unit reference area. 
+
+Minimization of the potential energy corresponds to the directional derivative of $\Pi$ being zero for all possible variations of u. (Note, minimizing $\Pi$ is equivalent to solving the balance of momentum problem.) 
+\begin{equation} \label{dirDer}
+L(u;v) = D_v \Pi = \frac{d \Pi (u + \epsilon v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0} = 0 \indent \forall v \in V
+\end{equation}
+If we use Newton's method, we also want to find the Jacobian of Eq. \ref{dirDer}
+\begin{equation} \label{JacDirDer}
+a(u;du,v) = D_{du} L = \frac{dL(u+ \epsilon du; v)}{d \epsilon} \Bigr\rvert_{\epsilon = 0}
+\end{equation}
+Note: in the final {\fontfamily{qcr}\selectfont solve} function in FEniCS we equate Eq. \ref{JacDirDer} to $J = \det(\mathbf{F})$
+
+\subsection{Kinematics and Specific Strain Energy Density}
+Note that this is written assuming the reader has a basic understanding of continuum and solid mechanics. The deformation gradient $\mathbf{F}$ and right Cauchy Green (CG) tensor $\mathbf{C}$ are defined as follows
+\begin{align*}
+\mathbf{F} &= \mathbf{I} + \nabla \mathbf{u} \\
+\mathbf{C} &= \mathbf{F}^T \mathbf{F}
+\end{align*}
+where the identity tensor is $I$ and the displacement field is $\mathbf{u}$. The first and third invariants of the right CG tensor are defined as follows.
+\begin{align*}
+I_C &= \tr \mathbf{C} \\
+III_C &= \det \mathbf{C} 
+\end{align*}
+Therefore, we can characterize the volumetric ratio between the current and reference configuration as, where we identify a relationship. 
+\begin{equation}
+J &= \det \mathbf{F} \rightarrow J^2 = III_C
+\end{equation}
+The stored energy density can be defined with the following equation, which represents 
+\begin{align*}
+\Psi = \frac{\mu}{2} (I_c - 2 - 2 \ln J ) + \frac{\lambda}{2} (\ln J)^2
+\end{align*}
+where the elasticity parameters are defined as the shear modulus, $\mu$ (Lame's second parameter) and Lame's first parameter $\lambda$. Note that {\fontfamily{qcr}\selectfont lambda} is a keyword in FEniCS so we define {\fontfamily{qcr}\selectfont lmbda}. \\
+{\fontfamily{qcr}\selectfont
+E, nu = 10.0, 0.3 \\
+mu = Constant(E/(2*(1 + nu))) \\
+lmbda = Constant(E*nu/((1 + nu)*(1 - 2*nu))) \\ 
+}
+where E is the elasticity modulus and $\nu$ is Poisson's ratio, a measure of incompressibility. 
+
+
+\section{FEniCS Implementation}
+\vspace{-2ex}
+
+\subsection{SNES Solver} 
+Define SNES solver parameters. {\fontfamily{qcr}\selectfont maximum\_iterations} sets the maximum newton-raphson iterations the solver will try before exiting. {\fontfamily{qcr}\selectfont report} allows for a report of the functional for each iteration as well as a report if the solver fails. {\fontfamily{qcr}\selectfont error\_on\_noncovergence} set to False suppresses the default error message which includes FEniCS contact information. \\
+{\fontfamily{qcr}\selectfont
+snes\_solver\_parameters = \{"nonlinear\_solver": "snes", \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "snes\_solver": \{"linear\_solver": "lu",	\\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "maximum\_iterations": 20, \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "report": True, \\
+\indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent \indent "error\_on\_nonconvergence": False\}\} \\ \\
+}
+Note that it appears that the PETSc's TAO solver appears to be the best optimization strategy, because higher body forces can be used for larger deformations. \\
+{\fontfamily{qcr}\selectfont
+problem = NonlinearVariationalProblem(F, u, bc, J=J) \\ \\
+} 
+Set the boundaries that ensures the circle stays within the box. \\
+{\fontfamily{qcr}\selectfont
+problem.set\_bounds(umin, umax) \\ \\
+}
+Call the solver parameters set above in the update statement. \\
+{\fontfamily{qcr}\selectfont
+solver = NonlinearVariationalSolver(problem) \\
+solver.parameters.update(snes\_solver\_parameters) \\ \\
+}
+If {\fontfamily{qcr}\selectfont info} is set to True, information on all solver parameters will be printed \\
+{\fontfamily{qcr}\selectfont
+info(solver.parameters, True) \\ \\
+}
+Stops at this line when the solution diverges \\ 
+{\fontfamily{qcr}\selectfont
+(iter, converged) = solver.solve() \\ \\ 
+}
+Warning because modification of the body force results in divergence of the problem. (in the y direction to > -1.0)  \\
+{\fontfamily{qcr}\selectfont
+if not converged: \\
+\indent warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.") \\ \\
+} 
+Save to an .xdmf file for multiple fields (time step = 0). \\
+{\fontfamily{qcr}\selectfont
+file = XDMFFile("displacement\_snes.xdmf") \\
+file.write(u, 0.) 
+}
+
+\subsection{TAO solver} 
+This file had been edited by Tianyi Li in 2014 and has some edits not only to the solver but to the boundary constraints: Instead of returning an expression for which x[0] must satisfy, the function {\fontfamily{qcr}\selectfont near()} returns where x = 0. Functionally, these are equivalent versions of the same definition {\fontfamily{qcr}\selectfont symmetry\_line} \\
+
+\subsubsection{Class Definition}
+Define the minimization problem by using the OptimisationProblem class \\
+{\fontfamily{qcr}\selectfont
+class ContactProblem(OptimisationProblem): \\
+\indent \indent def \_\_init\_\_(self): \\
+\indent \indent \indent \indent OptimisationProblem.\_\_init\_\_(self) \\ \\
+} 
+Objective function \\
+{\fontfamily{qcr}\selectfont
+\indent \indent  def f(self, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent return assemble(Pi) \\ \\
+}
+Define deformation gradient of the objective function \\
+{\fontfamily{qcr}\selectfont
+\indent \indent def F(self, b, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent assemble(F, tensor=b) \\ \\
+}
+Hessian of the objective function. \\
+{\fontfamily{qcr}\selectfont
+\indent \indent def J(self, A, x): \\
+\indent \indent \indent \indent u.vector()[:] = x \\
+\indent \indent \indent \indent assemble(J, tensor=A) \\ \\
+}
+The Hessian is related to the Jacobian by the following equation:
+\begin{equation*}
+\mathbf{H}(f(x)) = \mathbf{J} (\nabla f(x))^T
+\end{equation*}
+Solve the problem by specifying the boundary conditions with u\_min and u\_max  \\
+{\fontfamily{qcr}\selectfont
+solver.solve(ContactProblem(), u.vector(), u\_min.vector(), u\_max.vector())
+}
+
+
+\end{document}
