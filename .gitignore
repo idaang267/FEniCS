@@ -175,7 +175,7 @@ pyvenv.cfg
 # *.pdf
 # *.jpg
 # *.svg
-
+*.DS_Store
 
 ### TeX component of .gitignore
 
