@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<dolfin xmlns:dolfin="http://fenicsproject.org">
+  <parameters name="user">
+    <parameter key="InPlaneN" type="int" value="10" />
+    <parameter key="OutPlaneN" type="int" value="10" />
+    <parameter key="TotSteps" type="int" value="20" />
+    <parameter key="nu" type="double" value="0.45000000000000001" />
+  </parameters>
+</dolfin>
